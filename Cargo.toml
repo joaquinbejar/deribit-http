@@ -1,0 +1,19 @@
+[package]
+name = "deribit-http"
+version = "0.1.0"
+edition = "2024"
+authors = ["Joaquin Bejar <jb@taunais.com>"]
+description = "HTTP REST API client for Deribit trading platform"
+license = "MIT"
+readme = "README.md"
+repository = "https://github.com/joaquinbejar/deribit-http"
+homepage = "https://github.com/joaquinbejar/deribit-http"
+keywords = ["finance", "deribit", "trading", "api", "http"]
+categories = ["finance", "api-bindings", "web-programming::http-client"]
+
+[dependencies]
+#deribit-base = { path = "../deribit-base" }
+deribit-base = "0.1"
+reqwest = { version = "0.12", features = ["json"] }
+serde = { version = "1.0", features = ["derive"] }
+async-trait = "0.1"

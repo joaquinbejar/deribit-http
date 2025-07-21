@@ -14,11 +14,7 @@
 [![Documentation](https://img.shields.io/badge/docs-latest-blue.svg)](https://docs.rs/deribit-http)
 [![Wiki](https://img.shields.io/badge/wiki-latest-blue.svg)](https://deepwiki.com/joaquinbejar/deribit-http)
 
-## Deribit HTTP Client
-
-This crate provides a HTTP REST API client for the Deribit trading platform.
-It implements the common traits from `deribit-base` and provides methods
-for all REST API endpoints.
+{{readme}}
 
 ## Contribution and Contact
 
