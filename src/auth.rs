@@ -5,19 +5,28 @@ use serde::{Deserialize, Serialize};
 /// Authentication request
 #[derive(Debug, Serialize)]
 pub struct AuthRequest {
+    /// OAuth2 grant type (typically "client_credentials")
     pub grant_type: String,
+    /// Client ID from Deribit API credentials
     pub client_id: String,
+    /// Client secret from Deribit API credentials
     pub client_secret: String,
+    /// Optional scope for the authentication request
     pub scope: Option<String>,
 }
 
 /// Authentication response
 #[derive(Debug, Deserialize)]
 pub struct AuthResponse {
+    /// Access token for authenticated API requests
     pub access_token: String,
+    /// Token expiration time in seconds
     pub expires_in: i64,
+    /// Refresh token for obtaining new access tokens
     pub refresh_token: String,
+    /// Granted scope for the access token
     pub scope: String,
+    /// Type of the token (typically "Bearer")
     pub token_type: String,
 }
 
