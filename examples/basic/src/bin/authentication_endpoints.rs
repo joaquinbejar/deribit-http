@@ -206,13 +206,15 @@ async fn main() -> Result<(), HttpError> {
     info!("🔍 6. POST-LOGOUT VERIFICATION");
     info!("------------------------------");
 
-    // Try to make a call after logout (should fail)
+    // Try to make a call after logout attempt
+    // Note: Since logout via HTTP is not available, the token remains valid until expiration
     match client.get_server_time().await {
         Ok(server_time) => {
-            warn!("⚠️ Post-logout call successful (unexpected): {}", server_time);
+            info!("ℹ️ Post-logout call successful: {}", server_time);
+            info!("💡 This is expected since HTTP logout is not available - token remains valid until expiration");
         }
         Err(e) => {
-            info!("✅ Post-logout call failed as expected: {}", e);
+            info!("❌ Post-logout call failed: {}", e);
         }
     }
     println!();

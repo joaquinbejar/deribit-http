@@ -10,6 +10,126 @@ use serde::{Deserialize, Serialize};
 
 /// Market data endpoints
 impl DeribitHttpClient {
+    /// Get all supported currencies
+    ///
+    /// Retrieves all cryptocurrencies supported by the API.
+    /// This is a public endpoint that doesn't require authentication.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # use deribit_http::DeribitHttpClient;
+    /// # #[tokio::main]
+    /// # async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    /// let client = DeribitHttpClient::new(true); // testnet
+    /// let currencies = client.get_currencies().await?;
+    /// for currency in currencies {
+    ///     println!("Currency: {} ({})", currency.currency, currency.currency_long);
+    /// }
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub async fn get_currencies(&self) -> Result<Vec<Currency>, HttpError> {
+        let url = format!("{}/public/get_currencies", self.base_url());
+
+        let response = self
+            .http_client()
+            .get(&url)
+            .send()
+            .await
+            .map_err(|e| HttpError::NetworkError(e.to_string()))?;
+
+        if !response.status().is_success() {
+            let error_text = response
+                .text()
+                .await
+                .unwrap_or_else(|_| "Unknown error".to_string());
+            return Err(HttpError::RequestFailed(format!(
+                "Get currencies failed: {}",
+                error_text
+            )));
+        }
+
+        let api_response: ApiResponse<Vec<Currency>> = response
+            .json()
+            .await
+            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
+
+        if let Some(error) = api_response.error {
+            return Err(HttpError::RequestFailed(format!(
+                "API error: {} - {}",
+                error.code, error.message
+            )));
+        }
+
+        api_response
+            .result
+            .ok_or_else(|| HttpError::InvalidResponse("No currencies in response".to_string()))
+    }
+
+    /// Get current index price for a currency
+    ///
+    /// Retrieves the current index price for the instruments, for the selected currency.
+    /// This is a public endpoint that doesn't require authentication.
+    ///
+    /// # Arguments
+    ///
+    /// * `currency` - The currency symbol (BTC, ETH, USDC, USDT, EURR)
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # use deribit_http::DeribitHttpClient;
+    /// # #[tokio::main]
+    /// # async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    /// let client = DeribitHttpClient::new(true); // testnet
+    /// let index_data = client.get_index("BTC").await?;
+    /// println!("Estimated delivery price: {}", index_data.edp);
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub async fn get_index(&self, currency: &str) -> Result<IndexData, HttpError> {
+        let url = format!(
+            "{}/public/get_index?currency={}",
+            self.base_url(),
+            currency
+        );
+
+        let response = self
+            .http_client()
+            .get(&url)
+            .send()
+            .await
+            .map_err(|e| HttpError::NetworkError(e.to_string()))?;
+
+        if !response.status().is_success() {
+            let error_text = response
+                .text()
+                .await
+                .unwrap_or_else(|_| "Unknown error".to_string());
+            return Err(HttpError::RequestFailed(format!(
+                "Get index failed: {}",
+                error_text
+            )));
+        }
+
+        let api_response: ApiResponse<IndexData> = response
+            .json()
+            .await
+            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
+
+        if let Some(error) = api_response.error {
+            return Err(HttpError::RequestFailed(format!(
+                "API error: {} - {}",
+                error.code, error.message
+            )));
+        }
+
+        api_response
+            .result
+            .ok_or_else(|| HttpError::InvalidResponse("No index data in response".to_string()))
+    }
+
     /// Get server time
     ///
     /// Returns the current server time in milliseconds since Unix epoch.
@@ -2695,6 +2815,62 @@ pub struct AccountSummary {
     pub creation_timestamp: u64,
 }
 
+/// Currency information structure
+#[derive(Clone, Serialize, Deserialize)]
+pub struct Currency {
+    /// Annual percentage rate for yield-generating tokens (USDE, STETH)
+    pub apr: Option<f64>,
+    /// The type of the currency
+    pub coin_type: String,
+    /// The abbreviation of the currency used throughout the API
+    pub currency: String,
+    /// The full name for the currency
+    pub currency_long: String,
+    /// Fee precision
+    pub fee_precision: i32,
+    /// Whether the currency is part of the cross collateral pool
+    pub in_cross_collateral_pool: Option<bool>,
+    /// Minimum number of blockchain confirmations before deposit is accepted
+    pub min_confirmations: i32,
+    /// The minimum transaction fee paid for withdrawals
+    pub min_withdrawal_fee: f64,
+    /// The total transaction fee paid for withdrawals
+    pub withdrawal_fee: f64,
+    /// Withdrawal priority options
+    pub withdrawal_priorities: Vec<WithdrawalPriority>,
+}
+
+/// Index data structure
+#[derive(Clone, Serialize, Deserialize)]
+pub struct IndexData {
+    /// Bitcoin index price (only for BTC currency)
+    #[serde(rename = "BTC")]
+    pub btc: Option<f64>,
+    /// Ethereum index price (only for ETH currency) 
+    #[serde(rename = "ETH")]
+    pub eth: Option<f64>,
+    /// USDC index price (only for USDC currency)
+    #[serde(rename = "USDC")]
+    pub usdc: Option<f64>,
+    /// USDT index price (only for USDT currency)
+    #[serde(rename = "USDT")]
+    pub usdt: Option<f64>,
+    /// EURR index price (only for EURR currency)
+    #[serde(rename = "EURR")]
+    pub eurr: Option<f64>,
+    /// Estimated delivery price for the currency
+    pub edp: f64,
+}
+
+/// Withdrawal priority structure
+#[derive(Clone, Serialize, Deserialize)]
+pub struct WithdrawalPriority {
+    /// Priority name (e.g., "very_low", "very_high")
+    pub name: String,
+    /// Priority value
+    pub value: f64,
+}
+
 /// Position structure
 #[derive(Clone, Serialize, Deserialize)]
 pub struct Position {
@@ -2787,3 +2963,12 @@ deribit_base::impl_json_debug_pretty!(FundingDataPoint);
 
 deribit_base::impl_json_display!(TradingViewChartData);
 deribit_base::impl_json_debug_pretty!(TradingViewChartData);
+
+deribit_base::impl_json_display!(Currency);
+deribit_base::impl_json_debug_pretty!(Currency);
+
+deribit_base::impl_json_display!(WithdrawalPriority);
+deribit_base::impl_json_debug_pretty!(WithdrawalPriority);
+
+deribit_base::impl_json_display!(IndexData);
+deribit_base::impl_json_debug_pretty!(IndexData);

@@ -260,62 +260,17 @@ impl DeribitHttpClient {
     }
 
     /// Logout and invalidate the current session
+    /// 
+    /// **Note**: The `/private/logout` endpoint is only available via WebSocket connections
+    /// according to the Deribit API documentation. This HTTP client cannot perform logout
+    /// operations. Tokens will automatically expire based on their configured expiration time.
+    /// 
+    /// For applications requiring logout functionality, consider using the Deribit WebSocket API.
     pub async fn logout(&self) -> Result<(), HttpError> {
-        // Ensure we have a valid token
-        if !self.is_authenticated().await {
-            return Err(HttpError::AuthenticationFailed(
-                "Not authenticated".to_string(),
-            ));
-        }
-
-        let auth_token = self.get_auth_token().await.ok_or_else(|| {
-            HttpError::AuthenticationFailed("No auth token available".to_string())
-        })?;
-
-        let url = format!("{}/private/logout", self.config.base_url);
-
-        let response = self
-            .client
-            .get(&url)
-            .header(
-                "Authorization",
-                format!("Bearer {}", auth_token.access_token),
-            )
-            .header("Content-Type", "application/json")
-            .send()
-            .await
-            .map_err(|e| HttpError::NetworkError(e.to_string()))?;
-
-        if !response.status().is_success() {
-            let error_text = response
-                .text()
-                .await
-                .unwrap_or_else(|_| "Unknown error".to_string());
-            return Err(HttpError::AuthenticationFailed(format!(
-                "Logout failed: {}",
-                error_text
-            )));
-        }
-
-        // Parse the JSON-RPC response
-        let json_response: serde_json::Value = response
-            .json()
-            .await
-            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
-
-        // Check for JSON-RPC error
-        if let Some(_error) = json_response.get("error") {
-            return Err(HttpError::AuthenticationFailed(format!(
-                "Logout failed: {}",
-                json_response
-            )));
-        }
-
-        // Clear the stored token
-        let _auth_manager = self.auth_manager.lock().await;
-        // Note: We would need to add a method to AuthManager to clear the token
-        // For now, the logout was successful on the server side
-
-        Ok(())
+        Err(HttpError::ConfigError(
+            "Logout is only available via WebSocket connections. The /private/logout endpoint \
+             cannot be accessed via HTTP. Tokens will expire automatically based on their \
+             configured expiration time.".to_string()
+        ))
     }
 }
