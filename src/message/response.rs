@@ -1,8 +1,8 @@
 //! HTTP response message handling
 
-use deribit_base::{impl_json_debug_pretty, impl_json_display};
 use crate::error::HttpError;
 use crate::model::http_types::{ApiError, ApiResponse, HttpResponse};
+use deribit_base::{impl_json_debug_pretty, impl_json_display};
 use serde::{Deserialize, Serialize};
 
 /// Response handler for HTTP messages

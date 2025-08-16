@@ -2,6 +2,7 @@
 
 use crate::config::{HttpConfig, validate_config};
 use crate::error::HttpError;
+use crate::rate_limit::{RateLimiter, categorize_endpoint};
 use reqwest::Client;
 use std::sync::Arc;
 
@@ -12,6 +13,8 @@ pub struct DeribitHttpClient {
     client: Client,
     /// Configuration
     config: Arc<HttpConfig>,
+    /// Rate limiter
+    rate_limiter: RateLimiter,
 }
 
 impl DeribitHttpClient {
@@ -41,6 +44,7 @@ impl DeribitHttpClient {
         Ok(Self {
             client,
             config: Arc::new(config),
+            rate_limiter: RateLimiter::new(),
         })
     }
 
@@ -57,5 +61,26 @@ impl DeribitHttpClient {
     /// Get the HTTP client
     pub fn http_client(&self) -> &Client {
         &self.client
+    }
+
+    /// Make a rate-limited HTTP request
+    pub async fn make_request(&self, url: &str) -> Result<reqwest::Response, HttpError> {
+        // Determine rate limit category from URL
+        let category = categorize_endpoint(url);
+
+        // Wait for rate limit permission
+        self.rate_limiter.wait_for_permission(category).await;
+
+        // Make the request
+        self.client
+            .get(url)
+            .send()
+            .await
+            .map_err(|e| HttpError::NetworkError(e.to_string()))
+    }
+
+    /// Get rate limiter for advanced usage
+    pub fn rate_limiter(&self) -> &RateLimiter {
+        &self.rate_limiter
     }
 }

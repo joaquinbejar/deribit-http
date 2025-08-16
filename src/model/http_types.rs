@@ -109,8 +109,5 @@ impl RequestParams {
 }
 
 // Implement Display and Debug traits using macros from deribit-base
-deribit_base::impl_json_display!(HttpResponse,ApiError,AuthToken,RequestParams);
-deribit_base::impl_json_debug_pretty!(HttpResponse, ApiError,AuthToken,RequestParams);
-
-
-
+deribit_base::impl_json_display!(HttpResponse, ApiError, AuthToken, RequestParams);
+deribit_base::impl_json_debug_pretty!(HttpResponse, ApiError, AuthToken, RequestParams);

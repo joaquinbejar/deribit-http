@@ -12,6 +12,7 @@ pub mod endpoints;
 pub mod error;
 pub mod message;
 pub mod model;
+pub mod rate_limit;
 pub mod session;
 
 // Constants
@@ -22,12 +23,13 @@ pub use client::*;
 pub use error::*;
 
 // Re-export specific types to avoid conflicts
-pub use auth::{AuthManager, ApiKeyAuth};
-pub use config::{ApiCredentials};
+pub use auth::{ApiKeyAuth, AuthManager};
+pub use config::ApiCredentials;
 pub use connection::*;
 pub use endpoints::{
-    BuyOrderRequest, SellOrderRequest, OrderResponse, OrderInfo, OrderType, TimeInForce,
-    TradeExecution, TickerData, TickerStats, OrderBook, Instrument, Trade
+    AccountSummary, BuyOrderRequest, Deposit, DepositsResponse, EditOrderRequest, Instrument, OrderBook, OrderInfo, 
+    OrderResponse, OrderType, Position, PortfolioInfo, SellOrderRequest, Subaccount, TickerData, TickerStats, 
+    TimeInForce, Trade, TradeExecution, TransactionLog, TransactionLogEntry, UserTrade, Withdrawal, WithdrawalsResponse,
 };
 pub use message::{HttpMessageBuilder, HttpRequestBuilder, HttpResponseHandler};
 pub use model::{ApiError, ApiResponse, AuthToken, http_types};
