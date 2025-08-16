@@ -11,6 +11,17 @@ homepage = "https://github.com/joaquinbejar/deribit-http"
 keywords = ["finance", "deribit", "trading", "api", "http"]
 categories = ["finance", "api-bindings", "web-programming::http-client"]
 
+[workspace]
+members = [
+    "examples/basic",
+    "examples/market_data",
+    "examples/order_management",
+    "examples/position_management",
+    "examples/session",
+    "examples/error_handling",
+]
+
+
 [dependencies]
 deribit-base = { workspace = true }
 serde = { workspace = true }
@@ -29,9 +40,14 @@ hmac = { workspace = true }
 sha2 = { workspace = true }
 urlencoding = { workspace = true }
 
+[dev-dependencies]
+dotenv = "0.15"
+serial_test = "3.0"
+tracing-subscriber = { workspace = true }
 
 [workspace.dependencies]
 deribit-base = { path = "../deribit-base" }
+deribit-http = { path = "." }
 #deribit-base = "0.1"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
@@ -48,3 +64,5 @@ url = "2.4"
 hmac = "0.12"
 sha2 = "0.10"
 urlencoding = "2.1"
+dotenv = "0.15"
+env_logger = "0.11"

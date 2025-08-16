@@ -12,6 +12,7 @@ pub mod endpoints;
 pub mod error;
 pub mod message;
 pub mod model;
+pub mod prelude;
 pub mod rate_limit;
 pub mod session;
 

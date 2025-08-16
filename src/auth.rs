@@ -6,13 +6,14 @@
 
 use crate::config::HttpConfig;
 use crate::error::HttpError;
-use crate::model::http_types::{ApiResponse, AuthToken};
+use crate::model::http_types::AuthToken;
 use base64::Engine;
 use hmac::{Hmac, Mac};
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use sha2::Sha256;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
+use urlencoding;
 
 type HmacSha256 = Hmac<Sha256>;
 
@@ -68,19 +69,21 @@ impl AuthManager {
         client_id: &str,
         client_secret: &str,
     ) -> Result<AuthToken, HttpError> {
-        let auth_request = AuthRequest {
-            grant_type: "client_credentials".to_string(),
-            client_id: client_id.to_string(),
-            client_secret: client_secret.to_string(),
-            scope: Some("read write".to_string()),
-        };
-
-        let url = format!("{}/public/auth", self.config.base_url);
+        // Build URL with query parameters as per Deribit API documentation
+        let url = format!(
+            "{}/public/auth?grant_type=client_credentials&client_id={}&client_secret={}",
+            self.config.base_url,
+            urlencoding::encode(client_id),
+            urlencoding::encode(client_secret)
+        );
+        
+        // Debug: log the URL being used
+        tracing::debug!("Authentication URL: {}", url);
 
         let response = self
             .client
-            .post(&url)
-            .json(&auth_request)
+            .get(&url)
+            .header("Content-Type", "application/json")
             .send()
             .await
             .map_err(|e| HttpError::NetworkError(e.to_string()))?;
@@ -96,21 +99,29 @@ impl AuthManager {
             )));
         }
 
-        let api_response: ApiResponse<AuthToken> = response
+        // Parse the JSON-RPC response directly
+        let json_response: serde_json::Value = response
             .json()
             .await
             .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
 
-        if let Some(error) = api_response.error {
+        // Check for JSON-RPC error
+        if let Some(error) = json_response.get("error") {
+            let code = error.get("code").and_then(|c| c.as_i64()).unwrap_or(-1);
+            let message = error.get("message").and_then(|m| m.as_str()).unwrap_or("Unknown error");
             return Err(HttpError::AuthenticationFailed(format!(
-                "OAuth2 error: {} - {}",
-                error.code, error.message
+                "OAuth2 authentication failed: {}",
+                json_response
             )));
         }
 
-        let token = api_response
-            .result
-            .ok_or_else(|| HttpError::InvalidResponse("No token in response".to_string()))?;
+        // Extract the result and parse as AuthToken
+        let result = json_response
+            .get("result")
+            .ok_or_else(|| HttpError::InvalidResponse("No result in response".to_string()))?;
+
+        let token: AuthToken = serde_json::from_value(result.clone())
+            .map_err(|e| HttpError::InvalidResponse(format!("Failed to parse token: {}", e)))?;
 
         // Calculate token expiration time
         let expires_at = SystemTime::now() + Duration::from_secs(token.expires_in);
