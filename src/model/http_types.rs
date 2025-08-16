@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
 /// HTTP request structure
-#[derive(Debug, Clone)]
+#[derive(Clone, Serialize, Deserialize)]
 pub struct HttpRequest {
     /// HTTP method (GET, POST, PUT, DELETE, etc.)
     pub method: String,
@@ -17,7 +17,7 @@ pub struct HttpRequest {
 }
 
 /// HTTP response structure
-#[derive(Debug, Clone)]
+#[derive(Clone, Serialize, Deserialize)]
 pub struct HttpResponse {
     /// HTTP status code
     pub status: u16,
@@ -28,7 +28,7 @@ pub struct HttpResponse {
 }
 
 /// Generic API response wrapper
-#[derive(Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ApiResponse<T> {
     /// Successful result data
     pub result: Option<T>,
@@ -109,15 +109,8 @@ impl RequestParams {
 }
 
 // Implement Display and Debug traits using macros from deribit-base
-deribit_base::impl_json_display!(ApiError);
-deribit_base::impl_json_debug_pretty!(ApiError);
+deribit_base::impl_json_display!(HttpResponse,ApiError,AuthToken,RequestParams);
+deribit_base::impl_json_debug_pretty!(HttpResponse, ApiError,AuthToken,RequestParams);
 
-deribit_base::impl_json_display!(AuthToken);
-deribit_base::impl_json_debug_pretty!(AuthToken);
 
-deribit_base::impl_json_display!(RequestParams);
-deribit_base::impl_json_debug_pretty!(RequestParams);
 
-// ApiResponse<T> is generic, so we cannot use the macros directly
-// HttpRequest and HttpResponse contain HashMap which is not serializable by default
-// so we keep the derived Debug trait for those
