@@ -352,7 +352,205 @@ impl DeribitHttpClient {
 
         api_response
             .result
-            .ok_or_else(|| HttpError::InvalidResponse("No user trades data in response".to_string()))
+            .ok_or_else(|| HttpError::InvalidResponse("No trades data in response".to_string()))
+    }
+
+    /// Get historical volatility
+    ///
+    /// Provides information about historical volatility for given cryptocurrency.
+    ///
+    /// # Arguments
+    ///
+    /// * `currency` - Currency symbol (BTC, ETH, etc.)
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use deribit_http::DeribitHttpClient;
+    /// 
+    /// let client = DeribitHttpClient::new(true);
+    /// // let volatility = client.get_historical_volatility("BTC").await?;
+    /// // tracing::info!("Found {} volatility data points", volatility.len());
+    /// ```
+    pub async fn get_historical_volatility(
+        &self,
+        currency: &str,
+    ) -> Result<Vec<[f64; 2]>, HttpError> {
+        let url = format!(
+            "{}/public/get_historical_volatility?currency={}",
+            self.base_url(),
+            urlencoding::encode(currency)
+        );
+
+        let response = self
+            .http_client()
+            .get(&url)
+            .send()
+            .await
+            .map_err(|e| HttpError::NetworkError(e.to_string()))?;
+
+        if !response.status().is_success() {
+            let error_text = response
+                .text()
+                .await
+                .unwrap_or_else(|_| "Unknown error".to_string());
+            return Err(HttpError::RequestFailed(format!(
+                "Get historical volatility failed: {}",
+                error_text
+            )));
+        }
+
+        let api_response: ApiResponse<Vec<[f64; 2]>> = response
+            .json()
+            .await
+            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
+
+        if let Some(error) = api_response.error {
+            return Err(HttpError::RequestFailed(format!(
+                "API error: {} - {}",
+                error.code, error.message
+            )));
+        }
+
+        api_response
+            .result
+            .ok_or_else(|| HttpError::InvalidResponse("No historical volatility data in response".to_string()))
+    }
+
+    /// Get funding chart data
+    ///
+    /// Retrieves the list of the latest PERPETUAL funding chart points within a given time period.
+    ///
+    /// # Arguments
+    ///
+    /// * `instrument_name` - Instrument name
+    /// * `length` - Time period (8h, 24h, 1m)
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use deribit_http::DeribitHttpClient;
+    /// 
+    /// let client = DeribitHttpClient::new(true);
+    /// // let funding_data = client.get_funding_chart_data("BTC-PERPETUAL", "8h").await?;
+    /// // tracing::info!("Current interest: {}", funding_data.current_interest);
+    /// ```
+    pub async fn get_funding_chart_data(
+        &self,
+        instrument_name: &str,
+        length: &str,
+    ) -> Result<FundingChartData, HttpError> {
+        let url = format!(
+            "{}/public/get_funding_chart_data?instrument_name={}&length={}",
+            self.base_url(),
+            urlencoding::encode(instrument_name),
+            urlencoding::encode(length)
+        );
+
+        let response = self
+            .http_client()
+            .get(&url)
+            .send()
+            .await
+            .map_err(|e| HttpError::NetworkError(e.to_string()))?;
+
+        if !response.status().is_success() {
+            let error_text = response
+                .text()
+                .await
+                .unwrap_or_else(|_| "Unknown error".to_string());
+            return Err(HttpError::RequestFailed(format!(
+                "Get funding chart data failed: {}",
+                error_text
+            )));
+        }
+
+        let api_response: ApiResponse<FundingChartData> = response
+            .json()
+            .await
+            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
+
+        if let Some(error) = api_response.error {
+            return Err(HttpError::RequestFailed(format!(
+                "API error: {} - {}",
+                error.code, error.message
+            )));
+        }
+
+        api_response
+            .result
+            .ok_or_else(|| HttpError::InvalidResponse("No funding chart data in response".to_string()))
+    }
+
+    /// Get TradingView chart data
+    ///
+    /// Publicly available market data used to generate a TradingView candle chart.
+    ///
+    /// # Arguments
+    ///
+    /// * `instrument_name` - Instrument name
+    /// * `start_timestamp` - Start timestamp in milliseconds
+    /// * `end_timestamp` - End timestamp in milliseconds
+    /// * `resolution` - Chart resolution (1, 3, 5, 10, 15, 30, 60, 120, 180, 360)
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use deribit_http::DeribitHttpClient;
+    /// 
+    /// let client = DeribitHttpClient::new(true);
+    /// // let chart_data = client.get_tradingview_chart_data("BTC-PERPETUAL", 1554373800000, 1554376800000, "30").await?;
+    /// // tracing::info!("Chart status: {}", chart_data.status);
+    /// ```
+    pub async fn get_tradingview_chart_data(
+        &self,
+        instrument_name: &str,
+        start_timestamp: u64,
+        end_timestamp: u64,
+        resolution: &str,
+    ) -> Result<TradingViewChartData, HttpError> {
+        let url = format!(
+            "{}/public/get_tradingview_chart_data?instrument_name={}&start_timestamp={}&end_timestamp={}&resolution={}",
+            self.base_url(),
+            urlencoding::encode(instrument_name),
+            start_timestamp,
+            end_timestamp,
+            urlencoding::encode(resolution)
+        );
+
+        let response = self
+            .http_client()
+            .get(&url)
+            .send()
+            .await
+            .map_err(|e| HttpError::NetworkError(e.to_string()))?;
+
+        if !response.status().is_success() {
+            let error_text = response
+                .text()
+                .await
+                .unwrap_or_else(|_| "Unknown error".to_string());
+            return Err(HttpError::RequestFailed(format!(
+                "Get TradingView chart data failed: {}",
+                error_text
+            )));
+        }
+
+        let api_response: ApiResponse<TradingViewChartData> = response
+            .json()
+            .await
+            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
+
+        if let Some(error) = api_response.error {
+            return Err(HttpError::RequestFailed(format!(
+                "API error: {} - {}",
+                error.code, error.message
+            )));
+        }
+
+        api_response
+            .result
+            .ok_or_else(|| HttpError::InvalidResponse("No TradingView chart data in response".to_string()))
     }
 
     /// Get subaccounts
@@ -680,6 +878,217 @@ impl DeribitHttpClient {
             .result
             .ok_or_else(|| HttpError::InvalidResponse("No withdrawals data in response".to_string()))
     }
+
+    /// Submit transfer to subaccount
+    ///
+    /// Transfers funds to a subaccount.
+    ///
+    /// # Arguments
+    ///
+    /// * `currency` - Currency symbol (BTC, ETH, etc.)
+    /// * `amount` - Amount of funds to be transferred
+    /// * `destination` - ID of destination subaccount
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use deribit_http::DeribitHttpClient;
+    /// 
+    /// let client = DeribitHttpClient::new(true);
+    /// // let transfer = client.submit_transfer_to_subaccount("BTC", 0.001, 123).await?;
+    /// // tracing::info!("Transfer ID: {}", transfer.id);
+    /// ```
+    pub async fn submit_transfer_to_subaccount(
+        &self,
+        currency: &str,
+        amount: f64,
+        destination: u64,
+    ) -> Result<TransferResult, HttpError> {
+        let query_params = [("currency".to_string(), currency.to_string()),
+            ("amount".to_string(), amount.to_string()),
+            ("destination".to_string(), destination.to_string())];
+
+        let query_string = query_params
+            .iter()
+            .map(|(k, v)| format!("{}={}", k, urlencoding::encode(v)))
+            .collect::<Vec<_>>()
+            .join("&");
+
+        let url = format!("{}/private/submit_transfer_to_subaccount?{}", self.base_url(), query_string);
+
+        let response = self
+            .http_client()
+            .get(&url)
+            .send()
+            .await
+            .map_err(|e| HttpError::NetworkError(e.to_string()))?;
+
+        if !response.status().is_success() {
+            let error_text = response
+                .text()
+                .await
+                .unwrap_or_else(|_| "Unknown error".to_string());
+            return Err(HttpError::RequestFailed(format!(
+                "Submit transfer to subaccount failed: {}",
+                error_text
+            )));
+        }
+
+        let api_response: ApiResponse<TransferResult> = response
+            .json()
+            .await
+            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
+
+        if let Some(error) = api_response.error {
+            return Err(HttpError::RequestFailed(format!(
+                "API error: {} - {}",
+                error.code, error.message
+            )));
+        }
+
+        api_response
+            .result
+            .ok_or_else(|| HttpError::InvalidResponse("No transfer result in response".to_string()))
+    }
+
+    /// Submit transfer to user
+    ///
+    /// Transfers funds to another user.
+    ///
+    /// # Arguments
+    ///
+    /// * `currency` - Currency symbol (BTC, ETH, etc.)
+    /// * `amount` - Amount of funds to be transferred
+    /// * `destination` - Destination wallet address from address book
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use deribit_http::DeribitHttpClient;
+    /// 
+    /// let client = DeribitHttpClient::new(true);
+    /// // let transfer = client.submit_transfer_to_user("ETH", 0.1, "0x1234...").await?;
+    /// // tracing::info!("Transfer ID: {}", transfer.id);
+    /// ```
+    pub async fn submit_transfer_to_user(
+        &self,
+        currency: &str,
+        amount: f64,
+        destination: &str,
+    ) -> Result<TransferResult, HttpError> {
+        let query_params = [("currency".to_string(), currency.to_string()),
+            ("amount".to_string(), amount.to_string()),
+            ("destination".to_string(), destination.to_string())];
+
+        let query_string = query_params
+            .iter()
+            .map(|(k, v)| format!("{}={}", k, urlencoding::encode(v)))
+            .collect::<Vec<_>>()
+            .join("&");
+
+        let url = format!("{}/private/submit_transfer_to_user?{}", self.base_url(), query_string);
+
+        let response = self
+            .http_client()
+            .get(&url)
+            .send()
+            .await
+            .map_err(|e| HttpError::NetworkError(e.to_string()))?;
+
+        if !response.status().is_success() {
+            let error_text = response
+                .text()
+                .await
+                .unwrap_or_else(|_| "Unknown error".to_string());
+            return Err(HttpError::RequestFailed(format!(
+                "Submit transfer to user failed: {}",
+                error_text
+            )));
+        }
+
+        let api_response: ApiResponse<TransferResult> = response
+            .json()
+            .await
+            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
+
+        if let Some(error) = api_response.error {
+            return Err(HttpError::RequestFailed(format!(
+                "API error: {} - {}",
+                error.code, error.message
+            )));
+        }
+
+        api_response
+            .result
+            .ok_or_else(|| HttpError::InvalidResponse("No transfer result in response".to_string()))
+    }
+}
+
+/// Funding chart data structure
+#[derive(Clone, Serialize, Deserialize)]
+pub struct FundingChartData {
+    /// Current interest rate
+    pub current_interest: f64,
+    /// Interest rate for 8 hours
+    pub interest_8h: f64,
+    /// List of funding data points
+    pub data: Vec<FundingDataPoint>,
+}
+
+/// Funding data point structure
+#[derive(Clone, Serialize, Deserialize)]
+pub struct FundingDataPoint {
+    /// Index price
+    pub index_price: f64,
+    /// Interest rate for 8 hours
+    pub interest_8h: f64,
+    /// Timestamp
+    pub timestamp: u64,
+}
+
+/// TradingView chart data structure
+#[derive(Clone, Serialize, Deserialize)]
+pub struct TradingViewChartData {
+    /// Status of the request
+    pub status: String,
+    /// Timestamps
+    pub ticks: Vec<u64>,
+    /// Opening prices
+    pub open: Vec<f64>,
+    /// High prices
+    pub high: Vec<f64>,
+    /// Low prices
+    pub low: Vec<f64>,
+    /// Closing prices
+    pub close: Vec<f64>,
+    /// Volume data
+    pub volume: Vec<f64>,
+    /// Cost data
+    pub cost: Vec<f64>,
+}
+
+/// Transfer result structure
+#[derive(Clone, Serialize, Deserialize)]
+pub struct TransferResult {
+    /// Transfer ID
+    pub id: u64,
+    /// Transfer type (subaccount, user)
+    #[serde(rename = "type")]
+    pub transfer_type: String,
+    /// Transfer state (confirmed, prepared, etc.)
+    pub state: String,
+    /// Currency
+    pub currency: String,
+    /// Transfer amount
+    pub amount: f64,
+    /// Transfer direction (payment, etc.)
+    pub direction: String,
+    /// Other side (destination info)
+    pub other_side: String,
+    /// Creation timestamp
+    pub created_timestamp: u64,
+    /// Last update timestamp
+    pub updated_timestamp: u64,
 }
 
 /// Deposits response structure
@@ -2347,3 +2756,15 @@ deribit_base::impl_json_debug_pretty!(WithdrawalsResponse);
 
 deribit_base::impl_json_display!(Withdrawal);
 deribit_base::impl_json_debug_pretty!(Withdrawal);
+
+deribit_base::impl_json_display!(TransferResult);
+deribit_base::impl_json_debug_pretty!(TransferResult);
+
+deribit_base::impl_json_display!(FundingChartData);
+deribit_base::impl_json_debug_pretty!(FundingChartData);
+
+deribit_base::impl_json_display!(FundingDataPoint);
+deribit_base::impl_json_debug_pretty!(FundingDataPoint);
+
+deribit_base::impl_json_display!(TradingViewChartData);
+deribit_base::impl_json_debug_pretty!(TradingViewChartData);

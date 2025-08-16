@@ -27,9 +27,10 @@ pub use auth::{ApiKeyAuth, AuthManager};
 pub use config::ApiCredentials;
 pub use connection::*;
 pub use endpoints::{
-    AccountSummary, BuyOrderRequest, Deposit, DepositsResponse, EditOrderRequest, Instrument, OrderBook, OrderInfo, 
-    OrderResponse, OrderType, Position, PortfolioInfo, SellOrderRequest, Subaccount, TickerData, TickerStats, 
-    TimeInForce, Trade, TradeExecution, TransactionLog, TransactionLogEntry, UserTrade, Withdrawal, WithdrawalsResponse,
+    AccountSummary, BuyOrderRequest, Deposit, DepositsResponse, EditOrderRequest, FundingChartData, FundingDataPoint,
+    Instrument, OrderBook, OrderInfo, OrderResponse, OrderType, Position, PortfolioInfo, SellOrderRequest, 
+    Subaccount, TickerData, TickerStats, TimeInForce, Trade, TradeExecution, TradingViewChartData, TransactionLog, 
+    TransactionLogEntry, TransferResult, UserTrade, Withdrawal, WithdrawalsResponse,
 };
 pub use message::{HttpMessageBuilder, HttpRequestBuilder, HttpResponseHandler};
 pub use model::{ApiError, ApiResponse, AuthToken, http_types};
