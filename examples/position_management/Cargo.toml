@@ -3,9 +3,8 @@ name = "position_management"
 version = "0.1.0"
 edition = "2024"
 
-
 [dependencies]
-deribit-base = { workspace = true }
 deribit-http = { workspace = true }
 tracing = { workspace = true }
 tokio = { workspace = true }
+tracing-subscriber = { workspace = true }
