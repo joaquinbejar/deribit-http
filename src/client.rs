@@ -1,21 +1,61 @@
 //! HTTP client implementation for Deribit REST API
 
+use crate::config::{HttpConfig, validate_config};
+use crate::error::HttpError;
+use reqwest::Client;
+use std::sync::Arc;
+
 /// HTTP client for Deribit REST API
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct DeribitHttpClient {
-    /// Base URL for API requests
-    pub base_url: String,
+    /// HTTP client instance
+    client: Client,
+    /// Configuration
+    config: Arc<HttpConfig>,
 }
 
 impl DeribitHttpClient {
     /// Create a new HTTP client
     pub fn new(test_net: bool) -> Self {
-        let base_url = if test_net {
-            "https://test.deribit.com/api/v2".to_string()
+        let config = if test_net {
+            HttpConfig::testnet()
         } else {
-            "https://www.deribit.com/api/v2".to_string()
+            HttpConfig::production()
         };
 
-        Self { base_url }
+        Self::with_config(config).expect("Failed to create client with default config")
+    }
+
+    /// Create a new HTTP client with custom configuration
+    pub fn with_config(config: HttpConfig) -> Result<Self, HttpError> {
+        // Validate configuration
+        validate_config(&config)?;
+
+        // Build reqwest client
+        let client = Client::builder()
+            .timeout(config.timeout)
+            .user_agent(&config.user_agent)
+            .build()
+            .map_err(|e| HttpError::NetworkError(e.to_string()))?;
+
+        Ok(Self {
+            client,
+            config: Arc::new(config),
+        })
+    }
+
+    /// Get the configuration
+    pub fn config(&self) -> &HttpConfig {
+        &self.config
+    }
+
+    /// Get the base URL
+    pub fn base_url(&self) -> &str {
+        self.config.base_url.as_str()
+    }
+
+    /// Get the HTTP client
+    pub fn http_client(&self) -> &Client {
+        &self.client
     }
 }
