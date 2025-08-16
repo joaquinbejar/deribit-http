@@ -22,9 +22,13 @@ pub use client::*;
 pub use error::*;
 
 // Re-export specific types to avoid conflicts
-pub use auth::{ApiKeyAuth, AuthManager};
-pub use config::ApiCredentials;
+pub use auth::{AuthManager, ApiKeyAuth};
+pub use config::{ApiCredentials};
 pub use connection::*;
+pub use endpoints::{
+    BuyOrderRequest, SellOrderRequest, OrderResponse, OrderInfo, OrderType, TimeInForce,
+    TradeExecution, TickerData, TickerStats, OrderBook, Instrument, Trade
+};
 pub use message::{HttpMessageBuilder, HttpRequestBuilder, HttpResponseHandler};
 pub use model::{ApiError, ApiResponse, AuthToken, http_types};
 pub use session::*;
