@@ -367,7 +367,7 @@ impl DeribitHttpClient {
     ///
     /// ```rust
     /// use deribit_http::DeribitHttpClient;
-    /// 
+    ///
     /// let client = DeribitHttpClient::new(true);
     /// // let volatility = client.get_historical_volatility("BTC").await?;
     /// // tracing::info!("Found {} volatility data points", volatility.len());
@@ -412,9 +412,9 @@ impl DeribitHttpClient {
             )));
         }
 
-        api_response
-            .result
-            .ok_or_else(|| HttpError::InvalidResponse("No historical volatility data in response".to_string()))
+        api_response.result.ok_or_else(|| {
+            HttpError::InvalidResponse("No historical volatility data in response".to_string())
+        })
     }
 
     /// Get funding chart data
@@ -430,7 +430,7 @@ impl DeribitHttpClient {
     ///
     /// ```rust
     /// use deribit_http::DeribitHttpClient;
-    /// 
+    ///
     /// let client = DeribitHttpClient::new(true);
     /// // let funding_data = client.get_funding_chart_data("BTC-PERPETUAL", "8h").await?;
     /// // tracing::info!("Current interest: {}", funding_data.current_interest);
@@ -477,9 +477,9 @@ impl DeribitHttpClient {
             )));
         }
 
-        api_response
-            .result
-            .ok_or_else(|| HttpError::InvalidResponse("No funding chart data in response".to_string()))
+        api_response.result.ok_or_else(|| {
+            HttpError::InvalidResponse("No funding chart data in response".to_string())
+        })
     }
 
     /// Get TradingView chart data
@@ -497,7 +497,7 @@ impl DeribitHttpClient {
     ///
     /// ```rust
     /// use deribit_http::DeribitHttpClient;
-    /// 
+    ///
     /// let client = DeribitHttpClient::new(true);
     /// // let chart_data = client.get_tradingview_chart_data("BTC-PERPETUAL", 1554373800000, 1554376800000, "30").await?;
     /// // tracing::info!("Chart status: {}", chart_data.status);
@@ -548,9 +548,9 @@ impl DeribitHttpClient {
             )));
         }
 
-        api_response
-            .result
-            .ok_or_else(|| HttpError::InvalidResponse("No TradingView chart data in response".to_string()))
+        api_response.result.ok_or_else(|| {
+            HttpError::InvalidResponse("No TradingView chart data in response".to_string())
+        })
     }
 
     /// Get subaccounts
@@ -565,7 +565,7 @@ impl DeribitHttpClient {
     ///
     /// ```rust
     /// use deribit_http::DeribitHttpClient;
-    /// 
+    ///
     /// let client = DeribitHttpClient::new(true);
     /// // let subaccounts = client.get_subaccounts(Some(true)).await?;
     /// // tracing::info!("Found {} subaccounts", subaccounts.len());
@@ -583,14 +583,19 @@ impl DeribitHttpClient {
         let query_string = if query_params.is_empty() {
             String::new()
         } else {
-            "?".to_string() + &query_params
-                .iter()
-                .map(|(k, v)| format!("{}={}", k, urlencoding::encode(v)))
-                .collect::<Vec<_>>()
-                .join("&")
+            "?".to_string()
+                + &query_params
+                    .iter()
+                    .map(|(k, v)| format!("{}={}", k, urlencoding::encode(v)))
+                    .collect::<Vec<_>>()
+                    .join("&")
         };
 
-        let url = format!("{}/private/get_subaccounts{}", self.base_url(), query_string);
+        let url = format!(
+            "{}/private/get_subaccounts{}",
+            self.base_url(),
+            query_string
+        );
 
         let response = self
             .http_client()
@@ -622,9 +627,9 @@ impl DeribitHttpClient {
             )));
         }
 
-        api_response
-            .result
-            .ok_or_else(|| HttpError::InvalidResponse("No subaccounts data in response".to_string()))
+        api_response.result.ok_or_else(|| {
+            HttpError::InvalidResponse("No subaccounts data in response".to_string())
+        })
     }
 
     /// Get transaction log
@@ -643,7 +648,7 @@ impl DeribitHttpClient {
     ///
     /// ```rust
     /// use deribit_http::DeribitHttpClient;
-    /// 
+    ///
     /// let client = DeribitHttpClient::new(true);
     /// // let log = client.get_transaction_log("BTC", None, None, Some(20), None).await?;
     /// // tracing::info!("Found {} transaction log entries", log.logs.len());
@@ -656,9 +661,7 @@ impl DeribitHttpClient {
         count: Option<u32>,
         continuation: Option<&str>,
     ) -> Result<TransactionLog, HttpError> {
-        let mut query_params = vec![
-            ("currency".to_string(), currency.to_string()),
-        ];
+        let mut query_params = vec![("currency".to_string(), currency.to_string())];
 
         if let Some(start_timestamp) = start_timestamp {
             query_params.push(("start_timestamp".to_string(), start_timestamp.to_string()));
@@ -682,7 +685,11 @@ impl DeribitHttpClient {
             .collect::<Vec<_>>()
             .join("&");
 
-        let url = format!("{}/private/get_transaction_log?{}", self.base_url(), query_string);
+        let url = format!(
+            "{}/private/get_transaction_log?{}",
+            self.base_url(),
+            query_string
+        );
 
         let response = self
             .http_client()
@@ -714,9 +721,9 @@ impl DeribitHttpClient {
             )));
         }
 
-        api_response
-            .result
-            .ok_or_else(|| HttpError::InvalidResponse("No transaction log data in response".to_string()))
+        api_response.result.ok_or_else(|| {
+            HttpError::InvalidResponse("No transaction log data in response".to_string())
+        })
     }
 
     /// Get deposits
@@ -733,7 +740,7 @@ impl DeribitHttpClient {
     ///
     /// ```rust
     /// use deribit_http::DeribitHttpClient;
-    /// 
+    ///
     /// let client = DeribitHttpClient::new(true);
     /// // let deposits = client.get_deposits("BTC", Some(20), Some(0)).await?;
     /// // tracing::info!("Found {} deposits", deposits.data.len());
@@ -744,9 +751,7 @@ impl DeribitHttpClient {
         count: Option<u32>,
         offset: Option<u32>,
     ) -> Result<DepositsResponse, HttpError> {
-        let mut query_params = vec![
-            ("currency".to_string(), currency.to_string()),
-        ];
+        let mut query_params = vec![("currency".to_string(), currency.to_string())];
 
         if let Some(count) = count {
             query_params.push(("count".to_string(), count.to_string()));
@@ -813,7 +818,7 @@ impl DeribitHttpClient {
     ///
     /// ```rust
     /// use deribit_http::DeribitHttpClient;
-    /// 
+    ///
     /// let client = DeribitHttpClient::new(true);
     /// // let withdrawals = client.get_withdrawals("BTC", Some(20), Some(0)).await?;
     /// // tracing::info!("Found {} withdrawals", withdrawals.data.len());
@@ -824,9 +829,7 @@ impl DeribitHttpClient {
         count: Option<u32>,
         offset: Option<u32>,
     ) -> Result<WithdrawalsResponse, HttpError> {
-        let mut query_params = vec![
-            ("currency".to_string(), currency.to_string()),
-        ];
+        let mut query_params = vec![("currency".to_string(), currency.to_string())];
 
         if let Some(count) = count {
             query_params.push(("count".to_string(), count.to_string()));
@@ -842,7 +845,11 @@ impl DeribitHttpClient {
             .collect::<Vec<_>>()
             .join("&");
 
-        let url = format!("{}/private/get_withdrawals?{}", self.base_url(), query_string);
+        let url = format!(
+            "{}/private/get_withdrawals?{}",
+            self.base_url(),
+            query_string
+        );
 
         let response = self
             .http_client()
@@ -874,9 +881,9 @@ impl DeribitHttpClient {
             )));
         }
 
-        api_response
-            .result
-            .ok_or_else(|| HttpError::InvalidResponse("No withdrawals data in response".to_string()))
+        api_response.result.ok_or_else(|| {
+            HttpError::InvalidResponse("No withdrawals data in response".to_string())
+        })
     }
 
     /// Submit transfer to subaccount
@@ -893,7 +900,7 @@ impl DeribitHttpClient {
     ///
     /// ```rust
     /// use deribit_http::DeribitHttpClient;
-    /// 
+    ///
     /// let client = DeribitHttpClient::new(true);
     /// // let transfer = client.submit_transfer_to_subaccount("BTC", 0.001, 123).await?;
     /// // tracing::info!("Transfer ID: {}", transfer.id);
@@ -904,9 +911,11 @@ impl DeribitHttpClient {
         amount: f64,
         destination: u64,
     ) -> Result<TransferResult, HttpError> {
-        let query_params = [("currency".to_string(), currency.to_string()),
+        let query_params = [
+            ("currency".to_string(), currency.to_string()),
             ("amount".to_string(), amount.to_string()),
-            ("destination".to_string(), destination.to_string())];
+            ("destination".to_string(), destination.to_string()),
+        ];
 
         let query_string = query_params
             .iter()
@@ -914,7 +923,11 @@ impl DeribitHttpClient {
             .collect::<Vec<_>>()
             .join("&");
 
-        let url = format!("{}/private/submit_transfer_to_subaccount?{}", self.base_url(), query_string);
+        let url = format!(
+            "{}/private/submit_transfer_to_subaccount?{}",
+            self.base_url(),
+            query_string
+        );
 
         let response = self
             .http_client()
@@ -965,7 +978,7 @@ impl DeribitHttpClient {
     ///
     /// ```rust
     /// use deribit_http::DeribitHttpClient;
-    /// 
+    ///
     /// let client = DeribitHttpClient::new(true);
     /// // let transfer = client.submit_transfer_to_user("ETH", 0.1, "0x1234...").await?;
     /// // tracing::info!("Transfer ID: {}", transfer.id);
@@ -976,9 +989,11 @@ impl DeribitHttpClient {
         amount: f64,
         destination: &str,
     ) -> Result<TransferResult, HttpError> {
-        let query_params = [("currency".to_string(), currency.to_string()),
+        let query_params = [
+            ("currency".to_string(), currency.to_string()),
             ("amount".to_string(), amount.to_string()),
-            ("destination".to_string(), destination.to_string())];
+            ("destination".to_string(), destination.to_string()),
+        ];
 
         let query_string = query_params
             .iter()
@@ -986,7 +1001,11 @@ impl DeribitHttpClient {
             .collect::<Vec<_>>()
             .join("&");
 
-        let url = format!("{}/private/submit_transfer_to_user?{}", self.base_url(), query_string);
+        let url = format!(
+            "{}/private/submit_transfer_to_user?{}",
+            self.base_url(),
+            query_string
+        );
 
         let response = self
             .http_client()

@@ -6,22 +6,21 @@
 pub use crate::client::DeribitHttpClient;
 
 // Re-export configuration types
-pub use crate::config::{HttpConfig, ApiCredentials};
+pub use crate::config::{ApiCredentials, HttpConfig};
 
 // Re-export error types
 pub use crate::error::HttpError;
 
 // Re-export authentication types
-pub use crate::auth::{AuthManager, AuthRequest, ApiKeyAuth};
+pub use crate::auth::{ApiKeyAuth, AuthManager, AuthRequest};
 pub use crate::model::http_types::AuthToken;
 
 // Re-export endpoint response types
 pub use crate::endpoints::{
-    AccountSummary, BuyOrderRequest, Deposit, DepositsResponse, EditOrderRequest,
-    FundingChartData, FundingDataPoint, Instrument, OrderBook, OrderInfo,
-    OrderResponse, OrderType, Position, PortfolioInfo, SellOrderRequest,
-    Subaccount, TickerData, TickerStats, TimeInForce, Trade, TradeExecution,
-    TradingViewChartData, TransactionLog, TransactionLogEntry, TransferResult,
+    AccountSummary, BuyOrderRequest, Deposit, DepositsResponse, EditOrderRequest, FundingChartData,
+    FundingDataPoint, Instrument, OrderBook, OrderInfo, OrderResponse, OrderType, PortfolioInfo,
+    Position, SellOrderRequest, Subaccount, TickerData, TickerStats, TimeInForce, Trade,
+    TradeExecution, TradingViewChartData, TransactionLog, TransactionLogEntry, TransferResult,
     UserTrade, Withdrawal, WithdrawalsResponse,
 };
 

@@ -76,7 +76,7 @@ impl AuthManager {
             urlencoding::encode(client_id),
             urlencoding::encode(client_secret)
         );
-        
+
         // Debug: log the URL being used
         tracing::debug!("Authentication URL: {}", url);
 
@@ -107,8 +107,11 @@ impl AuthManager {
 
         // Check for JSON-RPC error
         if let Some(error) = json_response.get("error") {
-            let code = error.get("code").and_then(|c| c.as_i64()).unwrap_or(-1);
-            let message = error.get("message").and_then(|m| m.as_str()).unwrap_or("Unknown error");
+            let _code = error.get("code").and_then(|c| c.as_i64()).unwrap_or(-1);
+            let _message = error
+                .get("message")
+                .and_then(|m| m.as_str())
+                .unwrap_or("Unknown error");
             return Err(HttpError::AuthenticationFailed(format!(
                 "OAuth2 authentication failed: {}",
                 json_response

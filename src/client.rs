@@ -6,7 +6,8 @@ use crate::error::HttpError;
 use crate::model::http_types::AuthToken;
 use crate::rate_limit::{RateLimiter, categorize_endpoint};
 use reqwest::Client;
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
+use tokio::sync::Mutex;
 
 /// HTTP client for Deribit REST API
 #[derive(Debug, Clone)]
@@ -46,7 +47,7 @@ impl DeribitHttpClient {
             .map_err(|e| HttpError::NetworkError(e.to_string()))?;
 
         let auth_manager = AuthManager::new(client.clone(), config.clone());
-        
+
         Ok(Self {
             client,
             config: Arc::new(config),
@@ -97,8 +98,10 @@ impl DeribitHttpClient {
         client_id: &str,
         client_secret: &str,
     ) -> Result<AuthToken, HttpError> {
-        let mut auth_manager = self.auth_manager.lock().unwrap();
-        auth_manager.authenticate_oauth2(client_id, client_secret).await
+        let mut auth_manager = self.auth_manager.lock().await;
+        auth_manager
+            .authenticate_oauth2(client_id, client_secret)
+            .await
     }
 
     /// Authenticate using API key and secret (placeholder - not implemented in AuthManager yet)
@@ -108,18 +111,20 @@ impl DeribitHttpClient {
         _api_secret: &str,
     ) -> Result<AuthToken, HttpError> {
         // TODO: Implement API key authentication in AuthManager
-        Err(HttpError::AuthenticationFailed("API key authentication not yet implemented".to_string()))
+        Err(HttpError::AuthenticationFailed(
+            "API key authentication not yet implemented".to_string(),
+        ))
     }
 
     /// Get current authentication token
-    pub fn get_auth_token(&self) -> Option<AuthToken> {
-        let auth_manager = self.auth_manager.lock().unwrap();
+    pub async fn get_auth_token(&self) -> Option<AuthToken> {
+        let auth_manager = self.auth_manager.lock().await;
         auth_manager.get_token().cloned()
     }
 
     /// Check if client is authenticated
-    pub fn is_authenticated(&self) -> bool {
-        let auth_manager = self.auth_manager.lock().unwrap();
+    pub async fn is_authenticated(&self) -> bool {
+        let auth_manager = self.auth_manager.lock().await;
         auth_manager.get_token().is_some() && !auth_manager.is_token_expired()
     }
 
@@ -167,10 +172,10 @@ impl DeribitHttpClient {
             .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
 
         // Check for JSON-RPC error
-        if let Some(error) = json_response.get("error") {
+        if let Some(_error) = json_response.get("error") {
             return Err(HttpError::AuthenticationFailed(format!(
                 "Token exchange failed: {}",
-                json_response.to_string()
+                json_response
             )));
         }
 
@@ -183,8 +188,9 @@ impl DeribitHttpClient {
             .map_err(|e| HttpError::InvalidResponse(format!("Failed to parse token: {}", e)))?;
 
         // Update the stored token
-        let mut auth_manager = self.auth_manager.lock().unwrap();
-        let expires_at = std::time::SystemTime::now() + std::time::Duration::from_secs(token.expires_in);
+        let _auth_manager = self.auth_manager.lock().await;
+        let _expires_at =
+            std::time::SystemTime::now() + std::time::Duration::from_secs(token.expires_in);
         // Note: We would need to update AuthManager to store the new token
         // For now, just return the token
 
@@ -235,10 +241,10 @@ impl DeribitHttpClient {
             .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
 
         // Check for JSON-RPC error
-        if let Some(error) = json_response.get("error") {
+        if let Some(_error) = json_response.get("error") {
             return Err(HttpError::AuthenticationFailed(format!(
                 "Token fork failed: {}",
-                json_response.to_string()
+                json_response
             )));
         }
 
@@ -256,19 +262,25 @@ impl DeribitHttpClient {
     /// Logout and invalidate the current session
     pub async fn logout(&self) -> Result<(), HttpError> {
         // Ensure we have a valid token
-        if !self.is_authenticated() {
-            return Err(HttpError::AuthenticationFailed("Not authenticated".to_string()));
+        if !self.is_authenticated().await {
+            return Err(HttpError::AuthenticationFailed(
+                "Not authenticated".to_string(),
+            ));
         }
 
-        let auth_token = self.get_auth_token()
-            .ok_or_else(|| HttpError::AuthenticationFailed("No auth token available".to_string()))?;
+        let auth_token = self.get_auth_token().await.ok_or_else(|| {
+            HttpError::AuthenticationFailed("No auth token available".to_string())
+        })?;
 
         let url = format!("{}/private/logout", self.config.base_url);
 
         let response = self
             .client
             .get(&url)
-            .header("Authorization", format!("Bearer {}", auth_token.access_token))
+            .header(
+                "Authorization",
+                format!("Bearer {}", auth_token.access_token),
+            )
             .header("Content-Type", "application/json")
             .send()
             .await
@@ -292,15 +304,15 @@ impl DeribitHttpClient {
             .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
 
         // Check for JSON-RPC error
-        if let Some(error) = json_response.get("error") {
+        if let Some(_error) = json_response.get("error") {
             return Err(HttpError::AuthenticationFailed(format!(
                 "Logout failed: {}",
-                json_response.to_string()
+                json_response
             )));
         }
 
         // Clear the stored token
-        let mut auth_manager = self.auth_manager.lock().unwrap();
+        let _auth_manager = self.auth_manager.lock().await;
         // Note: We would need to add a method to AuthManager to clear the token
         // For now, the logout was successful on the server side
 

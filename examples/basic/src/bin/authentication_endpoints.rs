@@ -1,0 +1,234 @@
+//! Complete example of Deribit authentication endpoints
+//!
+//! This example demonstrates the usage of all authentication endpoints:
+//! - /public/auth - Initial OAuth2 authentication
+//! - /public/exchange_token - Token exchange for different subject_id
+//! - /public/fork_token - Create new session with same permissions
+//! - /private/logout - Logout and invalidate token
+
+use deribit_http::{DeribitHttpClient, config::HttpConfig, HttpError};
+use std::env;
+use std::path::Path;
+use tracing::{error, info, warn};
+
+#[tokio::main]
+async fn main() -> Result<(), HttpError> {
+    // Initialize logging
+    tracing_subscriber::fmt().with_env_filter("debug").init();
+
+    // Check if .env file exists
+    if !Path::new(".env").exists() {
+        return Err(HttpError::ConfigError(
+            "Missing .env file. Please create one with DERIBIT_USERNAME and DERIBIT_PASSWORD"
+                .to_string(),
+        ));
+    }
+
+    // Load environment variables
+    dotenv::dotenv().ok();
+
+    info!("🚀 Deribit HTTP Client - Authentication Endpoints Example");
+    info!("============================================================");
+    info!("");
+
+    // Check environment variables
+    let client_id = env::var("DERIBIT_CLIENT_ID")
+        .map_err(|_| HttpError::ConfigError("DERIBIT_CLIENT_ID not found in environment variables".to_string()))?;
+    let client_secret = env::var("DERIBIT_CLIENT_SECRET")
+        .map_err(|_| HttpError::ConfigError("DERIBIT_CLIENT_SECRET not found in environment variables".to_string()))?;
+
+    info!("✅ Credentials found in environment variables");
+    info!("📋 Client ID: {}...", &client_id[..8.min(client_id.len())]);
+    println!();
+
+    // Create HTTP client for testnet
+    let config = HttpConfig::testnet();
+    let client = DeribitHttpClient::with_config(config)?;
+    info!("✅ HTTP client created for testnet: {}", client.base_url());
+    println!();
+
+    // =================================================================
+    // 1. INITIAL OAUTH2 AUTHENTICATION (/public/auth)
+    // =================================================================
+    info!("🔐 1. INITIAL OAUTH2 AUTHENTICATION");
+    info!("-----------------------------------");
+
+    let initial_token = match client.authenticate_oauth2(&client_id, &client_secret).await {
+        Ok(token) => {
+            info!("✅ OAuth2 authentication successful");
+            info!("📄 Token type: {}", token.token_type);
+            info!("⏰ Expires in: {} seconds", token.expires_in);
+            info!("🔑 Access token: {}...", &token.access_token[..20]);
+            info!(
+                "🔄 Refresh token: {}...",
+                &token.refresh_token.as_ref().unwrap_or(&"N/A".to_string())[..20]
+            );
+            info!("🎯 Scope: {}", token.scope);
+            println!();
+            token
+        }
+        Err(e) => {
+            error!("❌ OAuth2 authentication error: {}", e);
+            return Err(HttpError::AuthenticationFailed(
+                "Failed to authenticate with OAuth2".to_string(),
+            ));
+        }
+    };
+
+    // Verify that the client is authenticated
+    if client.is_authenticated().await {
+        info!("✅ Client authenticated successfully");
+    } else {
+        warn!("⚠️ Client does not appear to be authenticated");
+    }
+    println!();
+
+    // =================================================================
+    // 2. TOKEN EXCHANGE (/public/exchange_token)
+    // =================================================================
+    info!("🔄 2. TOKEN EXCHANGE FOR DIFFERENT SUBJECT_ID");
+    info!("----------------------------------------------");
+
+    if let Some(refresh_token) = &initial_token.refresh_token {
+        // Use subject_id 10 as example (subaccount)
+        let subject_id = 10u64;
+        let custom_scope = Some("session:test_exchange trade:read_write");
+
+        match client
+            .exchange_token(refresh_token, subject_id, custom_scope)
+            .await
+        {
+            Ok(exchanged_token) => {
+                info!("✅ Token exchange successful");
+                info!("🎯 Subject ID: {}", subject_id);
+                info!("📄 Token type: {}", exchanged_token.token_type);
+                info!("⏰ Expires in: {} seconds", exchanged_token.expires_in);
+                info!(
+                    "🔑 New access token: {}...",
+                    &exchanged_token.access_token[..20]
+                );
+                info!("🎯 New scope: {}", exchanged_token.scope);
+                println!();
+            }
+            Err(e) => {
+                warn!("⚠️ Token exchange error: {}", e);
+                info!("ℹ️ This may be normal if you don't have subaccounts configured");
+                println!();
+            }
+        }
+    } else {
+        warn!("⚠️ No refresh token available for exchange");
+        println!();
+    }
+
+    // =================================================================
+    // 3. TOKEN FORK (/public/fork_token)
+    // =================================================================
+    info!("🍴 3. TOKEN FORK FOR NEW SESSION");
+    info!("--------------------------------");
+
+    if let Some(refresh_token) = &initial_token.refresh_token {
+        let session_name = "example_fork_session";
+        let custom_scope = Some("session:fork_example trade:read account:read");
+
+        match client
+            .fork_token(refresh_token, session_name, custom_scope)
+            .await
+        {
+            Ok(forked_token) => {
+                info!("✅ Token fork successful");
+                info!("📛 Session name: {}", session_name);
+                info!("📄 Token type: {}", forked_token.token_type);
+                info!("⏰ Expires in: {} seconds", forked_token.expires_in);
+                info!(
+                    "🔑 Forked access token: {}...",
+                    &forked_token.access_token[..20]
+                );
+                info!("🎯 Forked scope: {}", forked_token.scope);
+                println!();
+            }
+            Err(e) => {
+                warn!("⚠️ Token fork error: {}", e);
+                info!("ℹ️ This may be normal depending on your API key permissions");
+                println!();
+            }
+        }
+    } else {
+        warn!("⚠️ No refresh token available for fork");
+        println!();
+    }
+
+    // =================================================================
+    // 4. AUTHENTICATED FUNCTIONALITY TEST
+    // =================================================================
+    info!("🧪 4. AUTHENTICATED FUNCTIONALITY TEST");
+    info!("--------------------------------------");
+
+    // Try to make an authenticated call to verify the token works
+    match client.get_server_time().await {
+        Ok(server_time) => {
+            info!("✅ Authenticated call successful");
+            info!("🕐 Server time: {}", server_time);
+        }
+        Err(e) => {
+            warn!("⚠️ Authenticated call error: {}", e);
+        }
+    }
+    println!();
+
+    // =================================================================
+    // 5. LOGOUT (/private/logout)
+    // =================================================================
+    info!("🚪 5. LOGOUT AND SESSION TERMINATION");
+    info!("------------------------------------");
+
+    match client.logout().await {
+        Ok(()) => {
+            info!("✅ Logout successful");
+            info!("🔒 Session terminated correctly");
+
+            // Verify that the client is no longer authenticated
+            if !client.is_authenticated().await {
+                info!("✅ Client is no longer authenticated (as expected)");
+            } else {
+                warn!("⚠️ Client still appears to be authenticated");
+            }
+        }
+        Err(e) => {
+            error!("❌ Logout error: {}", e);
+        }
+    }
+    println!();
+
+    // =================================================================
+    // 6. POST-LOGOUT VERIFICATION
+    // =================================================================
+    info!("🔍 6. POST-LOGOUT VERIFICATION");
+    info!("------------------------------");
+
+    // Try to make a call after logout (should fail)
+    match client.get_server_time().await {
+        Ok(server_time) => {
+            warn!("⚠️ Post-logout call successful (unexpected): {}", server_time);
+        }
+        Err(e) => {
+            info!("✅ Post-logout call failed as expected: {}", e);
+        }
+    }
+    println!();
+
+    // =================================================================
+    // FINAL SUMMARY
+    // =================================================================
+    info!("📊 SUMMARY OF TESTED ENDPOINTS");
+    info!("==============================");
+    info!("✅ /public/auth - Initial OAuth2 authentication");
+    info!("🔄 /public/exchange_token - Token exchange");
+    info!("🍴 /public/fork_token - Token fork");
+    info!("🚪 /private/logout - Logout and session termination");
+    println!();
+    info!("🎉 Example completed successfully!");
+    info!("💡 Tip: Check the logs to see details of each operation");
+
+    Ok(())
+}

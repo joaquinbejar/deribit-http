@@ -80,7 +80,7 @@ impl TokenBucket {
         let now = Instant::now();
         let elapsed = now.duration_since(self.last_refill);
         let tokens_to_add = (elapsed.as_secs_f64() * self.refill_rate as f64) as u32;
-        
+
         if tokens_to_add > 0 {
             self.tokens = (self.tokens + tokens_to_add).min(self.capacity);
             self.last_refill = now;
@@ -92,23 +92,23 @@ impl RateLimiter {
     /// Create a new rate limiter with default Deribit limits
     pub fn new() -> Self {
         let mut limiters = HashMap::new();
-        
+
         // Based on Deribit API documentation
         // Trading: 200 requests per second with burst of 250
         limiters.insert(RateLimitCategory::Trading, TokenBucket::new(250, 200));
-        
+
         // Market data: Higher limits for public endpoints
         limiters.insert(RateLimitCategory::MarketData, TokenBucket::new(500, 400));
-        
+
         // Account: Moderate limits
         limiters.insert(RateLimitCategory::Account, TokenBucket::new(200, 150));
-        
+
         // Auth: Lower limits to prevent abuse
         limiters.insert(RateLimitCategory::Auth, TokenBucket::new(50, 30));
-        
+
         // General: Default limits
         limiters.insert(RateLimitCategory::General, TokenBucket::new(300, 200));
-        
+
         Self {
             limiters: Arc::new(Mutex::new(limiters)),
         }
@@ -119,16 +119,17 @@ impl RateLimiter {
         loop {
             let wait_time = {
                 let mut limiters = self.limiters.lock().await;
-                let bucket = limiters.get_mut(&category)
+                let bucket = limiters
+                    .get_mut(&category)
                     .expect("Rate limit category should exist");
-                
+
                 if bucket.try_consume() {
                     return; // Permission granted
                 } else {
                     bucket.time_until_token()
                 }
             };
-            
+
             // Wait before trying again
             if wait_time > Duration::from_secs(0) {
                 sleep(wait_time).await;
@@ -142,7 +143,8 @@ impl RateLimiter {
     /// Check if permission is available without waiting
     pub async fn check_permission(&self, category: RateLimitCategory) -> bool {
         let mut limiters = self.limiters.lock().await;
-        let bucket = limiters.get_mut(&category)
+        let bucket = limiters
+            .get_mut(&category)
             .expect("Rate limit category should exist");
         bucket.try_consume()
     }
@@ -150,7 +152,8 @@ impl RateLimiter {
     /// Get current token count for a category (for monitoring)
     pub async fn get_tokens(&self, category: RateLimitCategory) -> u32 {
         let mut limiters = self.limiters.lock().await;
-        let bucket = limiters.get_mut(&category)
+        let bucket = limiters
+            .get_mut(&category)
             .expect("Rate limit category should exist");
         bucket.refill();
         bucket.tokens
@@ -165,22 +168,24 @@ impl Default for RateLimiter {
 
 /// Helper function to categorize endpoints
 pub fn categorize_endpoint(endpoint: &str) -> RateLimitCategory {
-    if endpoint.contains("/private/buy") || 
-       endpoint.contains("/private/sell") || 
-       endpoint.contains("/private/cancel") || 
-       endpoint.contains("/private/edit") {
+    if endpoint.contains("/private/buy")
+        || endpoint.contains("/private/sell")
+        || endpoint.contains("/private/cancel")
+        || endpoint.contains("/private/edit")
+    {
         RateLimitCategory::Trading
-    } else if endpoint.contains("/public/ticker") || 
-              endpoint.contains("/public/get_order_book") || 
-              endpoint.contains("/public/get_last_trades") || 
-              endpoint.contains("/public/get_instruments") {
+    } else if endpoint.contains("/public/ticker")
+        || endpoint.contains("/public/get_order_book")
+        || endpoint.contains("/public/get_last_trades")
+        || endpoint.contains("/public/get_instruments")
+    {
         RateLimitCategory::MarketData
-    } else if endpoint.contains("/private/get_account_summary") || 
-              endpoint.contains("/private/get_positions") || 
-              endpoint.contains("/private/get_subaccounts") {
+    } else if endpoint.contains("/private/get_account_summary")
+        || endpoint.contains("/private/get_positions")
+        || endpoint.contains("/private/get_subaccounts")
+    {
         RateLimitCategory::Account
-    } else if endpoint.contains("/public/auth") || 
-              endpoint.contains("/private/logout") {
+    } else if endpoint.contains("/public/auth") || endpoint.contains("/private/logout") {
         RateLimitCategory::Auth
     } else {
         RateLimitCategory::General
@@ -190,17 +195,17 @@ pub fn categorize_endpoint(endpoint: &str) -> RateLimitCategory {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use tokio::time::{sleep, Duration};
+    use tokio::time::{Duration, sleep};
 
     #[tokio::test]
     async fn test_token_bucket_basic() {
         let mut bucket = TokenBucket::new(10, 5);
-        
+
         // Should be able to consume initial tokens
         for _ in 0..10 {
             assert!(bucket.try_consume());
         }
-        
+
         // Should be empty now
         assert!(!bucket.try_consume());
     }
@@ -208,16 +213,16 @@ mod tests {
     #[tokio::test]
     async fn test_token_bucket_refill() {
         let mut bucket = TokenBucket::new(5, 10); // 10 tokens per second
-        
+
         // Consume all tokens
         for _ in 0..5 {
             assert!(bucket.try_consume());
         }
         assert!(!bucket.try_consume());
-        
+
         // Wait for refill (100ms should give us 1 token at 10/sec rate)
         sleep(Duration::from_millis(200)).await;
-        
+
         // Should have at least 1 token now
         assert!(bucket.try_consume());
     }
@@ -225,21 +230,35 @@ mod tests {
     #[tokio::test]
     async fn test_rate_limiter() {
         let limiter = RateLimiter::new();
-        
+
         // Should be able to get permission initially
         assert!(limiter.check_permission(RateLimitCategory::Trading).await);
-        
+
         // Test waiting for permission
-        limiter.wait_for_permission(RateLimitCategory::MarketData).await;
+        limiter
+            .wait_for_permission(RateLimitCategory::MarketData)
+            .await;
         // If we get here, the wait succeeded
     }
 
     #[test]
     fn test_endpoint_categorization() {
-        assert_eq!(categorize_endpoint("/private/buy"), RateLimitCategory::Trading);
-        assert_eq!(categorize_endpoint("/public/ticker"), RateLimitCategory::MarketData);
-        assert_eq!(categorize_endpoint("/private/get_account_summary"), RateLimitCategory::Account);
+        assert_eq!(
+            categorize_endpoint("/private/buy"),
+            RateLimitCategory::Trading
+        );
+        assert_eq!(
+            categorize_endpoint("/public/ticker"),
+            RateLimitCategory::MarketData
+        );
+        assert_eq!(
+            categorize_endpoint("/private/get_account_summary"),
+            RateLimitCategory::Account
+        );
         assert_eq!(categorize_endpoint("/public/auth"), RateLimitCategory::Auth);
-        assert_eq!(categorize_endpoint("/public/get_time"), RateLimitCategory::General);
+        assert_eq!(
+            categorize_endpoint("/public/get_time"),
+            RateLimitCategory::General
+        );
     }
 }
