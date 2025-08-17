@@ -301,7 +301,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                         }
 
                         if let Some(option_type) = &option_instrument.option_type {
-                            info!("   📋 Option Type: {}", option_type.to_uppercase());
+                            info!("   📋 Option Type: {:?}", option_type);
                         }
 
                         info!("   💡 Options provide leverage and hedging opportunities");
