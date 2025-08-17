@@ -89,11 +89,7 @@ impl DeribitHttpClient {
     /// # }
     /// ```
     pub async fn get_index(&self, currency: &str) -> Result<IndexData, HttpError> {
-        let url = format!(
-            "{}/public/get_index?currency={}",
-            self.base_url(),
-            currency
-        );
+        let url = format!("{}/public/get_index?currency={}", self.base_url(), currency);
 
         let response = self
             .http_client()
@@ -188,9 +184,9 @@ impl DeribitHttpClient {
             )));
         }
 
-        api_response
-            .result
-            .ok_or_else(|| HttpError::InvalidResponse("No index price data in response".to_string()))
+        api_response.result.ok_or_else(|| {
+            HttpError::InvalidResponse("No index price data in response".to_string())
+        })
     }
 
     /// Get all supported index price names
@@ -245,14 +241,14 @@ impl DeribitHttpClient {
             )));
         }
 
-        api_response
-            .result
-            .ok_or_else(|| HttpError::InvalidResponse("No index price names in response".to_string()))
+        api_response.result.ok_or_else(|| {
+            HttpError::InvalidResponse("No index price names in response".to_string())
+        })
     }
 
     /// Get book summary by currency
     ///
-    /// Retrieves the summary information such as open interest, 24h volume, etc. 
+    /// Retrieves the summary information such as open interest, 24h volume, etc.
     /// for all instruments for the currency (optionally filtered by kind).
     /// This is a public endpoint that doesn't require authentication.
     ///
@@ -320,9 +316,9 @@ impl DeribitHttpClient {
             )));
         }
 
-        api_response
-            .result
-            .ok_or_else(|| HttpError::InvalidResponse("No book summary data in response".to_string()))
+        api_response.result.ok_or_else(|| {
+            HttpError::InvalidResponse("No book summary data in response".to_string())
+        })
     }
 
     /// Get single instrument information
@@ -390,7 +386,7 @@ impl DeribitHttpClient {
 
     /// Get book summary by instrument
     ///
-    /// Retrieves the summary information such as open interest, 24h volume, etc. 
+    /// Retrieves the summary information such as open interest, 24h volume, etc.
     /// for a specific instrument.
     /// This is a public endpoint that doesn't require authentication.
     ///
@@ -410,7 +406,10 @@ impl DeribitHttpClient {
     /// # Ok(())
     /// # }
     /// ```
-    pub async fn get_book_summary_by_instrument(&self, instrument_name: &str) -> Result<BookSummary, HttpError> {
+    pub async fn get_book_summary_by_instrument(
+        &self,
+        instrument_name: &str,
+    ) -> Result<BookSummary, HttpError> {
         let url = format!(
             "{}/public/get_book_summary_by_instrument?instrument_name={}",
             self.base_url(),
@@ -448,15 +447,14 @@ impl DeribitHttpClient {
             )));
         }
 
-        let book_summaries = api_response
-            .result
-            .ok_or_else(|| HttpError::InvalidResponse("No book summary data in response".to_string()))?;
+        let book_summaries = api_response.result.ok_or_else(|| {
+            HttpError::InvalidResponse("No book summary data in response".to_string())
+        })?;
 
         // Return the first (and typically only) element
-        book_summaries
-            .into_iter()
-            .next()
-            .ok_or_else(|| HttpError::InvalidResponse("Empty book summary array in response".to_string()))
+        book_summaries.into_iter().next().ok_or_else(|| {
+            HttpError::InvalidResponse("Empty book summary array in response".to_string())
+        })
     }
 
     /// Get contract size for an instrument
@@ -518,9 +516,9 @@ impl DeribitHttpClient {
             )));
         }
 
-        let contract_size_response = api_response
-            .result
-            .ok_or_else(|| HttpError::InvalidResponse("No contract size in response".to_string()))?;
+        let contract_size_response = api_response.result.ok_or_else(|| {
+            HttpError::InvalidResponse("No contract size in response".to_string())
+        })?;
 
         Ok(contract_size_response.contract_size)
     }
@@ -626,7 +624,7 @@ impl DeribitHttpClient {
 
     /// Hello endpoint for WebSocket client introduction
     ///
-    /// **Note**: This endpoint is only available via WebSocket connections according 
+    /// **Note**: This endpoint is only available via WebSocket connections according
     /// to the Deribit API documentation. This HTTP client cannot access this endpoint.
     /// The method is provided for completeness but will always return an error.
     ///
@@ -650,11 +648,16 @@ impl DeribitHttpClient {
     /// # Ok(())
     /// # }
     /// ```
-    pub async fn hello(&self, _client_name: &str, _client_version: &str) -> Result<HelloResponse, HttpError> {
+    pub async fn hello(
+        &self,
+        _client_name: &str,
+        _client_version: &str,
+    ) -> Result<HelloResponse, HttpError> {
         Err(HttpError::ConfigError(
             "The /public/hello endpoint is only available via WebSocket connections. \
              This endpoint cannot be accessed via HTTP. Please use the Deribit WebSocket API \
-             for client introduction functionality.".to_string()
+             for client introduction functionality."
+                .to_string(),
         ))
     }
 
@@ -791,9 +794,9 @@ impl DeribitHttpClient {
             )));
         }
 
-        api_response
-            .result
-            .ok_or_else(|| HttpError::InvalidResponse("No APR history data in response".to_string()))
+        api_response.result.ok_or_else(|| {
+            HttpError::InvalidResponse("No APR history data in response".to_string())
+        })
     }
 
     /// Get ticker information for an instrument
@@ -1363,7 +1366,10 @@ impl DeribitHttpClient {
         );
 
         if let Some(currency_pair) = currency_pair {
-            url.push_str(&format!("&currency_pair={}", urlencoding::encode(currency_pair)));
+            url.push_str(&format!(
+                "&currency_pair={}",
+                urlencoding::encode(currency_pair)
+            ));
         }
 
         let response = self
@@ -1597,11 +1603,17 @@ impl DeribitHttpClient {
         }
 
         if let Some(continuation) = continuation {
-            url.push_str(&format!("&continuation={}", urlencoding::encode(continuation)));
+            url.push_str(&format!(
+                "&continuation={}",
+                urlencoding::encode(continuation)
+            ));
         }
 
         if let Some(search_start_timestamp) = search_start_timestamp {
-            url.push_str(&format!("&search_start_timestamp={}", search_start_timestamp));
+            url.push_str(&format!(
+                "&search_start_timestamp={}",
+                search_start_timestamp
+            ));
         }
 
         let response = self
@@ -1689,11 +1701,17 @@ impl DeribitHttpClient {
         }
 
         if let Some(continuation) = continuation {
-            url.push_str(&format!("&continuation={}", urlencoding::encode(continuation)));
+            url.push_str(&format!(
+                "&continuation={}",
+                urlencoding::encode(continuation)
+            ));
         }
 
         if let Some(search_start_timestamp) = search_start_timestamp {
-            url.push_str(&format!("&search_start_timestamp={}", search_start_timestamp));
+            url.push_str(&format!(
+                "&search_start_timestamp={}",
+                search_start_timestamp
+            ));
         }
 
         let response = self
@@ -1818,9 +1836,9 @@ impl DeribitHttpClient {
             )));
         }
 
-        api_response.result.ok_or_else(|| {
-            HttpError::InvalidResponse("No trades data in response".to_string())
-        })
+        api_response
+            .result
+            .ok_or_else(|| HttpError::InvalidResponse("No trades data in response".to_string()))
     }
 
     /// Get last trades by currency and time
@@ -1852,6 +1870,7 @@ impl DeribitHttpClient {
     /// # Ok(())
     /// # }
     /// ```
+    #[allow(clippy::too_many_arguments)]
     pub async fn get_last_trades_by_currency_and_time(
         &self,
         currency: &str,
@@ -1916,9 +1935,9 @@ impl DeribitHttpClient {
             )));
         }
 
-        api_response.result.ok_or_else(|| {
-            HttpError::InvalidResponse("No trades data in response".to_string())
-        })
+        api_response
+            .result
+            .ok_or_else(|| HttpError::InvalidResponse("No trades data in response".to_string()))
     }
 
     /// Get last trades by instrument and time
@@ -2008,9 +2027,9 @@ impl DeribitHttpClient {
             )));
         }
 
-        api_response.result.ok_or_else(|| {
-            HttpError::InvalidResponse("No trades data in response".to_string())
-        })
+        api_response
+            .result
+            .ok_or_else(|| HttpError::InvalidResponse("No trades data in response".to_string()))
     }
 
     /// Get order book by instrument ID
@@ -2031,9 +2050,9 @@ impl DeribitHttpClient {
     /// # async fn main() -> Result<(), Box<dyn std::error::Error>> {
     /// let client = DeribitHttpClient::new(true); // testnet
     /// let order_book = client.get_order_book_by_instrument_id(42, Some(5)).await?;
-    /// println!("Order book for {}: {} bids, {} asks", 
-    ///          order_book.instrument_name, 
-    ///          order_book.bids.len(), 
+    /// println!("Order book for {}: {} bids, {} asks",
+    ///          order_book.instrument_name,
+    ///          order_book.bids.len(),
     ///          order_book.asks.len());
     /// # Ok(())
     /// # }
@@ -2083,13 +2102,11 @@ impl DeribitHttpClient {
             )));
         }
 
-        api_response.result.ok_or_else(|| {
-            HttpError::InvalidResponse("No order book data in response".to_string())
-        })
+        api_response
+            .result
+            .ok_or_else(|| HttpError::InvalidResponse("No order book data in response".to_string()))
     }
 }
-
-/// Public endpoint data structures
 
 /// Currency information structure
 #[derive(Clone, Serialize, Deserialize)]
@@ -2122,7 +2139,7 @@ pub struct IndexData {
     /// Bitcoin index price (only for BTC currency)
     #[serde(rename = "BTC")]
     pub btc: Option<f64>,
-    /// Ethereum index price (only for ETH currency) 
+    /// Ethereum index price (only for ETH currency)
     #[serde(rename = "ETH")]
     pub eth: Option<f64>,
     /// USDC index price (only for USDC currency)
@@ -2555,19 +2572,61 @@ pub struct LastTrade {
 
 // Implement Display and Debug traits using macros from deribit-base
 deribit_base::impl_json_display!(
-    Currency, IndexData, WithdrawalPriority, IndexPriceData, BookSummary, 
-    ContractSizeResponse, TestResponse, HelloResponse, StatusResponse,
-    AprHistoryResponse, AprDataPoint, TickerData, TickerStats, OrderBook,
-    Instrument, Trade, FundingChartData, FundingDataPoint, TradingViewChartData,
-    DeliveryPricesResponse, DeliveryPriceData, ExpirationsResponse, FundingRateData,
-    SettlementsResponse, Settlement, LastTradesResponse, LastTrade
+    Currency,
+    IndexData,
+    WithdrawalPriority,
+    IndexPriceData,
+    BookSummary,
+    ContractSizeResponse,
+    TestResponse,
+    HelloResponse,
+    StatusResponse,
+    AprHistoryResponse,
+    AprDataPoint,
+    TickerData,
+    TickerStats,
+    OrderBook,
+    Instrument,
+    Trade,
+    FundingChartData,
+    FundingDataPoint,
+    TradingViewChartData,
+    DeliveryPricesResponse,
+    DeliveryPriceData,
+    ExpirationsResponse,
+    FundingRateData,
+    SettlementsResponse,
+    Settlement,
+    LastTradesResponse,
+    LastTrade
 );
 
 deribit_base::impl_json_debug_pretty!(
-    Currency, IndexData, WithdrawalPriority, IndexPriceData, BookSummary, 
-    ContractSizeResponse, TestResponse, HelloResponse, StatusResponse,
-    AprHistoryResponse, AprDataPoint, TickerData, TickerStats, OrderBook,
-    Instrument, Trade, FundingChartData, FundingDataPoint, TradingViewChartData,
-    DeliveryPricesResponse, DeliveryPriceData, ExpirationsResponse, FundingRateData,
-    SettlementsResponse, Settlement, LastTradesResponse, LastTrade
+    Currency,
+    IndexData,
+    WithdrawalPriority,
+    IndexPriceData,
+    BookSummary,
+    ContractSizeResponse,
+    TestResponse,
+    HelloResponse,
+    StatusResponse,
+    AprHistoryResponse,
+    AprDataPoint,
+    TickerData,
+    TickerStats,
+    OrderBook,
+    Instrument,
+    Trade,
+    FundingChartData,
+    FundingDataPoint,
+    TradingViewChartData,
+    DeliveryPricesResponse,
+    DeliveryPriceData,
+    ExpirationsResponse,
+    FundingRateData,
+    SettlementsResponse,
+    Settlement,
+    LastTradesResponse,
+    LastTrade
 );

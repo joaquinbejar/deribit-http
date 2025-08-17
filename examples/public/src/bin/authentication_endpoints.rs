@@ -6,7 +6,7 @@
 //! - /public/fork_token - Create new session with same permissions
 //! - /private/logout - Logout and invalidate token
 
-use deribit_http::{DeribitHttpClient, config::HttpConfig, HttpError};
+use deribit_http::{DeribitHttpClient, HttpError, config::HttpConfig};
 use std::env;
 use std::path::Path;
 use tracing::{error, info, warn};
@@ -32,10 +32,14 @@ async fn main() -> Result<(), HttpError> {
     info!("");
 
     // Check environment variables
-    let client_id = env::var("DERIBIT_CLIENT_ID")
-        .map_err(|_| HttpError::ConfigError("DERIBIT_CLIENT_ID not found in environment variables".to_string()))?;
-    let client_secret = env::var("DERIBIT_CLIENT_SECRET")
-        .map_err(|_| HttpError::ConfigError("DERIBIT_CLIENT_SECRET not found in environment variables".to_string()))?;
+    let client_id = env::var("DERIBIT_CLIENT_ID").map_err(|_| {
+        HttpError::ConfigError("DERIBIT_CLIENT_ID not found in environment variables".to_string())
+    })?;
+    let client_secret = env::var("DERIBIT_CLIENT_SECRET").map_err(|_| {
+        HttpError::ConfigError(
+            "DERIBIT_CLIENT_SECRET not found in environment variables".to_string(),
+        )
+    })?;
 
     info!("✅ Credentials found in environment variables");
     info!("📋 Client ID: {}...", &client_id[..8.min(client_id.len())]);
@@ -96,7 +100,7 @@ async fn main() -> Result<(), HttpError> {
     if let (Some(sub_id), Some(sub_secret)) = (&sub_client_id, &sub_client_secret) {
         info!("🔑 Found subaccount credentials, authenticating with subaccount");
         info!("📋 Sub Client ID: {}...", &sub_id[..8.min(sub_id.len())]);
-        
+
         // Authenticate with subaccount credentials
         match client.authenticate_oauth2(sub_id, sub_secret).await {
             Ok(sub_token) => {
@@ -138,7 +142,7 @@ async fn main() -> Result<(), HttpError> {
             Err(e) => {
                 error!("❌ Subaccount OAuth2 authentication error: {}", e);
                 info!("ℹ️ Falling back to default behavior");
-                
+
                 // Fallback to original behavior
                 if let Some(refresh_token) = &initial_token.refresh_token {
                     let subject_id = 10u64;
@@ -171,7 +175,7 @@ async fn main() -> Result<(), HttpError> {
         }
     } else {
         info!("ℹ️ No subaccount credentials found, using default behavior");
-        
+
         if let Some(refresh_token) = &initial_token.refresh_token {
             // Use subject_id 10 as example (subaccount)
             let subject_id = 10u64;
@@ -293,7 +297,9 @@ async fn main() -> Result<(), HttpError> {
     match client.get_server_time().await {
         Ok(server_time) => {
             info!("ℹ️ Post-logout call successful: {}", server_time);
-            info!("💡 This is expected since HTTP logout is not available - token remains valid until expiration");
+            info!(
+                "💡 This is expected since HTTP logout is not available - token remains valid until expiration"
+            );
         }
         Err(e) => {
             info!("❌ Post-logout call failed: {}", e);

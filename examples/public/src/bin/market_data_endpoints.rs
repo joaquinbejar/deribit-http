@@ -56,21 +56,24 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         Ok(currencies) => {
             info!("✅ Currencies retrieved successfully");
             info!("📊 Found {} supported currencies:", currencies.len());
-            
+
             for currency in &currencies {
-                info!("   • {} ({}) - Fee precision: {}", 
-                     currency.currency, 
-                     currency.currency_long,
-                     currency.fee_precision);
-                
+                info!(
+                    "   • {} ({}) - Fee precision: {}",
+                    currency.currency, currency.currency_long, currency.fee_precision
+                );
+
                 if let Some(apr) = currency.apr {
                     info!("     📈 APR: {}% (yield-generating token)", apr);
                 }
             }
-            
+
             if currencies.len() > 10 {
-                info!("💡 Showing details for first {} currencies, {} total found", 
-                     std::cmp::min(currencies.len(), 5), currencies.len());
+                info!(
+                    "💡 Showing details for first {} currencies, {} total found",
+                    std::cmp::min(currencies.len(), 5),
+                    currencies.len()
+                );
             }
         }
         Err(e) => {
@@ -90,11 +93,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         Ok(apr_history) => {
             info!("✅ APR history for STETH retrieved successfully");
             info!("📊 Found {} data points:", apr_history.data.len());
-            
+
             for data_point in &apr_history.data {
                 info!("   • Day {}: APR {}%", data_point.day, data_point.apr);
             }
-            
+
             if let Some(continuation) = apr_history.continuation {
                 info!("🔗 Continuation token available: {}", continuation);
             }
@@ -124,26 +127,32 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     info!("📊 3. GET BOOK SUMMARY BY CURRENCY");
     info!("----------------------------------");
 
-    match client.get_book_summary_by_currency("BTC", Some("future")).await {
+    match client
+        .get_book_summary_by_currency("BTC", Some("future"))
+        .await
+    {
         Ok(book_summaries) => {
             info!("✅ Book summary for BTC futures retrieved successfully");
             info!("📊 Found {} BTC future instruments:", book_summaries.len());
-            
+
             for (i, summary) in book_summaries.iter().take(3).enumerate() {
-                info!("   {}. {} - Volume: {} {}", 
-                     i + 1,
-                     summary.instrument_name,
-                     summary.volume,
-                     summary.base_currency);
-                info!("      Mark Price: {} | Open Interest: {}", 
-                     summary.mark_price, 
-                     summary.open_interest);
-                
+                info!(
+                    "   {}. {} - Volume: {} {}",
+                    i + 1,
+                    summary.instrument_name,
+                    summary.volume,
+                    summary.base_currency
+                );
+                info!(
+                    "      Mark Price: {} | Open Interest: {}",
+                    summary.mark_price, summary.open_interest
+                );
+
                 if let Some(volume_usd) = summary.volume_usd {
                     info!("      Volume USD: ${:.2}", volume_usd);
                 }
             }
-            
+
             if book_summaries.len() > 3 {
                 info!("💡 Showing first 3 of {} BTC futures", book_summaries.len());
             }
@@ -169,19 +178,19 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             info!("   📈 Mark Price: {}", summary.mark_price);
             info!("   📊 Volume: {}", summary.volume);
             info!("   🏦 Open Interest: {}", summary.open_interest);
-            
+
             if let Some(volume_usd) = summary.volume_usd {
                 info!("   💵 Volume USD: ${:.2}", volume_usd);
             }
-            
+
             if let Some(funding_8h) = summary.funding_8h {
                 info!("   📈 8h Funding Rate: {:.6}", funding_8h);
             }
-            
+
             if let Some(current_funding) = summary.current_funding {
                 info!("   📈 Current Funding: {:.6}", current_funding);
             }
-            
+
             if let Some(price_change) = summary.price_change {
                 info!("   📊 Price Change: {:.2}%", price_change);
             }

@@ -6,7 +6,7 @@ pub enum HttpError {
     /// Config error
     #[error("Configuration error: {0}")]
     ConfigError(String),
-    
+
     /// Request failed with HTTP error
     #[error("Request failed: {0}")]
     RequestFailed(String),

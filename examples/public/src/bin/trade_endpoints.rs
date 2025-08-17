@@ -52,39 +52,48 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     info!("----------------------------------");
 
     // Test with BTC trades (all instruments)
-    match client.get_last_trades_by_currency("BTC", None, Some(10), Some(false), Some("default")).await {
+    match client
+        .get_last_trades_by_currency("BTC", None, Some(10), Some(false), Some("default"))
+        .await
+    {
         Ok(trades_response) => {
             info!("✅ Trades for BTC retrieved successfully");
             info!("📊 Found {} trade records:", trades_response.trades.len());
-            
+
             for (i, trade) in trades_response.trades.iter().take(5).enumerate() {
-                info!("   {}. {} - {} BTC at ${:.2}", 
-                     i + 1,
-                     trade.instrument_name,
-                     trade.amount,
-                     trade.price);
-                
-                info!("      Direction: {} - Timestamp: {}", 
-                     trade.direction,
-                     trade.timestamp);
-                
+                info!(
+                    "   {}. {} - {} BTC at ${:.2}",
+                    i + 1,
+                    trade.instrument_name,
+                    trade.amount,
+                    trade.price
+                );
+
+                info!(
+                    "      Direction: {} - Timestamp: {}",
+                    trade.direction, trade.timestamp
+                );
+
                 info!("      Trade ID: {}", trade.trade_id);
-                
+
                 if let Some(index_price) = trade.index_price {
                     info!("      Index Price: ${:.2}", index_price);
                 }
             }
-            
+
             if trades_response.trades.len() > 5 {
-                info!("💡 Showing first 5 of {} BTC trades", trades_response.trades.len());
+                info!(
+                    "💡 Showing first 5 of {} BTC trades",
+                    trades_response.trades.len()
+                );
             }
-            
+
             if let Some(has_more) = trades_response.has_more {
                 if has_more {
                     info!("🔗 More trades available for pagination");
                 }
             }
-            
+
             if trades_response.trades.is_empty() {
                 info!("💡 No trade data available for BTC");
             }
@@ -96,21 +105,30 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     // Test with BTC futures only
-    match client.get_last_trades_by_currency("BTC", Some("future"), Some(5), Some(false), Some("default")).await {
+    match client
+        .get_last_trades_by_currency("BTC", Some("future"), Some(5), Some(false), Some("default"))
+        .await
+    {
         Ok(trades_response) => {
             info!("✅ BTC future trades retrieved successfully");
-            info!("📊 Found {} future trade records", trades_response.trades.len());
-            
+            info!(
+                "📊 Found {} future trade records",
+                trades_response.trades.len()
+            );
+
             for (i, trade) in trades_response.trades.iter().enumerate() {
-                info!("   {}. Future trade: {} - {} BTC at ${:.2}", 
-                     i + 1,
-                     trade.instrument_name,
-                     trade.amount,
-                     trade.price);
-                
-                info!("      Direction: {} - Timestamp: {}", 
-                     trade.direction,
-                     trade.timestamp);
+                info!(
+                    "   {}. Future trade: {} - {} BTC at ${:.2}",
+                    i + 1,
+                    trade.instrument_name,
+                    trade.amount,
+                    trade.price
+                );
+
+                info!(
+                    "      Direction: {} - Timestamp: {}",
+                    trade.direction, trade.timestamp
+                );
             }
         }
         Err(e) => {
@@ -120,17 +138,22 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     // Test with ETH trades
-    match client.get_last_trades_by_currency("ETH", None, Some(3), Some(false), Some("default")).await {
+    match client
+        .get_last_trades_by_currency("ETH", None, Some(3), Some(false), Some("default"))
+        .await
+    {
         Ok(trades_response) => {
             info!("✅ ETH trades retrieved successfully");
-            info!("📊 Found {} ETH trade records", trades_response.trades.len());
-            
+            info!(
+                "📊 Found {} ETH trade records",
+                trades_response.trades.len()
+            );
+
             for trade in &trades_response.trades {
-                info!("   ETH trade: {} - {} ETH at ${:.2} ({})", 
-                     trade.instrument_name,
-                     trade.amount,
-                     trade.price,
-                     trade.direction);
+                info!(
+                    "   ETH trade: {} - {} ETH at ${:.2} ({})",
+                    trade.instrument_name, trade.amount, trade.price, trade.direction
+                );
             }
         }
         Err(e) => {
@@ -153,35 +176,50 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .as_millis() as u64;
     let start_timestamp = end_timestamp - (60 * 60 * 1000); // 1 hour ago
 
-    info!("🕐 Time range: {} to {} (last hour)", start_timestamp, end_timestamp);
+    info!(
+        "🕐 Time range: {} to {} (last hour)",
+        start_timestamp, end_timestamp
+    );
 
-    match client.get_last_trades_by_currency_and_time(
-        "BTC", 
-        start_timestamp, 
-        end_timestamp, 
-        None, 
-        Some(10), 
-        Some(false), 
-        Some("default")
-    ).await {
+    match client
+        .get_last_trades_by_currency_and_time(
+            "BTC",
+            start_timestamp,
+            end_timestamp,
+            None,
+            Some(10),
+            Some(false),
+            Some("default"),
+        )
+        .await
+    {
         Ok(trades_response) => {
             info!("✅ BTC trades in time range retrieved successfully");
-            info!("📊 Found {} trade records in the last hour:", trades_response.trades.len());
-            
+            info!(
+                "📊 Found {} trade records in the last hour:",
+                trades_response.trades.len()
+            );
+
             for (i, trade) in trades_response.trades.iter().take(3).enumerate() {
-                info!("   {}. {} - {} BTC at ${:.2}", 
-                     i + 1,
-                     trade.instrument_name,
-                     trade.amount,
-                     trade.price);
-                
-                info!("      Direction: {} - Timestamp: {}", 
-                     trade.direction,
-                     trade.timestamp);
+                info!(
+                    "   {}. {} - {} BTC at ${:.2}",
+                    i + 1,
+                    trade.instrument_name,
+                    trade.amount,
+                    trade.price
+                );
+
+                info!(
+                    "      Direction: {} - Timestamp: {}",
+                    trade.direction, trade.timestamp
+                );
             }
-            
+
             if trades_response.trades.len() > 3 {
-                info!("💡 Showing first 3 of {} BTC trades in time range", trades_response.trades.len());
+                info!(
+                    "💡 Showing first 3 of {} BTC trades in time range",
+                    trades_response.trades.len()
+                );
             }
         }
         Err(e) => {
@@ -191,24 +229,30 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     // Test with ETH and futures in time range
-    match client.get_last_trades_by_currency_and_time(
-        "ETH", 
-        start_timestamp, 
-        end_timestamp, 
-        Some("future"), 
-        Some(5), 
-        Some(false), 
-        Some("default")
-    ).await {
+    match client
+        .get_last_trades_by_currency_and_time(
+            "ETH",
+            start_timestamp,
+            end_timestamp,
+            Some("future"),
+            Some(5),
+            Some(false),
+            Some("default"),
+        )
+        .await
+    {
         Ok(trades_response) => {
             info!("✅ ETH future trades in time range retrieved successfully");
-            info!("📊 Found {} ETH future trade records", trades_response.trades.len());
-            
+            info!(
+                "📊 Found {} ETH future trade records",
+                trades_response.trades.len()
+            );
+
             for trade in &trades_response.trades {
-                info!("   ETH future trade: {} - {} ETH at ${:.2}", 
-                     trade.instrument_name,
-                     trade.amount,
-                     trade.price);
+                info!(
+                    "   ETH future trade: {} - {} ETH at ${:.2}",
+                    trade.instrument_name, trade.amount, trade.price
+                );
             }
         }
         Err(e) => {
@@ -225,25 +269,33 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     info!("-----------------------------------");
 
     // Test with BTC-PERPETUAL
-    match client.get_last_trades("BTC-PERPETUAL", Some(10), Some(false)).await {
+    match client
+        .get_last_trades("BTC-PERPETUAL", Some(10), Some(false))
+        .await
+    {
         Ok(trades) => {
             info!("✅ Trades for BTC-PERPETUAL retrieved successfully");
             info!("📊 Found {} trade records for BTC-PERPETUAL:", trades.len());
-            
+
             for (i, trade) in trades.iter().take(5).enumerate() {
-                info!("   {}. Trade at {} - {} BTC at ${:.2}", 
-                     i + 1,
-                     trade.timestamp,
-                     trade.amount,
-                     trade.price);
-                
+                info!(
+                    "   {}. Trade at {} - {} BTC at ${:.2}",
+                    i + 1,
+                    trade.timestamp,
+                    trade.amount,
+                    trade.price
+                );
+
                 info!("      Direction: {}", trade.direction);
             }
-            
+
             if trades.len() > 5 {
-                info!("💡 Showing first 5 of {} BTC-PERPETUAL trades", trades.len());
+                info!(
+                    "💡 Showing first 5 of {} BTC-PERPETUAL trades",
+                    trades.len()
+                );
             }
-            
+
             if trades.is_empty() {
                 info!("💡 No trade data available for BTC-PERPETUAL");
             }
@@ -255,17 +307,22 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     // Test with ETH-PERPETUAL
-    match client.get_last_trades("ETH-PERPETUAL", Some(5), Some(false)).await {
+    match client
+        .get_last_trades("ETH-PERPETUAL", Some(5), Some(false))
+        .await
+    {
         Ok(trades) => {
             info!("✅ Trades for ETH-PERPETUAL retrieved successfully");
             info!("📊 Found {} trade records for ETH-PERPETUAL", trades.len());
-            
+
             for (i, trade) in trades.iter().enumerate() {
-                info!("   {}. {} ETH at ${:.2} ({})", 
-                     i + 1,
-                     trade.amount,
-                     trade.price,
-                     trade.direction);
+                info!(
+                    "   {}. {} ETH at ${:.2} ({})",
+                    i + 1,
+                    trade.amount,
+                    trade.price,
+                    trade.direction
+                );
             }
         }
         Err(e) => {
@@ -275,16 +332,19 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     // Test with a BTC future (if available)
-    match client.get_last_trades("BTC-29MAR24", Some(3), Some(false)).await {
+    match client
+        .get_last_trades("BTC-29MAR24", Some(3), Some(false))
+        .await
+    {
         Ok(trades) => {
             info!("✅ Trades for BTC future retrieved successfully");
             info!("📊 Found {} trade records for BTC future", trades.len());
-            
+
             for trade in &trades {
-                info!("   Future trade: {} BTC at ${:.2} - {}", 
-                     trade.amount,
-                     trade.price,
-                     trade.timestamp);
+                info!(
+                    "   Future trade: {} BTC at ${:.2} - {}",
+                    trade.amount, trade.price, trade.timestamp
+                );
             }
         }
         Err(e) => {
@@ -294,12 +354,18 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     // Test with invalid instrument to demonstrate error handling
-    match client.get_last_trades("INVALID-INSTRUMENT", Some(1), Some(false)).await {
+    match client
+        .get_last_trades("INVALID-INSTRUMENT", Some(1), Some(false))
+        .await
+    {
         Ok(trades) => {
             if trades.is_empty() {
                 info!("✅ Empty result for invalid instrument (expected behavior)");
             } else {
-                warn!("⚠️ Unexpected trades found for invalid instrument: {}", trades.len());
+                warn!(
+                    "⚠️ Unexpected trades found for invalid instrument: {}",
+                    trades.len()
+                );
             }
         }
         Err(e) => {
@@ -316,34 +382,46 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     info!("----------------------------------------------");
 
     // Test with BTC-PERPETUAL in time range
-    match client.get_last_trades_by_instrument_and_time(
-        "BTC-PERPETUAL", 
-        start_timestamp, 
-        end_timestamp, 
-        Some(10), 
-        Some(false), 
-        Some("default")
-    ).await {
+    match client
+        .get_last_trades_by_instrument_and_time(
+            "BTC-PERPETUAL",
+            start_timestamp,
+            end_timestamp,
+            Some(10),
+            Some(false),
+            Some("default"),
+        )
+        .await
+    {
         Ok(trades_response) => {
             info!("✅ BTC-PERPETUAL trades in time range retrieved successfully");
-            info!("📊 Found {} trade records for BTC-PERPETUAL in the last hour:", trades_response.trades.len());
-            
+            info!(
+                "📊 Found {} trade records for BTC-PERPETUAL in the last hour:",
+                trades_response.trades.len()
+            );
+
             for (i, trade) in trades_response.trades.iter().take(3).enumerate() {
-                info!("   {}. Trade at {} - {} BTC at ${:.2}", 
-                     i + 1,
-                     trade.timestamp,
-                     trade.amount,
-                     trade.price);
-                
-                info!("      Direction: {} - Trade seq: {}", 
-                     trade.direction,
-                     trade.trade_seq);
+                info!(
+                    "   {}. Trade at {} - {} BTC at ${:.2}",
+                    i + 1,
+                    trade.timestamp,
+                    trade.amount,
+                    trade.price
+                );
+
+                info!(
+                    "      Direction: {} - Trade seq: {}",
+                    trade.direction, trade.trade_seq
+                );
             }
-            
+
             if trades_response.trades.len() > 3 {
-                info!("💡 Showing first 3 of {} BTC-PERPETUAL trades in time range", trades_response.trades.len());
+                info!(
+                    "💡 Showing first 3 of {} BTC-PERPETUAL trades in time range",
+                    trades_response.trades.len()
+                );
             }
-            
+
             if let Some(has_more) = trades_response.has_more {
                 if has_more {
                     info!("🔗 More trades available for this time range");
@@ -352,28 +430,36 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
         Err(e) => {
             warn!("⚠️ Get BTC-PERPETUAL trades by time error: {}", e);
-            info!("💡 This may be expected if no trades occurred for this instrument in the time range");
+            info!(
+                "💡 This may be expected if no trades occurred for this instrument in the time range"
+            );
         }
     }
 
     // Test with ETH-PERPETUAL in time range
-    match client.get_last_trades_by_instrument_and_time(
-        "ETH-PERPETUAL", 
-        start_timestamp, 
-        end_timestamp, 
-        Some(5), 
-        Some(false), 
-        Some("default")
-    ).await {
+    match client
+        .get_last_trades_by_instrument_and_time(
+            "ETH-PERPETUAL",
+            start_timestamp,
+            end_timestamp,
+            Some(5),
+            Some(false),
+            Some("default"),
+        )
+        .await
+    {
         Ok(trades_response) => {
             info!("✅ ETH-PERPETUAL trades in time range retrieved successfully");
-            info!("📊 Found {} trade records for ETH-PERPETUAL", trades_response.trades.len());
-            
+            info!(
+                "📊 Found {} trade records for ETH-PERPETUAL",
+                trades_response.trades.len()
+            );
+
             for trade in &trades_response.trades {
-                info!("   ETH-PERPETUAL trade: {} ETH at ${:.2} ({})", 
-                     trade.amount,
-                     trade.price,
-                     trade.direction);
+                info!(
+                    "   ETH-PERPETUAL trade: {} ETH at ${:.2} ({})",
+                    trade.amount, trade.price, trade.direction
+                );
             }
         }
         Err(e) => {
@@ -384,26 +470,37 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Test with wider time range (last 24 hours)
     let start_timestamp_24h = end_timestamp - (24 * 60 * 60 * 1000); // 24 hours ago
-    info!("🕐 Extended time range: {} to {} (last 24 hours)", start_timestamp_24h, end_timestamp);
+    info!(
+        "🕐 Extended time range: {} to {} (last 24 hours)",
+        start_timestamp_24h, end_timestamp
+    );
 
-    match client.get_last_trades_by_instrument_and_time(
-        "BTC-PERPETUAL", 
-        start_timestamp_24h, 
-        end_timestamp, 
-        Some(5), 
-        Some(false), 
-        Some("default")
-    ).await {
+    match client
+        .get_last_trades_by_instrument_and_time(
+            "BTC-PERPETUAL",
+            start_timestamp_24h,
+            end_timestamp,
+            Some(5),
+            Some(false),
+            Some("default"),
+        )
+        .await
+    {
         Ok(trades_response) => {
             info!("✅ BTC-PERPETUAL trades in 24h range retrieved successfully");
-            info!("📊 Found {} trade records in the last 24 hours", trades_response.trades.len());
-            
+            info!(
+                "📊 Found {} trade records in the last 24 hours",
+                trades_response.trades.len()
+            );
+
             for (i, trade) in trades_response.trades.iter().take(2).enumerate() {
-                info!("   {}. Recent trade: {} BTC at ${:.2} ({})", 
-                     i + 1,
-                     trade.amount,
-                     trade.price,
-                     trade.direction);
+                info!(
+                    "   {}. Recent trade: {} BTC at ${:.2} ({})",
+                    i + 1,
+                    trade.amount,
+                    trade.price,
+                    trade.direction
+                );
             }
         }
         Err(e) => {
@@ -433,15 +530,21 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     info!("📋 SUMMARY OF TESTED TRADE ENDPOINTS");
     info!("=====================================");
     info!("💱 /public/get_last_trades_by_currency - Recent trades filtered by currency");
-    info!("⏰ /public/get_last_trades_by_currency_and_time - Recent trades by currency with time range");
+    info!(
+        "⏰ /public/get_last_trades_by_currency_and_time - Recent trades by currency with time range"
+    );
     info!("🎯 /public/get_last_trades_by_instrument - Recent trades filtered by instrument");
-    info!("🎯⏰ /public/get_last_trades_by_instrument_and_time - Recent trades by instrument with time range");
+    info!(
+        "🎯⏰ /public/get_last_trades_by_instrument_and_time - Recent trades by instrument with time range"
+    );
     println!();
 
     info!("🎉 Trade endpoints example completed successfully!");
     info!("💡 Tip: Use these endpoints to analyze recent market activity and trading patterns");
     info!("🔗 Trade data is essential for market analysis, backtesting, and monitoring execution");
-    info!("📊 Filter by instrument type (future/option/perpetual) and time ranges for specific analysis");
+    info!(
+        "📊 Filter by instrument type (future/option/perpetual) and time ranges for specific analysis"
+    );
 
     Ok(())
 }

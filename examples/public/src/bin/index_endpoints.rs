@@ -55,19 +55,22 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         Ok(index_names) => {
             info!("✅ Index price names retrieved successfully");
             info!("📊 Found {} supported price indexes:", index_names.len());
-            
+
             for (i, index_name) in index_names.iter().take(10).enumerate() {
                 info!("   {}. {}", i + 1, index_name);
                 available_indexes.push(index_name.clone());
             }
-            
+
             if index_names.len() > 10 {
-                info!("💡 Showing first 10 of {} available indexes", index_names.len());
+                info!(
+                    "💡 Showing first 10 of {} available indexes",
+                    index_names.len()
+                );
                 available_indexes.extend(index_names.iter().skip(10).cloned());
             } else {
                 available_indexes = index_names;
             }
-            
+
             if available_indexes.is_empty() {
                 info!("💡 No index price names available");
             }
@@ -89,26 +92,26 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         Ok(index_data) => {
             info!("✅ Current index for BTC retrieved successfully");
             info!("📊 Index data for BTC:");
-            
+
             if let Some(btc_price) = index_data.btc {
                 info!("   💰 BTC Index Price: ${:.2}", btc_price);
             }
-            
+
             info!("   📈 Estimated Delivery Price: ${:.2}", index_data.edp);
-            
+
             // Display other currency prices if available
             if let Some(eth_price) = index_data.eth {
                 info!("   💰 ETH Index Price: ${:.2}", eth_price);
             }
-            
+
             if let Some(usdc_price) = index_data.usdc {
                 info!("   💰 USDC Index Price: ${:.2}", usdc_price);
             }
-            
+
             if let Some(usdt_price) = index_data.usdt {
                 info!("   💰 USDT Index Price: ${:.2}", usdt_price);
             }
-            
+
             if let Some(eurr_price) = index_data.eurr {
                 info!("   💰 EURR Index Price: ${:.2}", eurr_price);
             }
@@ -123,11 +126,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         Ok(index_data) => {
             info!("✅ Current index for ETH retrieved successfully");
             info!("📊 ETH Index data:");
-            
+
             if let Some(eth_price) = index_data.eth {
                 info!("   💰 ETH Index Price: ${:.2}", eth_price);
             }
-            
+
             info!("   📈 ETH Estimated Delivery Price: ${:.2}", index_data.edp);
         }
         Err(e) => {
@@ -141,12 +144,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         Ok(index_data) => {
             info!("✅ Current index for USDC retrieved successfully");
             info!("📊 USDC Index data:");
-            
+
             if let Some(usdc_price) = index_data.usdc {
                 info!("   💰 USDC Index Price: ${:.6}", usdc_price);
             }
-            
-            info!("   📈 USDC Estimated Delivery Price: ${:.6}", index_data.edp);
+
+            info!(
+                "   📈 USDC Estimated Delivery Price: ${:.6}",
+                index_data.edp
+            );
         }
         Err(e) => {
             warn!("⚠️ Get index for USDC error: {}", e);
@@ -168,9 +174,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 info!("✅ Index price for btc_usd retrieved successfully");
                 info!("📊 BTC/USD Index details:");
                 info!("   💰 Index Price: ${:.2}", index_price_data.index_price);
-                info!("   📈 Estimated Delivery Price: ${:.2}", index_price_data.estimated_delivery_price);
-                
-                let price_diff = index_price_data.index_price - index_price_data.estimated_delivery_price;
+                info!(
+                    "   📈 Estimated Delivery Price: ${:.2}",
+                    index_price_data.estimated_delivery_price
+                );
+
+                let price_diff =
+                    index_price_data.index_price - index_price_data.estimated_delivery_price;
                 info!("   📊 Price Difference: ${:.2}", price_diff);
             }
             Err(e) => {
@@ -188,7 +198,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 info!("✅ Index price for eth_usd retrieved successfully");
                 info!("📊 ETH/USD Index details:");
                 info!("   💰 Index Price: ${:.2}", index_price_data.index_price);
-                info!("   📈 Estimated Delivery Price: ${:.2}", index_price_data.estimated_delivery_price);
+                info!(
+                    "   📈 Estimated Delivery Price: ${:.2}",
+                    index_price_data.estimated_delivery_price
+                );
             }
             Err(e) => {
                 warn!("⚠️ Get index price for eth_usd error: {}", e);
@@ -206,7 +219,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 info!("✅ Index price for btc_usdc retrieved successfully");
                 info!("📊 BTC/USDC Index details:");
                 info!("   💰 Index Price: ${:.2}", index_price_data.index_price);
-                info!("   📈 Estimated Delivery Price: ${:.2}", index_price_data.estimated_delivery_price);
+                info!(
+                    "   📈 Estimated Delivery Price: ${:.2}",
+                    index_price_data.estimated_delivery_price
+                );
             }
             Err(e) => {
                 warn!("⚠️ Get index price for btc_usdc error: {}", e);
@@ -219,7 +235,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Test with a non-existent index to demonstrate error handling
     match client.get_index_price("non_existent_index").await {
         Ok(index_price_data) => {
-            info!("⚠️ Unexpected success for non-existent index: ${:.2}", index_price_data.index_price);
+            info!(
+                "⚠️ Unexpected success for non-existent index: ${:.2}",
+                index_price_data.index_price
+            );
         }
         Err(e) => {
             info!("✅ Expected error for non-existent index: {}", e);

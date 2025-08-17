@@ -8,6 +8,7 @@ pub mod auth;
 pub mod client;
 pub mod config;
 pub mod connection;
+/// HTTP API endpoints implementation for public and private Deribit API methods
 pub mod endpoints;
 pub mod error;
 pub mod message;

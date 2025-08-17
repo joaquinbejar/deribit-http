@@ -52,14 +52,21 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Test with BTC-PERPETUAL (default depth)
     match client.get_order_book("BTC-PERPETUAL", None).await {
         Ok(order_book) => {
-            info!("✅ Order book for {} retrieved successfully", order_book.instrument_name);
-            info!("📊 Found {} bids and {} asks", order_book.bids.len(), order_book.asks.len());
-            
+            info!(
+                "✅ Order book for {} retrieved successfully",
+                order_book.instrument_name
+            );
+            info!(
+                "📊 Found {} bids and {} asks",
+                order_book.bids.len(),
+                order_book.asks.len()
+            );
+
             info!("📈 Top 5 Bids (Price, Amount):");
             for (i, bid) in order_book.bids.iter().take(5).enumerate() {
                 info!("   {}. ${:.2} - {:.6} BTC", i + 1, bid[0], bid[1]);
             }
-            
+
             info!("📉 Top 5 Asks (Price, Amount):");
             for (i, ask) in order_book.asks.iter().take(5).enumerate() {
                 info!("   {}. ${:.2} - {:.6} BTC", i + 1, ask[0], ask[1]);
@@ -83,29 +90,43 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Test with BTC-PERPETUAL (custom depth)
     match client.get_order_book("BTC-PERPETUAL", Some(10)).await {
         Ok(order_book) => {
-            info!("✅ Order book for {} with depth 10 retrieved successfully", order_book.instrument_name);
-            info!("📊 Found {} bids and {} asks with depth 10", order_book.bids.len(), order_book.asks.len());
-            
+            info!(
+                "✅ Order book for {} with depth 10 retrieved successfully",
+                order_book.instrument_name
+            );
+            info!(
+                "📊 Found {} bids and {} asks with depth 10",
+                order_book.bids.len(),
+                order_book.asks.len()
+            );
+
             if order_book.bids.len() >= 3 {
                 info!("📈 Bid depth analysis:");
                 let total_bid_volume: f64 = order_book.bids.iter().map(|bid| bid[1]).sum();
                 info!("   Total bid volume: {:.6} BTC", total_bid_volume);
-                info!("   Price range: ${:.2} - ${:.2}", 
-                     order_book.bids.last().unwrap()[0], 
-                     order_book.bids.first().unwrap()[0]);
+                info!(
+                    "   Price range: ${:.2} - ${:.2}",
+                    order_book.bids.last().unwrap()[0],
+                    order_book.bids.first().unwrap()[0]
+                );
             }
-            
+
             if order_book.asks.len() >= 3 {
                 info!("📉 Ask depth analysis:");
                 let total_ask_volume: f64 = order_book.asks.iter().map(|ask| ask[1]).sum();
                 info!("   Total ask volume: {:.6} BTC", total_ask_volume);
-                info!("   Price range: ${:.2} - ${:.2}", 
-                     order_book.asks.first().unwrap()[0], 
-                     order_book.asks.last().unwrap()[0]);
+                info!(
+                    "   Price range: ${:.2} - ${:.2}",
+                    order_book.asks.first().unwrap()[0],
+                    order_book.asks.last().unwrap()[0]
+                );
             }
         }
         Err(e) => {
-            warn!("⚠️ Get order book for BTC-PERPETUAL with depth error: {}", e);
+            warn!(
+                "⚠️ Get order book for BTC-PERPETUAL with depth error: {}",
+                e
+            );
             info!("💡 This may be expected if the instrument is not available");
         }
     }
@@ -113,15 +134,28 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Test with ETH-PERPETUAL
     match client.get_order_book("ETH-PERPETUAL", Some(5)).await {
         Ok(order_book) => {
-            info!("✅ Order book for {} retrieved successfully", order_book.instrument_name);
-            info!("📊 Found {} bids and {} asks", order_book.bids.len(), order_book.asks.len());
-            
+            info!(
+                "✅ Order book for {} retrieved successfully",
+                order_book.instrument_name
+            );
+            info!(
+                "📊 Found {} bids and {} asks",
+                order_book.bids.len(),
+                order_book.asks.len()
+            );
+
             if !order_book.bids.is_empty() {
-                info!("📈 Best bid: ${:.2} - {:.6} ETH", order_book.bids[0][0], order_book.bids[0][1]);
+                info!(
+                    "📈 Best bid: ${:.2} - {:.6} ETH",
+                    order_book.bids[0][0], order_book.bids[0][1]
+                );
             }
-            
+
             if !order_book.asks.is_empty() {
-                info!("📉 Best ask: ${:.2} - {:.6} ETH", order_book.asks[0][0], order_book.asks[0][1]);
+                info!(
+                    "📉 Best ask: ${:.2} - {:.6} ETH",
+                    order_book.asks[0][0], order_book.asks[0][1]
+                );
             }
         }
         Err(e) => {
@@ -134,11 +168,17 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     match client.get_order_book("BTC-29MAR24", Some(3)).await {
         Ok(order_book) => {
             info!("✅ Order book for BTC future retrieved successfully");
-            info!("📊 Future order book: {} bids, {} asks", order_book.bids.len(), order_book.asks.len());
-            
+            info!(
+                "📊 Future order book: {} bids, {} asks",
+                order_book.bids.len(),
+                order_book.asks.len()
+            );
+
             if !order_book.bids.is_empty() && !order_book.asks.is_empty() {
-                info!("💰 Future market - Best bid: ${:.2} | Best ask: ${:.2}", 
-                     order_book.bids[0][0], order_book.asks[0][0]);
+                info!(
+                    "💰 Future market - Best bid: ${:.2} | Best ask: ${:.2}",
+                    order_book.bids[0][0], order_book.asks[0][0]
+                );
             }
         }
         Err(e) => {
@@ -175,10 +215,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         Ok(instruments) => {
             if !instruments.is_empty() {
                 info!("✅ Found {} BTC instruments", instruments.len());
-                
+
                 // Extract actual instrument IDs from the response
                 let mut valid_ids = Vec::new();
-                for instrument in instruments.iter().take(10) { // Check first 10 instruments
+                for instrument in instruments.iter().take(10) {
+                    // Check first 10 instruments
                     if let Some(id) = instrument.instrument_id {
                         valid_ids.push(id as u32);
                         if valid_ids.len() >= 5 {
@@ -186,54 +227,80 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                         }
                     }
                 }
-                
+
                 if !valid_ids.is_empty() {
-                    info!("🧪 Testing with actual instrument IDs: {:?}...", &valid_ids[..valid_ids.len().min(3)]);
-                    
+                    info!(
+                        "🧪 Testing with actual instrument IDs: {:?}...",
+                        &valid_ids[..valid_ids.len().min(3)]
+                    );
+
                     // Test with actual instrument IDs
                     for &test_id in valid_ids.iter().take(3) {
-                        match client.get_order_book_by_instrument_id(test_id, Some(5)).await {
+                        match client
+                            .get_order_book_by_instrument_id(test_id, Some(5))
+                            .await
+                        {
                             Ok(order_book) => {
-                                info!("✅ Order book for instrument ID {} retrieved successfully", test_id);
-                                info!("📊 Instrument: {} - {} bids, {} asks", 
-                                     order_book.instrument_name,
-                                     order_book.bids.len(), 
-                                     order_book.asks.len());
-                                
+                                info!(
+                                    "✅ Order book for instrument ID {} retrieved successfully",
+                                    test_id
+                                );
+                                info!(
+                                    "📊 Instrument: {} - {} bids, {} asks",
+                                    order_book.instrument_name,
+                                    order_book.bids.len(),
+                                    order_book.asks.len()
+                                );
+
                                 if !order_book.bids.is_empty() && !order_book.asks.is_empty() {
-                                    info!("💰 ID {} - Best bid: ${:.2} | Best ask: ${:.2}", 
-                                         test_id, order_book.bids[0][0], order_book.asks[0][0]);
+                                    info!(
+                                        "💰 ID {} - Best bid: ${:.2} | Best ask: ${:.2}",
+                                        test_id, order_book.bids[0][0], order_book.asks[0][0]
+                                    );
                                 }
-                                
+
                                 // Found a valid ID, no need to test others
                                 break;
                             }
                             Err(e) => {
-                                warn!("⚠️ Get order book for instrument ID {} error: {}", test_id, e);
+                                warn!(
+                                    "⚠️ Get order book for instrument ID {} error: {}",
+                                    test_id, e
+                                );
                             }
                         }
                     }
                 } else {
                     info!("💡 No instruments with IDs found for testing");
                     info!("🧪 Testing with fallback instrument IDs...");
-                    
+
                     // Fallback to some realistic test IDs if no IDs found in instruments
                     let fallback_ids = [1, 2, 3, 4]; // More realistic starting IDs
-                    
+
                     for &test_id in &fallback_ids {
-                        match client.get_order_book_by_instrument_id(test_id, Some(5)).await {
+                        match client
+                            .get_order_book_by_instrument_id(test_id, Some(5))
+                            .await
+                        {
                             Ok(order_book) => {
-                                info!("✅ Order book for instrument ID {} retrieved successfully", test_id);
-                                info!("📊 Instrument: {} - {} bids, {} asks", 
-                                     order_book.instrument_name,
-                                     order_book.bids.len(), 
-                                     order_book.asks.len());
-                                
+                                info!(
+                                    "✅ Order book for instrument ID {} retrieved successfully",
+                                    test_id
+                                );
+                                info!(
+                                    "📊 Instrument: {} - {} bids, {} asks",
+                                    order_book.instrument_name,
+                                    order_book.bids.len(),
+                                    order_book.asks.len()
+                                );
+
                                 if !order_book.bids.is_empty() && !order_book.asks.is_empty() {
-                                    info!("💰 ID {} - Best bid: ${:.2} | Best ask: ${:.2}", 
-                                         test_id, order_book.bids[0][0], order_book.asks[0][0]);
+                                    info!(
+                                        "💰 ID {} - Best bid: ${:.2} | Best ask: ${:.2}",
+                                        test_id, order_book.bids[0][0], order_book.asks[0][0]
+                                    );
                                 }
-                                
+
                                 // Found a valid ID, no need to test others
                                 break;
                             }
@@ -261,49 +328,86 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             if let Some(instrument) = instruments.iter().find(|inst| inst.instrument_id.is_some()) {
                 if let Some(test_id) = instrument.instrument_id {
                     let test_id = test_id as u32;
-                    
+
                     // Test with custom depth
-                    match client.get_order_book_by_instrument_id(test_id, Some(15)).await {
+                    match client
+                        .get_order_book_by_instrument_id(test_id, Some(15))
+                        .await
+                    {
                         Ok(order_book) => {
-                            info!("✅ Order book by ID {} with depth 15 retrieved successfully", test_id);
-                            info!("📊 Instrument: {} - {} bids, {} asks", 
-                                 order_book.instrument_name,
-                                 order_book.bids.len(), 
-                                 order_book.asks.len());
-                            
+                            info!(
+                                "✅ Order book by ID {} with depth 15 retrieved successfully",
+                                test_id
+                            );
+                            info!(
+                                "📊 Instrument: {} - {} bids, {} asks",
+                                order_book.instrument_name,
+                                order_book.bids.len(),
+                                order_book.asks.len()
+                            );
+
                             if order_book.bids.len() > 10 && order_book.asks.len() > 0 {
                                 info!("📈 Deep market analysis:");
-                                let mid_market = (order_book.bids[0][0] + order_book.asks[0][0]) / 2.0;
+                                let mid_market =
+                                    (order_book.bids[0][0] + order_book.asks[0][0]) / 2.0;
                                 info!("   Mid-market price: ${:.2}", mid_market);
-                                
-                                let total_bid_volume: f64 = order_book.bids.iter().map(|bid| bid[1]).sum();
-                                let total_ask_volume: f64 = order_book.asks.iter().map(|ask| ask[1]).sum();
-                                info!("   Total volume - Bids: {:.6}, Asks: {:.6}", total_bid_volume, total_ask_volume);
-                                
-                                let imbalance = (total_bid_volume - total_ask_volume) / (total_bid_volume + total_ask_volume) * 100.0;
-                                info!("   Order book imbalance: {:.2}% (positive = more bids)", imbalance);
+
+                                let total_bid_volume: f64 =
+                                    order_book.bids.iter().map(|bid| bid[1]).sum();
+                                let total_ask_volume: f64 =
+                                    order_book.asks.iter().map(|ask| ask[1]).sum();
+                                info!(
+                                    "   Total volume - Bids: {:.6}, Asks: {:.6}",
+                                    total_bid_volume, total_ask_volume
+                                );
+
+                                let imbalance = (total_bid_volume - total_ask_volume)
+                                    / (total_bid_volume + total_ask_volume)
+                                    * 100.0;
+                                info!(
+                                    "   Order book imbalance: {:.2}% (positive = more bids)",
+                                    imbalance
+                                );
                             }
                         }
                         Err(e) => {
-                            info!("⚠️ Get order book by ID {} with depth error: {}", test_id, e);
-                            info!("💡 This may be expected if the instrument is not currently tradeable");
+                            info!(
+                                "⚠️ Get order book by ID {} with depth error: {}",
+                                test_id, e
+                            );
+                            info!(
+                                "💡 This may be expected if the instrument is not currently tradeable"
+                            );
                         }
                     }
-                    
+
                     // Test with minimal depth (1)
-                    match client.get_order_book_by_instrument_id(test_id, Some(1)).await {
+                    match client
+                        .get_order_book_by_instrument_id(test_id, Some(1))
+                        .await
+                    {
                         Ok(order_book) => {
-                            info!("✅ Order book by ID {} with minimal depth retrieved successfully", test_id);
-                            info!("📊 Instrument: {} - Top level only", order_book.instrument_name);
-                            
+                            info!(
+                                "✅ Order book by ID {} with minimal depth retrieved successfully",
+                                test_id
+                            );
+                            info!(
+                                "📊 Instrument: {} - Top level only",
+                                order_book.instrument_name
+                            );
+
                             if !order_book.bids.is_empty() && !order_book.asks.is_empty() {
-                                info!("💰 Top of book - Bid: ${:.2} | Ask: ${:.2}", 
-                                     order_book.bids[0][0], order_book.asks[0][0]);
+                                info!(
+                                    "💰 Top of book - Bid: ${:.2} | Ask: ${:.2}",
+                                    order_book.bids[0][0], order_book.asks[0][0]
+                                );
                             }
                         }
                         Err(e) => {
                             info!("⚠️ Get order book by ID {} error: {}", test_id, e);
-                            info!("💡 This may be expected if the instrument is not currently tradeable");
+                            info!(
+                                "💡 This may be expected if the instrument is not currently tradeable"
+                            );
                         }
                     }
                 } else {
@@ -320,7 +424,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     // Test with invalid instrument ID to demonstrate error handling
-    match client.get_order_book_by_instrument_id(999999, Some(5)).await {
+    match client
+        .get_order_book_by_instrument_id(999999, Some(5))
+        .await
+    {
         Ok(order_book) => {
             if order_book.bids.is_empty() && order_book.asks.is_empty() {
                 info!("✅ Empty order book for invalid instrument ID (expected behavior)");

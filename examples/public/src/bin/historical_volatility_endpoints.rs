@@ -53,32 +53,39 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         Ok(volatility_data) => {
             info!("✅ Historical volatility for BTC retrieved successfully");
             info!("📊 Found {} volatility data points:", volatility_data.len());
-            
+
             // Display first few data points
             for (i, data_point) in volatility_data.iter().take(5).enumerate() {
                 let timestamp = data_point[0] as u64;
                 let volatility = data_point[1];
-                info!("   {}. Timestamp: {} - Volatility: {:.4}%", 
-                     i + 1,
-                     timestamp,
-                     volatility);
+                info!(
+                    "   {}. Timestamp: {} - Volatility: {:.4}%",
+                    i + 1,
+                    timestamp,
+                    volatility
+                );
             }
-            
+
             if volatility_data.len() > 5 {
-                info!("💡 Showing first 5 of {} volatility data points", volatility_data.len());
+                info!(
+                    "💡 Showing first 5 of {} volatility data points",
+                    volatility_data.len()
+                );
             }
-            
+
             if volatility_data.is_empty() {
                 info!("💡 No historical volatility data available for BTC");
             }
-            
+
             // Calculate and display some basic statistics
             if !volatility_data.is_empty() {
                 let volatilities: Vec<f64> = volatility_data.iter().map(|point| point[1]).collect();
                 let avg_volatility = volatilities.iter().sum::<f64>() / volatilities.len() as f64;
-                let max_volatility = volatilities.iter().fold(f64::NEG_INFINITY, |a, &b| a.max(b));
+                let max_volatility = volatilities
+                    .iter()
+                    .fold(f64::NEG_INFINITY, |a, &b| a.max(b));
                 let min_volatility = volatilities.iter().fold(f64::INFINITY, |a, &b| a.min(b));
-                
+
                 info!("📈 Volatility Statistics:");
                 info!("   Average: {:.4}%", avg_volatility);
                 info!("   Maximum: {:.4}%", max_volatility);
@@ -95,18 +102,23 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     match client.get_historical_volatility("ETH").await {
         Ok(volatility_data) => {
             info!("✅ Historical volatility for ETH retrieved successfully");
-            info!("📊 Found {} ETH volatility data points", volatility_data.len());
-            
+            info!(
+                "📊 Found {} ETH volatility data points",
+                volatility_data.len()
+            );
+
             // Display first few data points for ETH
             for (i, data_point) in volatility_data.iter().take(3).enumerate() {
                 let timestamp = data_point[0] as u64;
                 let volatility = data_point[1];
-                info!("   ETH {}. Volatility: {:.4}% at {}", 
-                     i + 1,
-                     volatility,
-                     timestamp);
+                info!(
+                    "   ETH {}. Volatility: {:.4}% at {}",
+                    i + 1,
+                    volatility,
+                    timestamp
+                );
             }
-            
+
             // Calculate ETH volatility statistics
             if !volatility_data.is_empty() {
                 let volatilities: Vec<f64> = volatility_data.iter().map(|point| point[1]).collect();
@@ -128,7 +140,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             if volatility_data.is_empty() {
                 info!("💡 No volatility data for USDC (expected for stablecoin)");
             } else {
-                info!("📊 Found {} USDC volatility data points", volatility_data.len());
+                info!(
+                    "📊 Found {} USDC volatility data points",
+                    volatility_data.len()
+                );
             }
         }
         Err(e) => {

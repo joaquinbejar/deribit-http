@@ -50,19 +50,30 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     info!("-------------------------");
 
     // Test with BTC USD index
-    match client.get_delivery_prices("btc_usd", Some(5), Some(0)).await {
+    match client
+        .get_delivery_prices("btc_usd", Some(5), Some(0))
+        .await
+    {
         Ok(delivery_prices) => {
             info!("✅ Delivery prices for btc_usd retrieved successfully");
-            info!("📊 Found {} delivery price records:", delivery_prices.data.len());
-            info!("📈 Total records available: {}", delivery_prices.records_total);
-            
+            info!(
+                "📊 Found {} delivery price records:",
+                delivery_prices.data.len()
+            );
+            info!(
+                "📈 Total records available: {}",
+                delivery_prices.records_total
+            );
+
             for (i, price_data) in delivery_prices.data.iter().enumerate() {
-                info!("   {}. Date: {} - Price: ${:.2}", 
-                     i + 1,
-                     price_data.date,
-                     price_data.delivery_price);
+                info!(
+                    "   {}. Date: {} - Price: ${:.2}",
+                    i + 1,
+                    price_data.date,
+                    price_data.delivery_price
+                );
             }
-            
+
             if delivery_prices.data.is_empty() {
                 info!("💡 No delivery price data available for btc_usd");
             }
@@ -73,13 +84,22 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     // Also test with ETH USD index
-    match client.get_delivery_prices("eth_usd", Some(3), Some(0)).await {
+    match client
+        .get_delivery_prices("eth_usd", Some(3), Some(0))
+        .await
+    {
         Ok(delivery_prices) => {
             info!("✅ Delivery prices for eth_usd retrieved successfully");
-            info!("📊 Found {} ETH delivery price records", delivery_prices.data.len());
-            
+            info!(
+                "📊 Found {} ETH delivery price records",
+                delivery_prices.data.len()
+            );
+
             for price_data in &delivery_prices.data {
-                info!("   ETH delivery: {} - ${:.2}", price_data.date, price_data.delivery_price);
+                info!(
+                    "   ETH delivery: {} - ${:.2}",
+                    price_data.date, price_data.delivery_price
+                );
             }
         }
         Err(e) => {
@@ -99,7 +119,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     match client.get_expirations("BTC", "future", None).await {
         Ok(expirations) => {
             info!("✅ Expirations for BTC futures retrieved successfully");
-            
+
             if let Some(futures) = &expirations.future {
                 info!("📊 Found {} BTC future expirations:", futures.len());
                 for (i, expiration) in futures.iter().enumerate() {
@@ -108,7 +128,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             } else {
                 info!("💡 No BTC future expirations found");
             }
-            
+
             if let Some(options) = &expirations.option {
                 info!("📊 Also found {} BTC option expirations", options.len());
             }
@@ -122,15 +142,18 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     match client.get_expirations("ETH", "option", None).await {
         Ok(expirations) => {
             info!("✅ Expirations for ETH options retrieved successfully");
-            
+
             if let Some(options) = &expirations.option {
                 info!("📊 Found {} ETH option expirations:", options.len());
                 for (i, expiration) in options.iter().take(5).enumerate() {
                     info!("   {}. {}", i + 1, expiration);
                 }
-                
+
                 if options.len() > 5 {
-                    info!("💡 Showing first 5 of {} ETH option expirations", options.len());
+                    info!(
+                        "💡 Showing first 5 of {} ETH option expirations",
+                        options.len()
+                    );
                 }
             } else {
                 info!("💡 No ETH option expirations found");
@@ -146,20 +169,23 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     match client.get_expirations("any", "any", None).await {
         Ok(expirations) => {
             info!("✅ All expirations retrieved successfully");
-            
+
             let mut total_expirations = 0;
-            
+
             if let Some(futures) = &expirations.future {
                 info!("📈 Total future expirations: {}", futures.len());
                 total_expirations += futures.len();
             }
-            
+
             if let Some(options) = &expirations.option {
                 info!("📊 Total option expirations: {}", options.len());
                 total_expirations += options.len();
             }
-            
-            info!("🎯 Total expirations across all instruments: {}", total_expirations);
+
+            info!(
+                "🎯 Total expirations across all instruments: {}",
+                total_expirations
+            );
         }
         Err(e) => {
             warn!("⚠️ Get all expirations error: {}", e);
@@ -178,7 +204,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     info!("🎉 Delivery prices and expirations endpoints example completed successfully!");
     info!("💡 Tip: Both endpoints provide essential information for derivatives trading");
-    info!("🔗 Use delivery prices for settlement tracking and expirations for contract lifecycle management");
+    info!(
+        "🔗 Use delivery prices for settlement tracking and expirations for contract lifecycle management"
+    );
 
     Ok(())
 }

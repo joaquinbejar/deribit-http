@@ -260,17 +260,18 @@ impl DeribitHttpClient {
     }
 
     /// Logout and invalidate the current session
-    /// 
+    ///
     /// **Note**: The `/private/logout` endpoint is only available via WebSocket connections
     /// according to the Deribit API documentation. This HTTP client cannot perform logout
     /// operations. Tokens will automatically expire based on their configured expiration time.
-    /// 
+    ///
     /// For applications requiring logout functionality, consider using the Deribit WebSocket API.
     pub async fn logout(&self) -> Result<(), HttpError> {
         Err(HttpError::ConfigError(
             "Logout is only available via WebSocket connections. The /private/logout endpoint \
              cannot be accessed via HTTP. Tokens will expire automatically based on their \
-             configured expiration time.".to_string()
+             configured expiration time."
+                .to_string(),
         ))
     }
 }

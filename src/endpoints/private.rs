@@ -6,7 +6,25 @@ use crate::model::http_types::ApiResponse;
 use serde::{Deserialize, Serialize};
 
 /// Private endpoints implementation
-impl DeribitHttpClient {    pub async fn get_subaccounts(
+impl DeribitHttpClient {
+    /// Get subaccounts
+    ///
+    /// Retrieves the list of subaccounts associated with the main account.
+    ///
+    /// # Arguments
+    ///
+    /// * `with_portfolio` - Include portfolio information (optional)
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use deribit_http::DeribitHttpClient;
+    ///
+    /// let client = DeribitHttpClient::new(true);
+    /// // let subaccounts = client.get_subaccounts(Some(true)).await?;
+    /// // tracing::info!("Found {} subaccounts", subaccounts.len());
+    /// ```
+    pub async fn get_subaccounts(
         &self,
         with_portfolio: Option<bool>,
     ) -> Result<Vec<Subaccount>, HttpError> {
@@ -2162,7 +2180,7 @@ pub struct IndexData {
     /// Bitcoin index price (only for BTC currency)
     #[serde(rename = "BTC")]
     pub btc: Option<f64>,
-    /// Ethereum index price (only for ETH currency) 
+    /// Ethereum index price (only for ETH currency)
     #[serde(rename = "ETH")]
     pub eth: Option<f64>,
     /// USDC index price (only for USDC currency)
