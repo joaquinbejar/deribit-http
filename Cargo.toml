@@ -14,11 +14,7 @@ categories = ["finance", "api-bindings", "web-programming::http-client"]
 [workspace]
 members = [
     "examples/public",
-    "examples/market_data",
-    "examples/order_management",
-    "examples/position_management",
-    "examples/session",
-    "examples/error_handling",
+    "examples/private",
 ]
 
 
@@ -26,12 +22,9 @@ members = [
 deribit-base = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
-async-trait = { workspace = true }
 tracing = { workspace = true }
-tracing-subscriber = { workspace = true }
 rand = { workspace = true }
 base64 = { workspace = true }
-chrono = { workspace = true }
 reqwest = { workspace = true }
 tokio = { workspace = true }
 thiserror = { workspace = true }
@@ -51,12 +44,10 @@ deribit-http = { path = "." }
 #deribit-base = "0.1"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
-async-trait = "0.1"
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 rand = "0.9"
 base64 = "0.22"
-chrono = { version = "0.4", features = ["serde"] }
 reqwest = { version = "0.12", features = ["json", "rustls-tls"] }
 tokio = { version = "1.0", features = ["full"] }
 thiserror = "2.0"
@@ -65,4 +56,3 @@ hmac = "0.12"
 sha2 = "0.10"
 urlencoding = "2.1"
 dotenv = "0.15"
-env_logger = "0.11"

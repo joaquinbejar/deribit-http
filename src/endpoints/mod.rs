@@ -4,9 +4,11 @@ pub mod public;
 // Re-export public endpoint data structures
 pub use public::{
     AprDataPoint, AprHistoryResponse, BookSummary, ContractSizeResponse, Currency, 
-    FundingChartData, FundingDataPoint, HelloResponse, IndexData, IndexPriceData,
-    Instrument, OrderBook, StatusResponse, TestResponse, TickerData, TickerStats, 
-    TradingViewChartData, Trade, WithdrawalPriority,
+    DeliveryPriceData, DeliveryPricesResponse, ExpirationsResponse, FundingChartData, 
+    FundingDataPoint, FundingRateData, HelloResponse, IndexData, IndexPriceData,
+    Instrument, LastTrade, LastTradesResponse, OrderBook, Settlement, SettlementsResponse,
+    StatusResponse, TestResponse, TickerData, TickerStats, TradingViewChartData, Trade, 
+    WithdrawalPriority,
 };
 
 // Re-export private endpoint data structures  

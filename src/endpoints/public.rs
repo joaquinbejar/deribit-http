@@ -1241,6 +1241,852 @@ impl DeribitHttpClient {
             HttpError::InvalidResponse("No TradingView chart data in response".to_string())
         })
     }
+
+    /// Get delivery prices
+    ///
+    /// Retrieves delivery prices for the given index.
+    /// This is a public endpoint that doesn't require authentication.
+    ///
+    /// # Arguments
+    ///
+    /// * `index_name` - Index identifier (e.g., "btc_usd", "eth_usd")
+    /// * `count` - Number of requested items (optional, default 20)
+    /// * `offset` - Offset for pagination (optional, default 0)
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # use deribit_http::DeribitHttpClient;
+    /// # #[tokio::main]
+    /// # async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    /// let client = DeribitHttpClient::new(true); // testnet
+    /// let delivery_prices = client.get_delivery_prices("btc_usd", Some(5), Some(0)).await?;
+    /// for price in delivery_prices.data {
+    ///     println!("Date: {} - Price: {}", price.date, price.delivery_price);
+    /// }
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub async fn get_delivery_prices(
+        &self,
+        index_name: &str,
+        count: Option<u32>,
+        offset: Option<u32>,
+    ) -> Result<DeliveryPricesResponse, HttpError> {
+        let mut url = format!(
+            "{}/public/get_delivery_prices?index_name={}",
+            self.base_url(),
+            urlencoding::encode(index_name)
+        );
+
+        if let Some(count) = count {
+            url.push_str(&format!("&count={}", count));
+        }
+
+        if let Some(offset) = offset {
+            url.push_str(&format!("&offset={}", offset));
+        }
+
+        let response = self
+            .http_client()
+            .get(&url)
+            .send()
+            .await
+            .map_err(|e| HttpError::NetworkError(e.to_string()))?;
+
+        if !response.status().is_success() {
+            let error_text = response
+                .text()
+                .await
+                .unwrap_or_else(|_| "Unknown error".to_string());
+            return Err(HttpError::RequestFailed(format!(
+                "Get delivery prices failed: {}",
+                error_text
+            )));
+        }
+
+        let api_response: ApiResponse<DeliveryPricesResponse> = response
+            .json()
+            .await
+            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
+
+        if let Some(error) = api_response.error {
+            return Err(HttpError::RequestFailed(format!(
+                "API error: {} - {}",
+                error.code, error.message
+            )));
+        }
+
+        api_response.result.ok_or_else(|| {
+            HttpError::InvalidResponse("No delivery prices data in response".to_string())
+        })
+    }
+
+    /// Get expirations
+    ///
+    /// Retrieves expirations for instruments. This method can be used to see instrument expirations.
+    /// This is a public endpoint that doesn't require authentication.
+    ///
+    /// # Arguments
+    ///
+    /// * `currency` - The currency symbol (BTC, ETH, USDC, USDT, any, grouped)
+    /// * `kind` - Instrument kind (future, option, any)
+    /// * `currency_pair` - Currency pair identifier (optional)
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # use deribit_http::DeribitHttpClient;
+    /// # #[tokio::main]
+    /// # async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    /// let client = DeribitHttpClient::new(true); // testnet
+    /// let expirations = client.get_expirations("BTC", "future", None).await?;
+    /// if let Some(futures) = expirations.get("future") {
+    ///     for expiration in futures {
+    ///         println!("Future expiration: {}", expiration);
+    ///     }
+    /// }
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub async fn get_expirations(
+        &self,
+        currency: &str,
+        kind: &str,
+        currency_pair: Option<&str>,
+    ) -> Result<ExpirationsResponse, HttpError> {
+        let mut url = format!(
+            "{}/public/get_expirations?currency={}&kind={}",
+            self.base_url(),
+            urlencoding::encode(currency),
+            urlencoding::encode(kind)
+        );
+
+        if let Some(currency_pair) = currency_pair {
+            url.push_str(&format!("&currency_pair={}", urlencoding::encode(currency_pair)));
+        }
+
+        let response = self
+            .http_client()
+            .get(&url)
+            .send()
+            .await
+            .map_err(|e| HttpError::NetworkError(e.to_string()))?;
+
+        if !response.status().is_success() {
+            let error_text = response
+                .text()
+                .await
+                .unwrap_or_else(|_| "Unknown error".to_string());
+            return Err(HttpError::RequestFailed(format!(
+                "Get expirations failed: {}",
+                error_text
+            )));
+        }
+
+        let api_response: ApiResponse<ExpirationsResponse> = response
+            .json()
+            .await
+            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
+
+        if let Some(error) = api_response.error {
+            return Err(HttpError::RequestFailed(format!(
+                "API error: {} - {}",
+                error.code, error.message
+            )));
+        }
+
+        api_response.result.ok_or_else(|| {
+            HttpError::InvalidResponse("No expirations data in response".to_string())
+        })
+    }
+
+    /// Get funding rate history
+    ///
+    /// Retrieves hourly historical interest rate for requested PERPETUAL instrument.
+    /// This is a public endpoint that doesn't require authentication.
+    ///
+    /// # Arguments
+    ///
+    /// * `instrument_name` - Instrument name
+    /// * `start_timestamp` - The earliest timestamp to return result from (milliseconds since UNIX epoch)
+    /// * `end_timestamp` - The most recent timestamp to return result from (milliseconds since UNIX epoch)
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # use deribit_http::DeribitHttpClient;
+    /// # #[tokio::main]
+    /// # async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    /// let client = DeribitHttpClient::new(true); // testnet
+    /// let funding_history = client.get_funding_rate_history("BTC-PERPETUAL", 1569888000000, 1569902400000).await?;
+    /// for rate in funding_history {
+    ///     println!("Timestamp: {} - Interest 8h: {}", rate.timestamp, rate.interest_8h);
+    /// }
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub async fn get_funding_rate_history(
+        &self,
+        instrument_name: &str,
+        start_timestamp: u64,
+        end_timestamp: u64,
+    ) -> Result<Vec<FundingRateData>, HttpError> {
+        let url = format!(
+            "{}/public/get_funding_rate_history?instrument_name={}&start_timestamp={}&end_timestamp={}",
+            self.base_url(),
+            urlencoding::encode(instrument_name),
+            start_timestamp,
+            end_timestamp
+        );
+
+        let response = self
+            .http_client()
+            .get(&url)
+            .send()
+            .await
+            .map_err(|e| HttpError::NetworkError(e.to_string()))?;
+
+        if !response.status().is_success() {
+            let error_text = response
+                .text()
+                .await
+                .unwrap_or_else(|_| "Unknown error".to_string());
+            return Err(HttpError::RequestFailed(format!(
+                "Get funding rate history failed: {}",
+                error_text
+            )));
+        }
+
+        let api_response: ApiResponse<Vec<FundingRateData>> = response
+            .json()
+            .await
+            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
+
+        if let Some(error) = api_response.error {
+            return Err(HttpError::RequestFailed(format!(
+                "API error: {} - {}",
+                error.code, error.message
+            )));
+        }
+
+        api_response.result.ok_or_else(|| {
+            HttpError::InvalidResponse("No funding rate history data in response".to_string())
+        })
+    }
+
+    /// Get funding rate value
+    ///
+    /// Retrieves interest rate value for requested period. Applicable only for PERPETUAL instruments.
+    /// This is a public endpoint that doesn't require authentication.
+    ///
+    /// # Arguments
+    ///
+    /// * `instrument_name` - Instrument name
+    /// * `start_timestamp` - The earliest timestamp to return result from (milliseconds since UNIX epoch)
+    /// * `end_timestamp` - The most recent timestamp to return result from (milliseconds since UNIX epoch)
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # use deribit_http::DeribitHttpClient;
+    /// # #[tokio::main]
+    /// # async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    /// let client = DeribitHttpClient::new(true); // testnet
+    /// let funding_rate = client.get_funding_rate_value("BTC-PERPETUAL", 1569888000000, 1569974400000).await?;
+    /// println!("Funding rate for period: {}", funding_rate);
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub async fn get_funding_rate_value(
+        &self,
+        instrument_name: &str,
+        start_timestamp: u64,
+        end_timestamp: u64,
+    ) -> Result<f64, HttpError> {
+        let url = format!(
+            "{}/public/get_funding_rate_value?instrument_name={}&start_timestamp={}&end_timestamp={}",
+            self.base_url(),
+            urlencoding::encode(instrument_name),
+            start_timestamp,
+            end_timestamp
+        );
+
+        let response = self
+            .http_client()
+            .get(&url)
+            .send()
+            .await
+            .map_err(|e| HttpError::NetworkError(e.to_string()))?;
+
+        if !response.status().is_success() {
+            let error_text = response
+                .text()
+                .await
+                .unwrap_or_else(|_| "Unknown error".to_string());
+            return Err(HttpError::RequestFailed(format!(
+                "Get funding rate value failed: {}",
+                error_text
+            )));
+        }
+
+        let api_response: ApiResponse<f64> = response
+            .json()
+            .await
+            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
+
+        if let Some(error) = api_response.error {
+            return Err(HttpError::RequestFailed(format!(
+                "API error: {} - {}",
+                error.code, error.message
+            )));
+        }
+
+        api_response.result.ok_or_else(|| {
+            HttpError::InvalidResponse("No funding rate value in response".to_string())
+        })
+    }
+
+    /// Get last settlements by currency
+    ///
+    /// Retrieves historical settlement, delivery and bankruptcy events coming from all instruments within a given currency.
+    /// This is a public endpoint that doesn't require authentication.
+    ///
+    /// # Arguments
+    ///
+    /// * `currency` - The currency symbol (BTC, ETH, USDC, USDT, EURR)
+    /// * `settlement_type` - Settlement type (settlement, delivery, bankruptcy) - optional
+    /// * `count` - Number of requested items (optional, default 20)
+    /// * `continuation` - Continuation token for pagination (optional)
+    /// * `search_start_timestamp` - The latest timestamp to return result from (optional)
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # use deribit_http::DeribitHttpClient;
+    /// # #[tokio::main]
+    /// # async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    /// let client = DeribitHttpClient::new(true); // testnet
+    /// let settlements = client.get_last_settlements_by_currency("BTC", Some("delivery"), Some(5), None, None).await?;
+    /// for settlement in settlements.settlements {
+    ///     println!("Settlement: {} at {}", settlement.instrument_name.unwrap_or("N/A".to_string()), settlement.timestamp);
+    /// }
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub async fn get_last_settlements_by_currency(
+        &self,
+        currency: &str,
+        settlement_type: Option<&str>,
+        count: Option<u32>,
+        continuation: Option<&str>,
+        search_start_timestamp: Option<u64>,
+    ) -> Result<SettlementsResponse, HttpError> {
+        let mut url = format!(
+            "{}/public/get_last_settlements_by_currency?currency={}",
+            self.base_url(),
+            urlencoding::encode(currency)
+        );
+
+        if let Some(settlement_type) = settlement_type {
+            url.push_str(&format!("&type={}", urlencoding::encode(settlement_type)));
+        }
+
+        if let Some(count) = count {
+            url.push_str(&format!("&count={}", count));
+        }
+
+        if let Some(continuation) = continuation {
+            url.push_str(&format!("&continuation={}", urlencoding::encode(continuation)));
+        }
+
+        if let Some(search_start_timestamp) = search_start_timestamp {
+            url.push_str(&format!("&search_start_timestamp={}", search_start_timestamp));
+        }
+
+        let response = self
+            .http_client()
+            .get(&url)
+            .send()
+            .await
+            .map_err(|e| HttpError::NetworkError(e.to_string()))?;
+
+        if !response.status().is_success() {
+            let error_text = response
+                .text()
+                .await
+                .unwrap_or_else(|_| "Unknown error".to_string());
+            return Err(HttpError::RequestFailed(format!(
+                "Get last settlements by currency failed: {}",
+                error_text
+            )));
+        }
+
+        let api_response: ApiResponse<SettlementsResponse> = response
+            .json()
+            .await
+            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
+
+        if let Some(error) = api_response.error {
+            return Err(HttpError::RequestFailed(format!(
+                "API error: {} - {}",
+                error.code, error.message
+            )));
+        }
+
+        api_response.result.ok_or_else(|| {
+            HttpError::InvalidResponse("No settlements data in response".to_string())
+        })
+    }
+
+    /// Get last settlements by instrument
+    ///
+    /// Retrieves historical public settlement, delivery and bankruptcy events filtered by instrument name.
+    /// This is a public endpoint that doesn't require authentication.
+    ///
+    /// # Arguments
+    ///
+    /// * `instrument_name` - Instrument name
+    /// * `settlement_type` - Settlement type (settlement, delivery, bankruptcy) - optional
+    /// * `count` - Number of requested items (optional, default 20)
+    /// * `continuation` - Continuation token for pagination (optional)
+    /// * `search_start_timestamp` - The latest timestamp to return result from (optional)
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # use deribit_http::DeribitHttpClient;
+    /// # #[tokio::main]
+    /// # async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    /// let client = DeribitHttpClient::new(true); // testnet
+    /// let settlements = client.get_last_settlements_by_instrument("BTC-PERPETUAL", Some("settlement"), Some(5), None, None).await?;
+    /// for settlement in settlements.settlements {
+    ///     println!("Settlement: {} PnL", settlement.profit_loss.unwrap_or(0.0));
+    /// }
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub async fn get_last_settlements_by_instrument(
+        &self,
+        instrument_name: &str,
+        settlement_type: Option<&str>,
+        count: Option<u32>,
+        continuation: Option<&str>,
+        search_start_timestamp: Option<u64>,
+    ) -> Result<SettlementsResponse, HttpError> {
+        let mut url = format!(
+            "{}/public/get_last_settlements_by_instrument?instrument_name={}",
+            self.base_url(),
+            urlencoding::encode(instrument_name)
+        );
+
+        if let Some(settlement_type) = settlement_type {
+            url.push_str(&format!("&type={}", urlencoding::encode(settlement_type)));
+        }
+
+        if let Some(count) = count {
+            url.push_str(&format!("&count={}", count));
+        }
+
+        if let Some(continuation) = continuation {
+            url.push_str(&format!("&continuation={}", urlencoding::encode(continuation)));
+        }
+
+        if let Some(search_start_timestamp) = search_start_timestamp {
+            url.push_str(&format!("&search_start_timestamp={}", search_start_timestamp));
+        }
+
+        let response = self
+            .http_client()
+            .get(&url)
+            .send()
+            .await
+            .map_err(|e| HttpError::NetworkError(e.to_string()))?;
+
+        if !response.status().is_success() {
+            let error_text = response
+                .text()
+                .await
+                .unwrap_or_else(|_| "Unknown error".to_string());
+            return Err(HttpError::RequestFailed(format!(
+                "Get last settlements by instrument failed: {}",
+                error_text
+            )));
+        }
+
+        let api_response: ApiResponse<SettlementsResponse> = response
+            .json()
+            .await
+            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
+
+        if let Some(error) = api_response.error {
+            return Err(HttpError::RequestFailed(format!(
+                "API error: {} - {}",
+                error.code, error.message
+            )));
+        }
+
+        api_response.result.ok_or_else(|| {
+            HttpError::InvalidResponse("No settlements data in response".to_string())
+        })
+    }
+
+    /// Get last trades by currency
+    ///
+    /// Retrieves the latest trades that have occurred for instruments in a specific currency.
+    /// This is a public endpoint that doesn't require authentication.
+    ///
+    /// # Arguments
+    ///
+    /// * `currency` - The currency symbol (BTC, ETH, USDC, USDT, EURR)
+    /// * `kind` - Instrument kind (future, option, spot, etc.) - optional
+    /// * `count` - Number of requested items (optional, default 10)
+    /// * `include_old` - Include trades older than 7 days (optional)
+    /// * `sorting` - Direction of results sorting (optional)
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # use deribit_http::DeribitHttpClient;
+    /// # #[tokio::main]
+    /// # async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    /// let client = DeribitHttpClient::new(true); // testnet
+    /// let trades = client.get_last_trades_by_currency("BTC", Some("future"), Some(10), Some(false), Some("desc")).await?;
+    /// for trade in trades.trades {
+    ///     println!("Trade: {} {} at {}", trade.amount, trade.instrument_name, trade.price);
+    /// }
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub async fn get_last_trades_by_currency(
+        &self,
+        currency: &str,
+        kind: Option<&str>,
+        count: Option<u32>,
+        include_old: Option<bool>,
+        sorting: Option<&str>,
+    ) -> Result<LastTradesResponse, HttpError> {
+        let mut url = format!(
+            "{}/public/get_last_trades_by_currency?currency={}",
+            self.base_url(),
+            urlencoding::encode(currency)
+        );
+
+        if let Some(kind) = kind {
+            url.push_str(&format!("&kind={}", urlencoding::encode(kind)));
+        }
+
+        if let Some(count) = count {
+            url.push_str(&format!("&count={}", count));
+        }
+
+        if let Some(include_old) = include_old {
+            url.push_str(&format!("&include_old={}", include_old));
+        }
+
+        if let Some(sorting) = sorting {
+            url.push_str(&format!("&sorting={}", urlencoding::encode(sorting)));
+        }
+
+        let response = self
+            .http_client()
+            .get(&url)
+            .send()
+            .await
+            .map_err(|e| HttpError::NetworkError(e.to_string()))?;
+
+        if !response.status().is_success() {
+            let error_text = response
+                .text()
+                .await
+                .unwrap_or_else(|_| "Unknown error".to_string());
+            return Err(HttpError::RequestFailed(format!(
+                "Get last trades by currency failed: {}",
+                error_text
+            )));
+        }
+
+        let api_response: ApiResponse<LastTradesResponse> = response
+            .json()
+            .await
+            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
+
+        if let Some(error) = api_response.error {
+            return Err(HttpError::RequestFailed(format!(
+                "API error: {} - {}",
+                error.code, error.message
+            )));
+        }
+
+        api_response.result.ok_or_else(|| {
+            HttpError::InvalidResponse("No trades data in response".to_string())
+        })
+    }
+
+    /// Get last trades by currency and time
+    ///
+    /// Retrieves the latest trades that have occurred for instruments in a specific currency within a time range.
+    /// This is a public endpoint that doesn't require authentication.
+    ///
+    /// # Arguments
+    ///
+    /// * `currency` - The currency symbol (BTC, ETH, USDC, USDT, EURR)
+    /// * `start_timestamp` - The earliest timestamp to return result from (milliseconds since UNIX epoch)
+    /// * `end_timestamp` - The most recent timestamp to return result from (milliseconds since UNIX epoch)
+    /// * `kind` - Instrument kind (future, option, spot, etc.) - optional
+    /// * `count` - Number of requested items (optional, default 10)
+    /// * `include_old` - Include trades older than 7 days (optional)
+    /// * `sorting` - Direction of results sorting (optional)
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # use deribit_http::DeribitHttpClient;
+    /// # #[tokio::main]
+    /// # async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    /// let client = DeribitHttpClient::new(true); // testnet
+    /// let trades = client.get_last_trades_by_currency_and_time("BTC", 1569888000000, 1569974400000, Some("future"), Some(10), Some(false), Some("desc")).await?;
+    /// for trade in trades.trades {
+    ///     println!("Trade: {} {} at {}", trade.amount, trade.instrument_name, trade.price);
+    /// }
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub async fn get_last_trades_by_currency_and_time(
+        &self,
+        currency: &str,
+        start_timestamp: u64,
+        end_timestamp: u64,
+        kind: Option<&str>,
+        count: Option<u32>,
+        include_old: Option<bool>,
+        sorting: Option<&str>,
+    ) -> Result<LastTradesResponse, HttpError> {
+        let mut url = format!(
+            "{}/public/get_last_trades_by_currency_and_time?currency={}&start_timestamp={}&end_timestamp={}",
+            self.base_url(),
+            urlencoding::encode(currency),
+            start_timestamp,
+            end_timestamp
+        );
+
+        if let Some(kind) = kind {
+            url.push_str(&format!("&kind={}", urlencoding::encode(kind)));
+        }
+
+        if let Some(count) = count {
+            url.push_str(&format!("&count={}", count));
+        }
+
+        if let Some(include_old) = include_old {
+            url.push_str(&format!("&include_old={}", include_old));
+        }
+
+        if let Some(sorting) = sorting {
+            url.push_str(&format!("&sorting={}", urlencoding::encode(sorting)));
+        }
+
+        let response = self
+            .http_client()
+            .get(&url)
+            .send()
+            .await
+            .map_err(|e| HttpError::NetworkError(e.to_string()))?;
+
+        if !response.status().is_success() {
+            let error_text = response
+                .text()
+                .await
+                .unwrap_or_else(|_| "Unknown error".to_string());
+            return Err(HttpError::RequestFailed(format!(
+                "Get last trades by currency and time failed: {}",
+                error_text
+            )));
+        }
+
+        let api_response: ApiResponse<LastTradesResponse> = response
+            .json()
+            .await
+            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
+
+        if let Some(error) = api_response.error {
+            return Err(HttpError::RequestFailed(format!(
+                "API error: {} - {}",
+                error.code, error.message
+            )));
+        }
+
+        api_response.result.ok_or_else(|| {
+            HttpError::InvalidResponse("No trades data in response".to_string())
+        })
+    }
+
+    /// Get last trades by instrument and time
+    ///
+    /// Retrieves the latest trades that have occurred for a specific instrument within a time range.
+    /// This is a public endpoint that doesn't require authentication.
+    ///
+    /// # Arguments
+    ///
+    /// * `instrument_name` - Instrument name
+    /// * `start_timestamp` - The earliest timestamp to return result from (milliseconds since UNIX epoch)
+    /// * `end_timestamp` - The most recent timestamp to return result from (milliseconds since UNIX epoch)
+    /// * `count` - Number of requested items (optional, default 10)
+    /// * `include_old` - Include trades older than 7 days (optional)
+    /// * `sorting` - Direction of results sorting (optional)
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # use deribit_http::DeribitHttpClient;
+    /// # #[tokio::main]
+    /// # async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    /// let client = DeribitHttpClient::new(true); // testnet
+    /// let trades = client.get_last_trades_by_instrument_and_time("BTC-PERPETUAL", 1569888000000, 1569974400000, Some(10), Some(false), Some("desc")).await?;
+    /// for trade in trades.trades {
+    ///     println!("Trade: {} at {} ({})", trade.amount, trade.price, trade.direction);
+    /// }
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub async fn get_last_trades_by_instrument_and_time(
+        &self,
+        instrument_name: &str,
+        start_timestamp: u64,
+        end_timestamp: u64,
+        count: Option<u32>,
+        include_old: Option<bool>,
+        sorting: Option<&str>,
+    ) -> Result<LastTradesResponse, HttpError> {
+        let mut url = format!(
+            "{}/public/get_last_trades_by_instrument_and_time?instrument_name={}&start_timestamp={}&end_timestamp={}",
+            self.base_url(),
+            urlencoding::encode(instrument_name),
+            start_timestamp,
+            end_timestamp
+        );
+
+        if let Some(count) = count {
+            url.push_str(&format!("&count={}", count));
+        }
+
+        if let Some(include_old) = include_old {
+            url.push_str(&format!("&include_old={}", include_old));
+        }
+
+        if let Some(sorting) = sorting {
+            url.push_str(&format!("&sorting={}", urlencoding::encode(sorting)));
+        }
+
+        let response = self
+            .http_client()
+            .get(&url)
+            .send()
+            .await
+            .map_err(|e| HttpError::NetworkError(e.to_string()))?;
+
+        if !response.status().is_success() {
+            let error_text = response
+                .text()
+                .await
+                .unwrap_or_else(|_| "Unknown error".to_string());
+            return Err(HttpError::RequestFailed(format!(
+                "Get last trades by instrument and time failed: {}",
+                error_text
+            )));
+        }
+
+        let api_response: ApiResponse<LastTradesResponse> = response
+            .json()
+            .await
+            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
+
+        if let Some(error) = api_response.error {
+            return Err(HttpError::RequestFailed(format!(
+                "API error: {} - {}",
+                error.code, error.message
+            )));
+        }
+
+        api_response.result.ok_or_else(|| {
+            HttpError::InvalidResponse("No trades data in response".to_string())
+        })
+    }
+
+    /// Get order book by instrument ID
+    ///
+    /// Retrieves the order book for the specified instrument by its ID.
+    /// This is a public endpoint that doesn't require authentication.
+    ///
+    /// # Arguments
+    ///
+    /// * `instrument_id` - Instrument ID
+    /// * `depth` - The number of entries to return for bid and ask order book entries (optional)
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # use deribit_http::DeribitHttpClient;
+    /// # #[tokio::main]
+    /// # async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    /// let client = DeribitHttpClient::new(true); // testnet
+    /// let order_book = client.get_order_book_by_instrument_id(42, Some(5)).await?;
+    /// println!("Order book for {}: {} bids, {} asks", 
+    ///          order_book.instrument_name, 
+    ///          order_book.bids.len(), 
+    ///          order_book.asks.len());
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub async fn get_order_book_by_instrument_id(
+        &self,
+        instrument_id: u32,
+        depth: Option<u32>,
+    ) -> Result<OrderBook, HttpError> {
+        let mut url = format!(
+            "{}/public/get_order_book_by_instrument_id?instrument_id={}",
+            self.base_url(),
+            instrument_id
+        );
+
+        if let Some(depth) = depth {
+            url.push_str(&format!("&depth={}", depth));
+        }
+
+        let response = self
+            .http_client()
+            .get(&url)
+            .send()
+            .await
+            .map_err(|e| HttpError::NetworkError(e.to_string()))?;
+
+        if !response.status().is_success() {
+            let error_text = response
+                .text()
+                .await
+                .unwrap_or_else(|_| "Unknown error".to_string());
+            return Err(HttpError::RequestFailed(format!(
+                "Get order book by instrument ID failed: {}",
+                error_text
+            )));
+        }
+
+        let api_response: ApiResponse<OrderBook> = response
+            .json()
+            .await
+            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
+
+        if let Some(error) = api_response.error {
+            return Err(HttpError::RequestFailed(format!(
+                "API error: {} - {}",
+                error.code, error.message
+            )));
+        }
+
+        api_response.result.ok_or_else(|| {
+            HttpError::InvalidResponse("No order book data in response".to_string())
+        })
+    }
 }
 
 /// Public endpoint data structures
@@ -1417,9 +2263,21 @@ pub struct TickerData {
     /// Mark price
     pub mark_price: f64,
     /// Open interest
-    pub open_interest: f64,
+    pub open_interest: Option<f64>,
     /// 24h statistics
     pub stats: TickerStats,
+    /// Timestamp
+    pub timestamp: Option<u64>,
+    /// Market state
+    pub state: Option<String>,
+    /// Index price
+    pub index_price: Option<f64>,
+    /// Instrument name
+    pub instrument_name: Option<String>,
+    /// Minimum price
+    pub min_price: Option<f64>,
+    /// Maximum price
+    pub max_price: Option<f64>,
 }
 
 /// Ticker statistics structure
@@ -1433,6 +2291,10 @@ pub struct TickerStats {
     pub low: Option<f64>,
     /// 24h high price
     pub high: Option<f64>,
+    /// Volume in USD
+    pub volume_usd: Option<f64>,
+    /// Notional volume
+    pub volume_notional: Option<f64>,
 }
 
 /// Order book structure
@@ -1446,17 +2308,74 @@ pub struct OrderBook {
     pub instrument_name: String,
 }
 
+/// Tick size step structure
+#[derive(Clone, Serialize, Deserialize)]
+pub struct TickSizeStep {
+    /// Tick size for this step
+    pub tick_size: f64,
+    /// Price threshold above which this tick size applies
+    pub above_price: f64,
+}
+
 /// Instrument structure
 #[derive(Clone, Serialize, Deserialize)]
 pub struct Instrument {
     /// Instrument name
     pub instrument_name: String,
     /// Contract size
-    pub contract_size: i32,
+    pub contract_size: f64,
     /// Creation timestamp
     pub creation_timestamp: u64,
     /// Expiration timestamp
     pub expiration_timestamp: Option<u64>,
+    /// Price index
+    pub price_index: Option<String>,
+    /// RFQ (Request for Quote) enabled
+    pub rfq: Option<bool>,
+    /// Instrument kind (future, option, spot)
+    pub kind: String,
+    /// Maker commission rate
+    pub maker_commission: f64,
+    /// Taker commission rate
+    pub taker_commission: f64,
+    /// Instrument type (linear, reversed)
+    pub instrument_type: Option<String>,
+    /// Is the instrument active
+    pub is_active: bool,
+    /// Tick size
+    pub tick_size: f64,
+    /// Instrument ID
+    pub instrument_id: Option<u64>,
+    /// Settlement period
+    pub settlement_period: Option<String>,
+    /// Minimum trade amount
+    pub min_trade_amount: f64,
+    /// Future type (linear, reversed)
+    pub future_type: Option<String>,
+    /// Maximum leverage
+    pub max_leverage: Option<i32>,
+    /// Maximum liquidation commission
+    pub max_liquidation_commission: Option<f64>,
+    /// Block trade commission
+    pub block_trade_commission: Option<f64>,
+    /// Block trade minimum trade amount
+    pub block_trade_min_trade_amount: Option<f64>,
+    /// Block trade tick size
+    pub block_trade_tick_size: Option<f64>,
+    /// Settlement currency
+    pub settlement_currency: Option<String>,
+    /// Base currency
+    pub base_currency: String,
+    /// Counter currency
+    pub counter_currency: Option<String>,
+    /// Quote currency
+    pub quote_currency: Option<String>,
+    /// Tick size steps
+    pub tick_size_steps: Vec<TickSizeStep>,
+    /// Option type (call, put) - only for options
+    pub option_type: Option<String>,
+    /// Strike price - only for options
+    pub strike: Option<f64>,
 }
 
 /// Trade structure
@@ -1513,17 +2432,142 @@ pub struct TradingViewChartData {
     pub ticks: Vec<u64>,
 }
 
+/// Delivery prices response structure
+#[derive(Clone, Serialize, Deserialize)]
+pub struct DeliveryPricesResponse {
+    /// Array of delivery price data
+    pub data: Vec<DeliveryPriceData>,
+    /// Total number of available records
+    pub records_total: u32,
+}
+
+/// Delivery price data structure
+#[derive(Clone, Serialize, Deserialize)]
+pub struct DeliveryPriceData {
+    /// The event date with year, month and day
+    pub date: String,
+    /// The settlement price for the instrument
+    pub delivery_price: f64,
+}
+
+/// Expirations response structure (using HashMap for flexible structure)
+#[derive(Clone, Serialize, Deserialize)]
+pub struct ExpirationsResponse {
+    /// Future expirations
+    pub future: Option<Vec<String>>,
+    /// Option expirations
+    pub option: Option<Vec<String>>,
+}
+
+/// Funding rate data structure
+#[derive(Clone, Serialize, Deserialize)]
+pub struct FundingRateData {
+    /// Timestamp in milliseconds since Unix epoch
+    pub timestamp: u64,
+    /// Index price
+    pub index_price: f64,
+    /// Previous index price
+    pub prev_index_price: f64,
+    /// Interest rate for 8 hours
+    pub interest_8h: f64,
+    /// Interest rate for 1 hour
+    pub interest_1h: f64,
+}
+
+/// Settlements response structure
+#[derive(Clone, Serialize, Deserialize)]
+pub struct SettlementsResponse {
+    /// Array of settlements
+    pub settlements: Vec<Settlement>,
+    /// Continuation token for pagination
+    pub continuation: Option<String>,
+}
+
+/// Settlement structure
+#[derive(Clone, Serialize, Deserialize)]
+pub struct Settlement {
+    /// Settlement type (settlement, delivery, bankruptcy)
+    #[serde(rename = "type")]
+    pub settlement_type: String,
+    /// Timestamp in milliseconds since Unix epoch
+    pub timestamp: u64,
+    /// Total value of session profit and losses (in base currency)
+    pub session_profit_loss: f64,
+    /// Profit and loss (in base currency; settlement and delivery only)
+    pub profit_loss: Option<f64>,
+    /// Position size (in quote currency; settlement and delivery only)
+    pub position: Option<f64>,
+    /// Mark price for at the settlement time (in quote currency; settlement and delivery only)
+    pub mark_price: Option<f64>,
+    /// Instrument name (settlement and delivery only)
+    pub instrument_name: Option<String>,
+    /// Underlying index price at time of event (in quote currency; settlement and delivery only)
+    pub index_price: Option<f64>,
+    /// Funded amount (bankruptcy only)
+    pub funded: Option<f64>,
+    /// Funding (in base currency; settlement for perpetual product only)
+    pub funding: Option<f64>,
+    /// Value of session bankruptcy (in base currency; bankruptcy only)
+    pub session_bankruptcy: Option<f64>,
+    /// Total amount of paid taxes/fees (in base currency; bankruptcy only)
+    pub session_tax: Option<f64>,
+    /// Rate of paid taxes/fees (in base currency; bankruptcy only)
+    pub session_tax_rate: Option<f64>,
+    /// The amount of the socialized losses (in base currency; bankruptcy only)
+    pub socialized: Option<f64>,
+}
+
+/// Last trades response structure
+#[derive(Clone, Serialize, Deserialize)]
+pub struct LastTradesResponse {
+    /// Array of trades
+    pub trades: Vec<LastTrade>,
+    /// Whether there are more trades available
+    pub has_more: Option<bool>,
+}
+
+/// Last trade structure
+#[derive(Clone, Serialize, Deserialize)]
+pub struct LastTrade {
+    /// Trade ID
+    pub trade_id: String,
+    /// Trade sequence number
+    pub trade_seq: u64,
+    /// Instrument name
+    pub instrument_name: String,
+    /// Trade price
+    pub price: f64,
+    /// Trade amount
+    pub amount: f64,
+    /// Trade direction (buy/sell)
+    pub direction: String,
+    /// Timestamp in milliseconds since Unix epoch
+    pub timestamp: u64,
+    /// Index price at trade time
+    pub index_price: Option<f64>,
+    /// Mark price at trade time
+    pub mark_price: Option<f64>,
+    /// Mark implied volatility (for options)
+    pub mark_iv: Option<f64>,
+    /// Tick direction
+    pub tick_direction: i32,
+}
+
 // Implement Display and Debug traits using macros from deribit-base
 deribit_base::impl_json_display!(
     Currency, IndexData, WithdrawalPriority, IndexPriceData, BookSummary, 
     ContractSizeResponse, TestResponse, HelloResponse, StatusResponse,
     AprHistoryResponse, AprDataPoint, TickerData, TickerStats, OrderBook,
-    Instrument, Trade, FundingChartData, FundingDataPoint, TradingViewChartData
+    Instrument, Trade, FundingChartData, FundingDataPoint, TradingViewChartData,
+    DeliveryPricesResponse, DeliveryPriceData, ExpirationsResponse, FundingRateData,
+    SettlementsResponse, Settlement, LastTradesResponse, LastTrade
 );
 
 deribit_base::impl_json_debug_pretty!(
     Currency, IndexData, WithdrawalPriority, IndexPriceData, BookSummary, 
     ContractSizeResponse, TestResponse, HelloResponse, StatusResponse,
     AprHistoryResponse, AprDataPoint, TickerData, TickerStats, OrderBook,
-    Instrument, Trade, FundingChartData, FundingDataPoint, TradingViewChartData
+    Instrument, Trade, FundingChartData, FundingDataPoint, TradingViewChartData,
+    DeliveryPricesResponse, DeliveryPriceData, ExpirationsResponse, FundingRateData,
+    SettlementsResponse, Settlement, LastTradesResponse, LastTrade
 );
