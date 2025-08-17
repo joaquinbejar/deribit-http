@@ -33,10 +33,7 @@ hmac = { workspace = true }
 sha2 = { workspace = true }
 urlencoding = { workspace = true }
 
-[dev-dependencies]
-dotenv = "0.15"
-serial_test = "3.0"
-tracing-subscriber = { workspace = true }
+
 
 [workspace.dependencies]
 deribit-base = { path = "../deribit-base" }

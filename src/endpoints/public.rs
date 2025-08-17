@@ -1336,22 +1336,6 @@ impl DeribitHttpClient {
     /// * `kind` - Instrument kind (future, option, any)
     /// * `currency_pair` - Currency pair identifier (optional)
     ///
-    /// # Examples
-    ///
-    /// ```rust
-    /// # use deribit_http::DeribitHttpClient;
-    /// # #[tokio::main]
-    /// # async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    /// let client = DeribitHttpClient::new(true); // testnet
-    /// let expirations = client.get_expirations("BTC", "future", None).await?;
-    /// if let Some(futures) = expirations.get("future") {
-    ///     for expiration in futures {
-    ///         println!("Future expiration: {}", expiration);
-    ///     }
-    /// }
-    /// # Ok(())
-    /// # }
-    /// ```
     pub async fn get_expirations(
         &self,
         currency: &str,
