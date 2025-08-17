@@ -89,37 +89,119 @@ async fn main() -> Result<(), HttpError> {
     info!("🔄 2. TOKEN EXCHANGE FOR DIFFERENT SUBJECT_ID");
     info!("----------------------------------------------");
 
-    if let Some(refresh_token) = &initial_token.refresh_token {
-        // Use subject_id 10 as example (subaccount)
-        let subject_id = 10u64;
-        let custom_scope = Some("session:test_exchange trade:read_write");
+    // Check for subaccount credentials in environment variables
+    let sub_client_id = env::var("DERIBIT_SUB_CLIENT_ID").ok();
+    let sub_client_secret = env::var("DERIBIT_SUB_CLIENT_SECRET").ok();
 
-        match client
-            .exchange_token(refresh_token, subject_id, custom_scope)
-            .await
-        {
-            Ok(exchanged_token) => {
-                info!("✅ Token exchange successful");
-                info!("🎯 Subject ID: {}", subject_id);
-                info!("📄 Token type: {}", exchanged_token.token_type);
-                info!("⏰ Expires in: {} seconds", exchanged_token.expires_in);
-                info!(
-                    "🔑 New access token: {}...",
-                    &exchanged_token.access_token[..20]
-                );
-                info!("🎯 New scope: {}", exchanged_token.scope);
-                println!();
+    if let (Some(sub_id), Some(sub_secret)) = (&sub_client_id, &sub_client_secret) {
+        info!("🔑 Found subaccount credentials, authenticating with subaccount");
+        info!("📋 Sub Client ID: {}...", &sub_id[..8.min(sub_id.len())]);
+        
+        // Authenticate with subaccount credentials
+        match client.authenticate_oauth2(sub_id, sub_secret).await {
+            Ok(sub_token) => {
+                info!("✅ Subaccount OAuth2 authentication successful");
+                info!("📄 Sub Token type: {}", sub_token.token_type);
+                info!("⏰ Sub Expires in: {} seconds", sub_token.expires_in);
+                info!("🔑 Sub Access token: {}...", &sub_token.access_token[..20]);
+                info!("🎯 Sub Scope: {}", sub_token.scope);
+
+                if let Some(sub_refresh_token) = &sub_token.refresh_token {
+                    // Use the subaccount's refresh token for exchange_token with subject_id 0 (main account)
+                    let subject_id = 0u64;
+                    let custom_scope = Some("session:test_exchange trade:read_write");
+
+                    match client
+                        .exchange_token(sub_refresh_token, subject_id, custom_scope)
+                        .await
+                    {
+                        Ok(exchanged_token) => {
+                            info!("✅ Token exchange successful from subaccount to main account");
+                            info!("🎯 Subject ID: {} (main account)", subject_id);
+                            info!("📄 Token type: {}", exchanged_token.token_type);
+                            info!("⏰ Expires in: {} seconds", exchanged_token.expires_in);
+                            info!(
+                                "🔑 Exchanged access token: {}...",
+                                &exchanged_token.access_token[..20]
+                            );
+                            info!("🎯 Exchanged scope: {}", exchanged_token.scope);
+                        }
+                        Err(e) => {
+                            warn!("⚠️ Token exchange error: {}", e);
+                            info!("ℹ️ This may be normal depending on subaccount permissions");
+                        }
+                    }
+                } else {
+                    warn!("⚠️ No refresh token available from subaccount authentication");
+                }
             }
             Err(e) => {
-                warn!("⚠️ Token exchange error: {}", e);
-                info!("ℹ️ This may be normal if you don't have subaccounts configured");
-                println!();
+                error!("❌ Subaccount OAuth2 authentication error: {}", e);
+                info!("ℹ️ Falling back to default behavior");
+                
+                // Fallback to original behavior
+                if let Some(refresh_token) = &initial_token.refresh_token {
+                    let subject_id = 10u64;
+                    let custom_scope = Some("session:test_exchange trade:read_write");
+
+                    match client
+                        .exchange_token(refresh_token, subject_id, custom_scope)
+                        .await
+                    {
+                        Ok(exchanged_token) => {
+                            info!("✅ Token exchange successful (fallback)");
+                            info!("🎯 Subject ID: {}", subject_id);
+                            info!("📄 Token type: {}", exchanged_token.token_type);
+                            info!("⏰ Expires in: {} seconds", exchanged_token.expires_in);
+                            info!(
+                                "🔑 New access token: {}...",
+                                &exchanged_token.access_token[..20]
+                            );
+                            info!("🎯 New scope: {}", exchanged_token.scope);
+                        }
+                        Err(e) => {
+                            warn!("⚠️ Token exchange error: {}", e);
+                            info!("ℹ️ This may be normal if you don't have subaccounts configured");
+                        }
+                    }
+                } else {
+                    warn!("⚠️ No refresh token available for fallback exchange");
+                }
             }
         }
     } else {
-        warn!("⚠️ No refresh token available for exchange");
-        println!();
+        info!("ℹ️ No subaccount credentials found, using default behavior");
+        
+        if let Some(refresh_token) = &initial_token.refresh_token {
+            // Use subject_id 10 as example (subaccount)
+            let subject_id = 10u64;
+            let custom_scope = Some("session:test_exchange trade:read_write");
+
+            match client
+                .exchange_token(refresh_token, subject_id, custom_scope)
+                .await
+            {
+                Ok(exchanged_token) => {
+                    info!("✅ Token exchange successful");
+                    info!("🎯 Subject ID: {}", subject_id);
+                    info!("📄 Token type: {}", exchanged_token.token_type);
+                    info!("⏰ Expires in: {} seconds", exchanged_token.expires_in);
+                    info!(
+                        "🔑 New access token: {}...",
+                        &exchanged_token.access_token[..20]
+                    );
+                    info!("🎯 New scope: {}", exchanged_token.scope);
+                }
+                Err(e) => {
+                    warn!("⚠️ Token exchange error: {}", e);
+                    info!("ℹ️ This may be normal if you don't have subaccounts configured");
+                }
+            }
+        } else {
+            warn!("⚠️ No refresh token available for exchange");
+        }
     }
+    println!();
 
     // =================================================================
     // 3. TOKEN FORK (/public/fork_token)
