@@ -64,17 +64,17 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
             info!("📈 Top 5 Bids (Price, Amount):");
             for (i, bid) in order_book.bids.iter().take(5).enumerate() {
-                info!("   {}. ${:.2} - {:.6} BTC", i + 1, bid[0], bid[1]);
+                info!("   {}. ${:.2} - {:.6} BTC", i + 1, bid.price, bid.amount);
             }
 
             info!("📉 Top 5 Asks (Price, Amount):");
             for (i, ask) in order_book.asks.iter().take(5).enumerate() {
-                info!("   {}. ${:.2} - {:.6} BTC", i + 1, ask[0], ask[1]);
+                info!("   {}. ${:.2} - {:.6} BTC", i + 1, ask.price, ask.amount);
             }
 
             if !order_book.bids.is_empty() && !order_book.asks.is_empty() {
-                let best_bid = order_book.bids[0][0];
-                let best_ask = order_book.asks[0][0];
+                let best_bid = order_book.bids[0].price;
+                let best_ask = order_book.asks[0].price;
                 let spread = best_ask - best_bid;
                 let spread_percentage = (spread / best_bid) * 100.0;
                 info!("💰 Best Bid: ${:.2} | Best Ask: ${:.2}", best_bid, best_ask);
@@ -102,23 +102,23 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
             if order_book.bids.len() >= 3 {
                 info!("📈 Bid depth analysis:");
-                let total_bid_volume: f64 = order_book.bids.iter().map(|bid| bid[1]).sum();
+                let total_bid_volume: f64 = order_book.bids.iter().map(|bid| bid.amount).sum();
                 info!("   Total bid volume: {:.6} BTC", total_bid_volume);
                 info!(
                     "   Price range: ${:.2} - ${:.2}",
-                    order_book.bids.last().unwrap()[0],
-                    order_book.bids.first().unwrap()[0]
+                    order_book.bids.last().unwrap().price,
+                    order_book.bids.first().unwrap().price
                 );
             }
 
             if order_book.asks.len() >= 3 {
                 info!("📉 Ask depth analysis:");
-                let total_ask_volume: f64 = order_book.asks.iter().map(|ask| ask[1]).sum();
+                let total_ask_volume: f64 = order_book.asks.iter().map(|ask| ask.amount).sum();
                 info!("   Total ask volume: {:.6} BTC", total_ask_volume);
                 info!(
                     "   Price range: ${:.2} - ${:.2}",
-                    order_book.asks.first().unwrap()[0],
-                    order_book.asks.last().unwrap()[0]
+                    order_book.asks.first().unwrap().price,
+                    order_book.asks.last().unwrap().price
                 );
             }
         }
@@ -147,14 +147,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             if !order_book.bids.is_empty() {
                 info!(
                     "📈 Best bid: ${:.2} - {:.6} ETH",
-                    order_book.bids[0][0], order_book.bids[0][1]
+                    order_book.bids[0].price, order_book.bids[0].amount
                 );
             }
 
             if !order_book.asks.is_empty() {
                 info!(
                     "📉 Best ask: ${:.2} - {:.6} ETH",
-                    order_book.asks[0][0], order_book.asks[0][1]
+                    order_book.asks[0].price, order_book.asks[0].amount
                 );
             }
         }
@@ -177,7 +177,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             if !order_book.bids.is_empty() && !order_book.asks.is_empty() {
                 info!(
                     "💰 Future market - Best bid: ${:.2} | Best ask: ${:.2}",
-                    order_book.bids[0][0], order_book.asks[0][0]
+                    order_book.bids[0].price, order_book.asks[0].price
                 );
             }
         }
@@ -255,7 +255,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                                 if !order_book.bids.is_empty() && !order_book.asks.is_empty() {
                                     info!(
                                         "💰 ID {} - Best bid: ${:.2} | Best ask: ${:.2}",
-                                        test_id, order_book.bids[0][0], order_book.asks[0][0]
+                                        test_id, order_book.bids[0].price, order_book.asks[0].price
                                     );
                                 }
 
@@ -297,7 +297,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                                 if !order_book.bids.is_empty() && !order_book.asks.is_empty() {
                                     info!(
                                         "💰 ID {} - Best bid: ${:.2} | Best ask: ${:.2}",
-                                        test_id, order_book.bids[0][0], order_book.asks[0][0]
+                                        test_id, order_book.bids[0].price, order_book.asks[0].price
                                     );
                                 }
 
@@ -349,13 +349,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                             if order_book.bids.len() > 10 && order_book.asks.len() > 0 {
                                 info!("📈 Deep market analysis:");
                                 let mid_market =
-                                    (order_book.bids[0][0] + order_book.asks[0][0]) / 2.0;
+                                    (order_book.bids[0].price + order_book.asks[0].price) / 2.0;
                                 info!("   Mid-market price: ${:.2}", mid_market);
 
                                 let total_bid_volume: f64 =
-                                    order_book.bids.iter().map(|bid| bid[1]).sum();
+                                    order_book.bids.iter().map(|bid| bid.amount).sum();
                                 let total_ask_volume: f64 =
-                                    order_book.asks.iter().map(|ask| ask[1]).sum();
+                                    order_book.asks.iter().map(|ask| ask.amount).sum();
                                 info!(
                                     "   Total volume - Bids: {:.6}, Asks: {:.6}",
                                     total_bid_volume, total_ask_volume
@@ -399,7 +399,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                             if !order_book.bids.is_empty() && !order_book.asks.is_empty() {
                                 info!(
                                     "💰 Top of book - Bid: ${:.2} | Ask: ${:.2}",
-                                    order_book.bids[0][0], order_book.asks[0][0]
+                                    order_book.bids[0].price, order_book.asks[0].price
                                 );
                             }
                         }

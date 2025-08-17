@@ -6,95 +6,8 @@ use deribit_base::{impl_json_debug_pretty, impl_json_display};
 use serde::{Deserialize, Serialize};
 
 // Re-export types from deribit-base for convenience
-pub use deribit_base::prelude::{Trade};
+pub use deribit_base::prelude::{OrderBook, OrderBookEntry, Trade};
 
-// =============================================================================
-// TICKER DATA TYPE (overrides deribit-base version)
-// =============================================================================
-
-/// Ticker stats sub-structure
-#[derive(Clone, Serialize, Deserialize)]
-pub struct TickerStats {
-    pub volume: f64,
-    pub price_change: Option<f64>,
-    pub high: Option<f64>,
-    pub low: Option<f64>,
-}
-
-/// Ticker data structure with corrected field types
-#[derive(Clone, Serialize, Deserialize)]
-pub struct TickerData {
-    pub instrument_name: String,
-    pub last_price: Option<f64>,
-    pub mark_price: f64,
-    pub best_bid_price: Option<f64>,
-    pub best_ask_price: Option<f64>,
-    pub best_bid_amount: f64,
-    pub best_ask_amount: f64,
-    pub volume: Option<f64>,
-    pub volume_usd: Option<f64>,
-    pub open_interest: Option<f64>,
-    pub high: Option<f64>,
-    pub low: Option<f64>,
-    pub price_change: Option<f64>,
-    pub price_change_percentage: Option<f64>,
-    pub bid_iv: Option<f64>,
-    pub ask_iv: Option<f64>,
-    pub mark_iv: Option<f64>,
-    pub timestamp: u64,
-    pub state: String,
-    pub settlement_price: Option<f64>,
-    pub stats: TickerStats,
-}
-
-// =============================================================================
-// ORDER BOOK TYPE (overrides deribit-base version)
-// =============================================================================
-
-/// Order book data structure compatible with array indexing [price, amount]
-#[derive(Clone, Serialize, Deserialize)]
-pub struct OrderBook {
-    /// Instrument name
-    pub instrument_name: String,
-    /// Timestamp of the order book
-    pub timestamp: i64,
-    /// Bid levels (sorted by price descending) - each entry is [price, amount]
-    pub bids: Vec<[f64; 2]>,
-    /// Ask levels (sorted by price ascending) - each entry is [price, amount]
-    pub asks: Vec<[f64; 2]>,
-    /// Change ID for incremental updates
-    pub change_id: u64,
-    /// Previous change ID
-    pub prev_change_id: Option<u64>,
-}
-
-// =============================================================================
-// INSTRUMENT TYPE (overrides deribit-base version)
-// =============================================================================
-
-/// Instrument structure with corrected field types
-#[derive(Clone, Serialize, Deserialize)]
-pub struct Instrument {
-    pub instrument_name: String,
-    pub contract_size: f64,
-    pub creation_timestamp: Option<i64>,
-    pub expiration_timestamp: Option<i64>,
-    pub strike: Option<f64>,
-    pub option_type: Option<String>,
-    pub instrument_id: Option<u32>,
-    pub base_currency: String,
-    pub counter_currency: String,
-    pub currency: String,
-    pub is_active: bool,
-    pub kind: String,
-    pub max_leverage: f64,
-    pub maker_commission: f64,
-    pub taker_commission: f64,
-    pub tick_size: f64,
-    pub min_trade_amount: f64,
-    pub settlement_period: String,
-    pub quote_currency: String,
-}
 
 // =============================================================================
 // PRIVATE ENDPOINT TYPES
@@ -863,9 +776,6 @@ pub struct LastTrade {
 }
 
 impl_json_display!(
-    TickerData,
-    OrderBook,
-    Instrument,
     FundingChartData,
     FundingDataPoint,
     TradingViewChartData,
@@ -913,9 +823,6 @@ impl_json_display!(
 );
 
 impl_json_debug_pretty!(
-    TickerData,
-    OrderBook,
-    Instrument,
     FundingChartData,
     FundingDataPoint,
     TradingViewChartData,
