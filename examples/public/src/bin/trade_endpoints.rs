@@ -76,9 +76,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
                 info!("      Trade ID: {}", trade.trade_id);
 
-                if let Some(index_price) = trade.index_price {
-                    info!("      Index Price: ${:.2}", index_price);
-                }
+                info!("      Index Price: ${:.2}", trade.index_price);
             }
 
             if trades_response.trades.len() > 5 {
@@ -88,10 +86,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 );
             }
 
-            if let Some(has_more) = trades_response.has_more {
-                if has_more {
-                    info!("🔗 More trades available for pagination");
-                }
+            if trades_response.has_more {
+                info!("🔗 More trades available for pagination");
             }
 
             if trades_response.trades.is_empty() {
@@ -422,10 +418,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 );
             }
 
-            if let Some(has_more) = trades_response.has_more {
-                if has_more {
-                    info!("🔗 More trades available for this time range");
-                }
+            if trades_response.has_more {
+                info!("🔗 More trades available for this time range");
             }
         }
         Err(e) => {

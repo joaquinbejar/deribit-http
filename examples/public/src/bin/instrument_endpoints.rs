@@ -56,7 +56,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             info!("📊 Instrument Details:");
             info!("   📝 Name: {}", instrument.instrument_name);
             info!("   📏 Contract Size: {}", instrument.contract_size);
-            info!("   📅 Creation: {}", instrument.creation_timestamp);
+            if let Some(creation) = instrument.creation_timestamp {
+                info!("   📅 Creation: {}", creation);
+            } else {
+                info!("   📅 Creation: Not available");
+            }
 
             if let Some(expiration) = instrument.expiration_timestamp {
                 info!("   ⏰ Expiration: {}", expiration);
@@ -76,7 +80,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             info!("📊 BTC Future Details:");
             info!("   📝 Name: {}", instrument.instrument_name);
             info!("   📏 Contract Size: {}", instrument.contract_size);
-            info!("   📅 Creation: {}", instrument.creation_timestamp);
+            if let Some(creation) = instrument.creation_timestamp {
+                info!("   📅 Creation: {}", creation);
+            } else {
+                info!("   📅 Creation: Not available");
+            }
 
             if let Some(expiration) = instrument.expiration_timestamp {
                 info!("   ⏰ Expiration: {}", expiration);
@@ -95,7 +103,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             info!("📊 BTC Option Details:");
             info!("   📝 Name: {}", instrument.instrument_name);
             info!("   📏 Contract Size: {}", instrument.contract_size);
-            info!("   📅 Creation: {}", instrument.creation_timestamp);
+            if let Some(creation) = instrument.creation_timestamp {
+                info!("   📅 Creation: {}", creation);
+            } else {
+                info!("   📅 Creation: Not available");
+            }
 
             if let Some(expiration) = instrument.expiration_timestamp {
                 info!("   ⏰ Expiration: {}", expiration);
@@ -114,7 +126,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             info!("📊 ETH Perpetual Details:");
             info!("   📝 Name: {}", instrument.instrument_name);
             info!("   📏 Contract Size: {}", instrument.contract_size);
-            info!("   📅 Creation: {}", instrument.creation_timestamp);
+            if let Some(creation) = instrument.creation_timestamp {
+                info!("   📅 Creation: {}", creation);
+            } else {
+                info!("   📅 Creation: Not available");
+            }
         }
         Err(e) => {
             warn!("⚠️ Get ETH-PERPETUAL instrument error: {}", e);
@@ -208,11 +224,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             info!("📈 Found {} BTC future instruments:", instruments.len());
 
             for (i, instrument) in instruments.iter().take(3).enumerate() {
+                let creation_display = instrument
+                    .creation_timestamp
+                    .map(|ts| ts.to_string())
+                    .unwrap_or_else(|| "N/A".to_string());
                 info!(
                     "   {}. {} (Created: {})",
                     i + 1,
                     instrument.instrument_name,
-                    instrument.creation_timestamp
+                    creation_display
                 );
             }
 
@@ -322,11 +342,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             if !instruments.is_empty() {
                 info!("💡 Including expired instruments in the results");
                 for (i, instrument) in instruments.iter().take(2).enumerate() {
+                    let creation_display = instrument
+                        .creation_timestamp
+                        .map(|ts| ts.to_string())
+                        .unwrap_or_else(|| "N/A".to_string());
                     info!(
                         "   {}. {} (Creation: {})",
                         i + 1,
                         instrument.instrument_name,
-                        instrument.creation_timestamp
+                        creation_display
                     );
                 }
             } else {

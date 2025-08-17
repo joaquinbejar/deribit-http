@@ -78,12 +78,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     let spread_percentage = (spread / bid_price) * 100.0;
                     info!("   📏 Spread: ${:.2} ({:.4}%)", spread, spread_percentage);
 
-                    if let (Some(bid_amount), Some(ask_amount)) =
-                        (ticker.best_bid_amount, ticker.best_ask_amount)
-                    {
-                        info!("   📦 Best Bid Amount: {:.6} BTC", bid_amount);
-                        info!("   📦 Best Ask Amount: {:.6} BTC", ask_amount);
-                    }
+                    info!("   📦 Best Bid Amount: {:.6} BTC", ticker.best_bid_amount);
+                    info!("   📦 Best Ask Amount: {:.6} BTC", ticker.best_ask_amount);
                 }
                 _ => {
                     info!("   📈 Best Bid: N/A");

@@ -1717,6 +1717,94 @@ impl DeribitHttpClient {
         })
     }
 
+    /// Get stop order history
+    ///
+    /// Retrieves history of stop orders that have been partially or fully filled.
+    ///
+    /// # Arguments
+    ///
+    /// * `currency` - Currency symbol (BTC, ETH, etc.)
+    /// * `kind` - Instrument kind filter (optional)
+    /// * `count` - Number of requested items (optional, default 20)
+    /// * `offset` - Offset for pagination (optional)
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use deribit_http::DeribitHttpClient;
+    ///
+    /// let client = DeribitHttpClient::new(true);
+    /// // let history = client.get_stop_order_history("BTC", Some("future"), Some(10), None).await?;
+    /// // tracing::info!("Found {} historical stop orders", history.len());
+    /// ```
+    pub async fn get_stop_order_history(
+        &self,
+        currency: &str,
+        kind: Option<&str>,
+        count: Option<u32>,
+        offset: Option<u32>,
+    ) -> Result<Vec<OrderInfo>, HttpError> {
+        let mut query_params = vec![("currency".to_string(), currency.to_string())];
+
+        if let Some(kind) = kind {
+            query_params.push(("kind".to_string(), kind.to_string()));
+        }
+
+        if let Some(count) = count {
+            query_params.push(("count".to_string(), count.to_string()));
+        }
+
+        if let Some(offset) = offset {
+            query_params.push(("offset".to_string(), offset.to_string()));
+        }
+
+        let query_string = query_params
+            .iter()
+            .map(|(k, v)| format!("{}={}", k, urlencoding::encode(v)))
+            .collect::<Vec<_>>()
+            .join("&");
+
+        let url = format!(
+            "{}/private/get_stop_order_history?{}",
+            self.base_url(),
+            query_string
+        );
+
+        let response = self
+            .http_client()
+            .get(&url)
+            .send()
+            .await
+            .map_err(|e| HttpError::NetworkError(e.to_string()))?;
+
+        if !response.status().is_success() {
+            let error_text = response
+                .text()
+                .await
+                .unwrap_or_else(|_| "Unknown error".to_string());
+            return Err(HttpError::RequestFailed(format!(
+                "Get stop order history failed: {}",
+                error_text
+            )));
+        }
+
+        let api_response: ApiResponse<Vec<OrderInfo>> = response
+            .json()
+            .await
+            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
+
+        if let Some(error) = api_response.error {
+            return Err(HttpError::RequestFailed(format!(
+                "API error: {} - {}",
+                error.code, error.message
+            )));
+        }
+
+        api_response.result.ok_or_else(|| {
+            HttpError::InvalidResponse("No stop order history data in response".to_string())
+        })
+    }
+
     /// Get user trades by instrument
     ///
     /// Retrieves the latest user trades that have occurred for a specific instrument.
@@ -1815,5 +1903,894 @@ impl DeribitHttpClient {
         api_response.result.ok_or_else(|| {
             HttpError::InvalidResponse("No user trades data in response".to_string())
         })
+    }
+
+    /// Get user trades by currency
+    ///
+    /// Retrieves user trades filtered by currency.
+    ///
+    /// # Arguments
+    ///
+    /// * `currency` - Currency symbol (BTC, ETH, etc.)
+    /// * `kind` - Instrument kind filter (optional)
+    /// * `start_seq` - Start sequence number (optional)
+    /// * `end_seq` - End sequence number (optional)
+    /// * `count` - Number of requested items (optional, default 10)
+    /// * `include_old` - Include trades older than 7 days (optional)
+    /// * `sorting` - Direction of results sorting (optional)
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use deribit_http::DeribitHttpClient;
+    ///
+    /// let client = DeribitHttpClient::new(true);
+    /// // let trades = client.get_user_trades_by_currency("BTC", Some("future"), None, None, Some(10), Some(true), Some("desc")).await?;
+    /// // tracing::info!("Found {} user trades", trades.len());
+    /// ```
+    pub async fn get_user_trades_by_currency(
+        &self,
+        currency: &str,
+        kind: Option<&str>,
+        start_seq: Option<u64>,
+        end_seq: Option<u64>,
+        count: Option<u32>,
+        include_old: Option<bool>,
+        sorting: Option<&str>,
+    ) -> Result<Vec<UserTrade>, HttpError> {
+        let mut query_params = vec![("currency".to_string(), currency.to_string())];
+
+        if let Some(kind) = kind {
+            query_params.push(("kind".to_string(), kind.to_string()));
+        }
+
+        if let Some(start_seq) = start_seq {
+            query_params.push(("start_seq".to_string(), start_seq.to_string()));
+        }
+
+        if let Some(end_seq) = end_seq {
+            query_params.push(("end_seq".to_string(), end_seq.to_string()));
+        }
+
+        if let Some(count) = count {
+            query_params.push(("count".to_string(), count.to_string()));
+        }
+
+        if let Some(include_old) = include_old {
+            query_params.push(("include_old".to_string(), include_old.to_string()));
+        }
+
+        if let Some(sorting) = sorting {
+            query_params.push(("sorting".to_string(), sorting.to_string()));
+        }
+
+        let query_string = query_params
+            .iter()
+            .map(|(k, v)| format!("{}={}", k, urlencoding::encode(v)))
+            .collect::<Vec<_>>()
+            .join("&");
+
+        let url = format!(
+            "{}/private/get_user_trades_by_currency?{}",
+            self.base_url(),
+            query_string
+        );
+
+        let response = self
+            .http_client()
+            .get(&url)
+            .send()
+            .await
+            .map_err(|e| HttpError::NetworkError(e.to_string()))?;
+
+        if !response.status().is_success() {
+            let error_text = response
+                .text()
+                .await
+                .unwrap_or_else(|_| "Unknown error".to_string());
+            return Err(HttpError::RequestFailed(format!(
+                "Get user trades by currency failed: {}",
+                error_text
+            )));
+        }
+
+        let api_response: ApiResponse<Vec<UserTrade>> = response
+            .json()
+            .await
+            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
+
+        if let Some(error) = api_response.error {
+            return Err(HttpError::RequestFailed(format!(
+                "API error: {} - {}",
+                error.code, error.message
+            )));
+        }
+
+        api_response.result.ok_or_else(|| {
+            HttpError::InvalidResponse("No user trades data in response".to_string())
+        })
+    }
+
+    /// Get user trades by currency and time
+    ///
+    /// Retrieves user trades filtered by currency within a time range.
+    ///
+    /// # Arguments
+    ///
+    /// * `currency` - Currency symbol (BTC, ETH, etc.)
+    /// * `start_timestamp` - Start timestamp in milliseconds
+    /// * `end_timestamp` - End timestamp in milliseconds
+    /// * `kind` - Instrument kind filter (optional)
+    /// * `count` - Number of requested items (optional, default 10)
+    /// * `include_old` - Include trades older than 7 days (optional)
+    /// * `sorting` - Direction of results sorting (optional)
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use deribit_http::DeribitHttpClient;
+    ///
+    /// let client = DeribitHttpClient::new(true);
+    /// // let trades = client.get_user_trades_by_currency_and_time("BTC", start_time, end_time, Some("future"), Some(20), Some(true), Some("desc")).await?;
+    /// // tracing::info!("Found {} user trades", trades.len());
+    /// ```
+    pub async fn get_user_trades_by_currency_and_time(
+        &self,
+        currency: &str,
+        start_timestamp: u64,
+        end_timestamp: u64,
+        kind: Option<&str>,
+        count: Option<u32>,
+        include_old: Option<bool>,
+        sorting: Option<&str>,
+    ) -> Result<Vec<UserTrade>, HttpError> {
+        let mut query_params = vec![
+            ("currency".to_string(), currency.to_string()),
+            ("start_timestamp".to_string(), start_timestamp.to_string()),
+            ("end_timestamp".to_string(), end_timestamp.to_string()),
+        ];
+
+        if let Some(kind) = kind {
+            query_params.push(("kind".to_string(), kind.to_string()));
+        }
+
+        if let Some(count) = count {
+            query_params.push(("count".to_string(), count.to_string()));
+        }
+
+        if let Some(include_old) = include_old {
+            query_params.push(("include_old".to_string(), include_old.to_string()));
+        }
+
+        if let Some(sorting) = sorting {
+            query_params.push(("sorting".to_string(), sorting.to_string()));
+        }
+
+        let query_string = query_params
+            .iter()
+            .map(|(k, v)| format!("{}={}", k, urlencoding::encode(v)))
+            .collect::<Vec<_>>()
+            .join("&");
+
+        let url = format!(
+            "{}/private/get_user_trades_by_currency_and_time?{}",
+            self.base_url(),
+            query_string
+        );
+
+        let response = self
+            .http_client()
+            .get(&url)
+            .send()
+            .await
+            .map_err(|e| HttpError::NetworkError(e.to_string()))?;
+
+        if !response.status().is_success() {
+            let error_text = response
+                .text()
+                .await
+                .unwrap_or_else(|_| "Unknown error".to_string());
+            return Err(HttpError::RequestFailed(format!(
+                "Get user trades by currency and time failed: {}",
+                error_text
+            )));
+        }
+
+        let api_response: ApiResponse<Vec<UserTrade>> = response
+            .json()
+            .await
+            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
+
+        if let Some(error) = api_response.error {
+            return Err(HttpError::RequestFailed(format!(
+                "API error: {} - {}",
+                error.code, error.message
+            )));
+        }
+
+        api_response.result.ok_or_else(|| {
+            HttpError::InvalidResponse("No user trades data in response".to_string())
+        })
+    }
+
+    /// Get user trades by instrument and time
+    ///
+    /// Retrieves user trades for a specific instrument within a time range.
+    ///
+    /// # Arguments
+    ///
+    /// * `instrument_name` - Instrument name
+    /// * `start_timestamp` - Start timestamp in milliseconds
+    /// * `end_timestamp` - End timestamp in milliseconds
+    /// * `count` - Number of requested items (optional, default 10)
+    /// * `include_old` - Include trades older than 7 days (optional)
+    /// * `sorting` - Direction of results sorting (optional)
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use deribit_http::DeribitHttpClient;
+    ///
+    /// let client = DeribitHttpClient::new(true);
+    /// // let trades = client.get_user_trades_by_instrument_and_time("BTC-PERPETUAL", start_time, end_time, Some(15), Some(true), Some("desc")).await?;
+    /// // tracing::info!("Found {} user trades", trades.len());
+    /// ```
+    pub async fn get_user_trades_by_instrument_and_time(
+        &self,
+        instrument_name: &str,
+        start_timestamp: u64,
+        end_timestamp: u64,
+        count: Option<u32>,
+        include_old: Option<bool>,
+        sorting: Option<&str>,
+    ) -> Result<Vec<UserTrade>, HttpError> {
+        let mut query_params = vec![
+            ("instrument_name".to_string(), instrument_name.to_string()),
+            ("start_timestamp".to_string(), start_timestamp.to_string()),
+            ("end_timestamp".to_string(), end_timestamp.to_string()),
+        ];
+
+        if let Some(count) = count {
+            query_params.push(("count".to_string(), count.to_string()));
+        }
+
+        if let Some(include_old) = include_old {
+            query_params.push(("include_old".to_string(), include_old.to_string()));
+        }
+
+        if let Some(sorting) = sorting {
+            query_params.push(("sorting".to_string(), sorting.to_string()));
+        }
+
+        let query_string = query_params
+            .iter()
+            .map(|(k, v)| format!("{}={}", k, urlencoding::encode(v)))
+            .collect::<Vec<_>>()
+            .join("&");
+
+        let url = format!(
+            "{}/private/get_user_trades_by_instrument_and_time?{}",
+            self.base_url(),
+            query_string
+        );
+
+        let response = self
+            .http_client()
+            .get(&url)
+            .send()
+            .await
+            .map_err(|e| HttpError::NetworkError(e.to_string()))?;
+
+        if !response.status().is_success() {
+            let error_text = response
+                .text()
+                .await
+                .unwrap_or_else(|_| "Unknown error".to_string());
+            return Err(HttpError::RequestFailed(format!(
+                "Get user trades by instrument and time failed: {}",
+                error_text
+            )));
+        }
+
+        let api_response: ApiResponse<Vec<UserTrade>> = response
+            .json()
+            .await
+            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
+
+        if let Some(error) = api_response.error {
+            return Err(HttpError::RequestFailed(format!(
+                "API error: {} - {}",
+                error.code, error.message
+            )));
+        }
+
+        api_response.result.ok_or_else(|| {
+            HttpError::InvalidResponse("No user trades data in response".to_string())
+        })
+    }
+
+    /// Get user trades by order
+    ///
+    /// Retrieves user trades for a specific order.
+    ///
+    /// # Arguments
+    ///
+    /// * `order_id` - Order ID
+    /// * `sorting` - Direction of results sorting (optional)
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use deribit_http::DeribitHttpClient;
+    ///
+    /// let client = DeribitHttpClient::new(true);
+    /// // let trades = client.get_user_trades_by_order("order_id_123", Some("desc")).await?;
+    /// // tracing::info!("Found {} user trades for order", trades.len());
+    /// ```
+    pub async fn get_user_trades_by_order(
+        &self,
+        order_id: &str,
+        sorting: Option<&str>,
+    ) -> Result<Vec<UserTrade>, HttpError> {
+        let mut query_params = vec![("order_id".to_string(), order_id.to_string())];
+
+        if let Some(sorting) = sorting {
+            query_params.push(("sorting".to_string(), sorting.to_string()));
+        }
+
+        let query_string = query_params
+            .iter()
+            .map(|(k, v)| format!("{}={}", k, urlencoding::encode(v)))
+            .collect::<Vec<_>>()
+            .join("&");
+
+        let url = format!(
+            "{}/private/get_user_trades_by_order?{}",
+            self.base_url(),
+            query_string
+        );
+
+        let response = self
+            .http_client()
+            .get(&url)
+            .send()
+            .await
+            .map_err(|e| HttpError::NetworkError(e.to_string()))?;
+
+        if !response.status().is_success() {
+            let error_text = response
+                .text()
+                .await
+                .unwrap_or_else(|_| "Unknown error".to_string());
+            return Err(HttpError::RequestFailed(format!(
+                "Get user trades by order failed: {}",
+                error_text
+            )));
+        }
+
+        let api_response: ApiResponse<Vec<UserTrade>> = response
+            .json()
+            .await
+            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
+
+        if let Some(error) = api_response.error {
+            return Err(HttpError::RequestFailed(format!(
+                "API error: {} - {}",
+                error.code, error.message
+            )));
+        }
+
+        api_response.result.ok_or_else(|| {
+            HttpError::InvalidResponse("No user trades data in response".to_string())
+        })
+    }
+
+    /// Submit mass quotes
+    ///
+    /// Submits mass quotes for multiple instruments in a single request.
+    ///
+    /// # Arguments
+    ///
+    /// * `quotes` - Vector of mass quote requests
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use deribit_http::{DeribitHttpClient, MassQuoteRequest};
+    ///
+    /// let client = DeribitHttpClient::new(true);
+    /// let quotes = vec![
+    ///     MassQuoteRequest {
+    ///         instrument_name: "BTC-PERPETUAL".to_string(),
+    ///         bid_price: Some(50000.0),
+    ///         ask_price: Some(50100.0),
+    ///         bid_amount: Some(100.0),
+    ///         ask_amount: Some(100.0),
+    ///     }
+    /// ];
+    /// // let response = client.mass_quote(quotes).await?;
+    /// ```
+    pub async fn mass_quote(
+        &self,
+        quotes: Vec<MassQuoteRequest>,
+    ) -> Result<MassQuoteResponse, HttpError> {
+        let json_body = serde_json::json!({
+            "quotes": quotes
+        });
+
+        let response = self
+            .http_client()
+            .post(&format!("{}/private/mass_quote", self.base_url()))
+            .header("Content-Type", "application/json")
+            .body(json_body.to_string())
+            .send()
+            .await
+            .map_err(|e| HttpError::NetworkError(e.to_string()))?;
+
+        if !response.status().is_success() {
+            let error_text = response
+                .text()
+                .await
+                .unwrap_or_else(|_| "Unknown error".to_string());
+            return Err(HttpError::RequestFailed(format!(
+                "Mass quote failed: {}",
+                error_text
+            )));
+        }
+
+        let api_response: ApiResponse<MassQuoteResponse> = response
+            .json()
+            .await
+            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
+
+        if let Some(error) = api_response.error {
+            return Err(HttpError::RequestFailed(format!(
+                "API error: {} - {}",
+                error.code, error.message
+            )));
+        }
+
+        api_response
+            .result
+            .ok_or_else(|| HttpError::InvalidResponse("No mass quote response in response".to_string()))
+    }
+
+    /// Get open orders by instrument
+    ///
+    /// Retrieves open orders for a specific instrument.
+    ///
+    /// # Arguments
+    ///
+    /// * `instrument_name` - The instrument name
+    /// * `order_type` - Order type filter (optional)
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use deribit_http::DeribitHttpClient;
+    ///
+    /// let client = DeribitHttpClient::new(true);
+    /// // let orders = client.get_open_orders_by_instrument("BTC-PERPETUAL", None).await?;
+    /// // tracing::info!("Found {} open orders", orders.len());
+    /// ```
+    pub async fn get_open_orders_by_instrument(
+        &self,
+        instrument_name: &str,
+        order_type: Option<&str>,
+    ) -> Result<Vec<OrderInfo>, HttpError> {
+        let mut query_params = vec![("instrument_name".to_string(), instrument_name.to_string())];
+
+        if let Some(order_type) = order_type {
+            query_params.push(("type".to_string(), order_type.to_string()));
+        }
+
+        let query_string = query_params
+            .iter()
+            .map(|(k, v)| format!("{}={}", k, urlencoding::encode(v)))
+            .collect::<Vec<_>>()
+            .join("&");
+
+        let url = format!(
+            "{}/private/get_open_orders_by_instrument?{}",
+            self.base_url(),
+            query_string
+        );
+
+        let response = self
+            .http_client()
+            .get(&url)
+            .send()
+            .await
+            .map_err(|e| HttpError::NetworkError(e.to_string()))?;
+
+        if !response.status().is_success() {
+            let error_text = response
+                .text()
+                .await
+                .unwrap_or_else(|_| "Unknown error".to_string());
+            return Err(HttpError::RequestFailed(format!(
+                "Get open orders by instrument failed: {}",
+                error_text
+            )));
+        }
+
+        let api_response: ApiResponse<Vec<OrderInfo>> = response
+            .json()
+            .await
+            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
+
+        if let Some(error) = api_response.error {
+            return Err(HttpError::RequestFailed(format!(
+                "API error: {} - {}",
+                error.code, error.message
+            )));
+        }
+
+        api_response
+            .result
+            .ok_or_else(|| HttpError::InvalidResponse("No orders data in response".to_string()))
+    }
+
+    /// Cancel quotes
+    ///
+    /// Cancels all mass quotes.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use deribit_http::DeribitHttpClient;
+    ///
+    /// let client = DeribitHttpClient::new(true);
+    /// // let result = client.cancel_quotes().await?;
+    /// ```
+    pub async fn cancel_quotes(&self) -> Result<u32, HttpError> {
+        let url = format!("{}/private/cancel_quotes", self.base_url());
+
+        let response = self
+            .http_client()
+            .get(&url)
+            .send()
+            .await
+            .map_err(|e| HttpError::NetworkError(e.to_string()))?;
+
+        if !response.status().is_success() {
+            let error_text = response
+                .text()
+                .await
+                .unwrap_or_else(|_| "Unknown error".to_string());
+            return Err(HttpError::RequestFailed(format!(
+                "Cancel quotes failed: {}",
+                error_text
+            )));
+        }
+
+        let api_response: ApiResponse<u32> = response
+            .json()
+            .await
+            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
+
+        if let Some(error) = api_response.error {
+            return Err(HttpError::RequestFailed(format!(
+                "API error: {} - {}",
+                error.code, error.message
+            )));
+        }
+
+        api_response
+            .result
+            .ok_or_else(|| HttpError::InvalidResponse("No cancel result in response".to_string()))
+    }
+
+    /// Get open orders by label
+    ///
+    /// Retrieves open orders filtered by a specific label.
+    ///
+    /// # Arguments
+    ///
+    /// * `label` - The label to filter orders by
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use deribit_http::DeribitHttpClient;
+    ///
+    /// let client = DeribitHttpClient::new(true);
+    /// // let orders = client.get_open_orders_by_label("my_label").await?;
+    /// // tracing::info!("Found {} orders with label", orders.len());
+    /// ```
+    pub async fn get_open_orders_by_label(&self, label: &str) -> Result<Vec<OrderInfo>, HttpError> {
+        let url = format!(
+            "{}/private/get_open_orders_by_label?label={}",
+            self.base_url(),
+            urlencoding::encode(label)
+        );
+
+        let response = self
+            .http_client()
+            .get(&url)
+            .send()
+            .await
+            .map_err(|e| HttpError::NetworkError(e.to_string()))?;
+
+        if !response.status().is_success() {
+            let error_text = response
+                .text()
+                .await
+                .unwrap_or_else(|_| "Unknown error".to_string());
+            return Err(HttpError::RequestFailed(format!(
+                "Get open orders by label failed: {}",
+                error_text
+            )));
+        }
+
+        let api_response: ApiResponse<Vec<OrderInfo>> = response
+            .json()
+            .await
+            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
+
+        if let Some(error) = api_response.error {
+            return Err(HttpError::RequestFailed(format!(
+                "API error: {} - {}",
+                error.code, error.message
+            )));
+        }
+
+        api_response
+            .result
+            .ok_or_else(|| HttpError::InvalidResponse("No orders data in response".to_string()))
+    }
+
+    /// Get order history by currency
+    ///
+    /// Retrieves order history for a specific currency.
+    ///
+    /// # Arguments
+    ///
+    /// * `currency` - Currency symbol (BTC, ETH, etc.)
+    /// * `kind` - Instrument kind filter (optional)
+    /// * `count` - Number of requested items (optional)
+    /// * `offset` - Offset for pagination (optional)
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use deribit_http::DeribitHttpClient;
+    ///
+    /// let client = DeribitHttpClient::new(true);
+    /// // let history = client.get_order_history_by_currency("BTC", Some("future"), Some(10), Some(0)).await?;
+    /// // tracing::info!("Found {} historical orders", history.len());
+    /// ```
+    pub async fn get_order_history_by_currency(
+        &self,
+        currency: &str,
+        kind: Option<&str>,
+        count: Option<u32>,
+        offset: Option<u32>,
+    ) -> Result<Vec<OrderInfo>, HttpError> {
+        // This is an alias to the existing get_order_history method
+        self.get_order_history(currency, kind, count, offset).await
+    }
+
+    /// Get order history by instrument
+    ///
+    /// Retrieves order history for a specific instrument.
+    ///
+    /// # Arguments
+    ///
+    /// * `instrument_name` - The instrument name
+    /// * `count` - Number of requested items (optional)
+    /// * `offset` - Offset for pagination (optional)
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use deribit_http::DeribitHttpClient;
+    ///
+    /// let client = DeribitHttpClient::new(true);
+    /// // let history = client.get_order_history_by_instrument("BTC-PERPETUAL", Some(10), Some(0)).await?;
+    /// // tracing::info!("Found {} historical orders", history.len());
+    /// ```
+    pub async fn get_order_history_by_instrument(
+        &self,
+        instrument_name: &str,
+        count: Option<u32>,
+        offset: Option<u32>,
+    ) -> Result<Vec<OrderInfo>, HttpError> {
+        let mut query_params = vec![("instrument_name".to_string(), instrument_name.to_string())];
+
+        if let Some(count) = count {
+            query_params.push(("count".to_string(), count.to_string()));
+        }
+
+        if let Some(offset) = offset {
+            query_params.push(("offset".to_string(), offset.to_string()));
+        }
+
+        let query_string = query_params
+            .iter()
+            .map(|(k, v)| format!("{}={}", k, urlencoding::encode(v)))
+            .collect::<Vec<_>>()
+            .join("&");
+
+        let url = format!(
+            "{}/private/get_order_history_by_instrument?{}",
+            self.base_url(),
+            query_string
+        );
+
+        let response = self
+            .http_client()
+            .get(&url)
+            .send()
+            .await
+            .map_err(|e| HttpError::NetworkError(e.to_string()))?;
+
+        if !response.status().is_success() {
+            let error_text = response
+                .text()
+                .await
+                .unwrap_or_else(|_| "Unknown error".to_string());
+            return Err(HttpError::RequestFailed(format!(
+                "Get order history by instrument failed: {}",
+                error_text
+            )));
+        }
+
+        let api_response: ApiResponse<Vec<OrderInfo>> = response
+            .json()
+            .await
+            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
+
+        if let Some(error) = api_response.error {
+            return Err(HttpError::RequestFailed(format!(
+                "API error: {} - {}",
+                error.code, error.message
+            )));
+        }
+
+        api_response.result.ok_or_else(|| {
+            HttpError::InvalidResponse("No order history data in response".to_string())
+        })
+    }
+
+    /// Get order state
+    ///
+    /// Retrieves the state of a specific order.
+    ///
+    /// # Arguments
+    ///
+    /// * `order_id` - The order ID
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use deribit_http::DeribitHttpClient;
+    ///
+    /// let client = DeribitHttpClient::new(true);
+    /// // let order = client.get_order_state("order_id").await?;
+    /// // tracing::info!("Order state: {}", order.order_state);
+    /// ```
+    pub async fn get_order_state(&self, order_id: &str) -> Result<OrderInfo, HttpError> {
+        let url = format!(
+            "{}/private/get_order_state?order_id={}",
+            self.base_url(),
+            urlencoding::encode(order_id)
+        );
+
+        let response = self
+            .http_client()
+            .get(&url)
+            .send()
+            .await
+            .map_err(|e| HttpError::NetworkError(e.to_string()))?;
+
+        if !response.status().is_success() {
+            let error_text = response
+                .text()
+                .await
+                .unwrap_or_else(|_| "Unknown error".to_string());
+            return Err(HttpError::RequestFailed(format!(
+                "Get order state failed: {}",
+                error_text
+            )));
+        }
+
+        let api_response: ApiResponse<OrderInfo> = response
+            .json()
+            .await
+            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
+
+        if let Some(error) = api_response.error {
+            return Err(HttpError::RequestFailed(format!(
+                "API error: {} - {}",
+                error.code, error.message
+            )));
+        }
+
+        api_response
+            .result
+            .ok_or_else(|| HttpError::InvalidResponse("No order data in response".to_string()))
+    }
+
+    /// Edit order by label
+    ///
+    /// Edits an existing order identified by its label.
+    ///
+    /// # Arguments
+    ///
+    /// * `label` - The label of the order to edit
+    /// * `amount` - New amount (optional)
+    /// * `price` - New price (optional)
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use deribit_http::DeribitHttpClient;
+    ///
+    /// let client = DeribitHttpClient::new(true);
+    /// // let order = client.edit_by_label("my_label", Some(15.0), Some(25000.0)).await?;
+    /// // tracing::info!("Order edited: {}", order.order.order_id);
+    /// ```
+    pub async fn edit_by_label(
+        &self,
+        label: &str,
+        amount: Option<f64>,
+        price: Option<f64>,
+    ) -> Result<OrderResponse, HttpError> {
+        let mut query_params = vec![("label".to_string(), label.to_string())];
+
+        if let Some(amount) = amount {
+            query_params.push(("amount".to_string(), amount.to_string()));
+        }
+
+        if let Some(price) = price {
+            query_params.push(("price".to_string(), price.to_string()));
+        }
+
+        let query_string = query_params
+            .iter()
+            .map(|(k, v)| format!("{}={}", k, urlencoding::encode(v)))
+            .collect::<Vec<_>>()
+            .join("&");
+
+        let url = format!(
+            "{}/private/edit_by_label?{}",
+            self.base_url(),
+            query_string
+        );
+
+        let response = self
+            .http_client()
+            .get(&url)
+            .send()
+            .await
+            .map_err(|e| HttpError::NetworkError(e.to_string()))?;
+
+        if !response.status().is_success() {
+            let error_text = response
+                .text()
+                .await
+                .unwrap_or_else(|_| "Unknown error".to_string());
+            return Err(HttpError::RequestFailed(format!(
+                "Edit order by label failed: {}",
+                error_text
+            )));
+        }
+
+        let api_response: ApiResponse<OrderResponse> = response
+            .json()
+            .await
+            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
+
+        if let Some(error) = api_response.error {
+            return Err(HttpError::RequestFailed(format!(
+                "API error: {} - {}",
+                error.code, error.message
+            )));
+        }
+
+        api_response
+            .result
+            .ok_or_else(|| HttpError::InvalidResponse("No order data in response".to_string()))
     }
 }
