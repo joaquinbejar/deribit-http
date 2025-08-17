@@ -13,7 +13,7 @@ categories = ["finance", "api-bindings", "web-programming::http-client"]
 
 [workspace]
 members = [
-    "examples/basic",
+    "examples/public",
     "examples/market_data",
     "examples/order_management",
     "examples/position_management",
