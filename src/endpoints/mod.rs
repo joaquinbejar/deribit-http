@@ -14,7 +14,7 @@ pub use types::{
 // Re-export private endpoint data structures
 pub use types::{
     AccountSummary, BuyOrderRequest, Deposit, DepositsResponse, EditOrderRequest, MassQuoteRequest,
-    MassQuoteResponse, OrderInfo, OrderResponse, OrderType, PortfolioInfo, Position, QuoteResult,
-    SellOrderRequest, Subaccount, TimeInForce, TradeExecution, TransactionLog, TransactionLogEntry,
-    TransferResult, UserTrade, Withdrawal, WithdrawalsResponse,
+    MassQuoteResponse, OrderInfo, OrderResponse, PortfolioInfo, QuoteResult, SellOrderRequest,
+    Subaccount, TradeExecution, TransactionLog, TransactionLogEntry, TransferResult, UserTrade,
+    Withdrawal, WithdrawalsResponse,
 };

@@ -1,5 +1,6 @@
 //! Private endpoints for authenticated API calls
 
+use deribit_base::prelude::Position;
 use crate::DeribitHttpClient;
 use crate::endpoints::types::*;
 use crate::error::HttpError;

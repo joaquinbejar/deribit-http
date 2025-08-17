@@ -7,8 +7,7 @@ use serde::{Deserialize, Serialize};
 
 // Re-export types from deribit-base for convenience
 pub use deribit_base::prelude::{OrderBook, OrderBookEntry, Trade};
-
-
+use deribit_base::prelude::{OrderType, TimeInForce};
 // =============================================================================
 // PRIVATE ENDPOINT TYPES
 // =============================================================================
@@ -300,65 +299,6 @@ pub struct EditOrderRequest {
     pub reduce_only: bool,
 }
 
-/// Order type enum
-#[derive(Clone, Serialize, Deserialize)]
-pub enum OrderType {
-    #[serde(rename = "limit")]
-    Limit,
-    #[serde(rename = "market")]
-    Market,
-    #[serde(rename = "stop_limit")]
-    StopLimit,
-    #[serde(rename = "stop_market")]
-    StopMarket,
-    #[serde(rename = "take_limit")]
-    TakeLimit,
-    #[serde(rename = "take_market")]
-    TakeMarket,
-    #[serde(rename = "market_limit")]
-    MarketLimit,
-    #[serde(rename = "trailing_stop")]
-    TrailingStop,
-}
-
-impl OrderType {
-    pub fn as_str(&self) -> &'static str {
-        match self {
-            OrderType::Limit => "limit",
-            OrderType::Market => "market",
-            OrderType::StopLimit => "stop_limit",
-            OrderType::StopMarket => "stop_market",
-            OrderType::TakeLimit => "take_limit",
-            OrderType::TakeMarket => "take_market",
-            OrderType::MarketLimit => "market_limit",
-            OrderType::TrailingStop => "trailing_stop",
-        }
-    }
-}
-
-/// Time in force enum
-#[derive(Clone, Serialize, Deserialize)]
-pub enum TimeInForce {
-    #[serde(rename = "good_til_cancelled")]
-    GoodTilCancelled,
-    #[serde(rename = "good_til_day")]
-    GoodTilDay,
-    #[serde(rename = "fill_or_kill")]
-    FillOrKill,
-    #[serde(rename = "immediate_or_cancel")]
-    ImmediateOrCancel,
-}
-
-impl TimeInForce {
-    pub fn as_str(&self) -> &'static str {
-        match self {
-            TimeInForce::GoodTilCancelled => "good_til_cancelled",
-            TimeInForce::GoodTilDay => "good_til_day",
-            TimeInForce::FillOrKill => "fill_or_kill",
-            TimeInForce::ImmediateOrCancel => "immediate_or_cancel",
-        }
-    }
-}
 
 /// Buy order request structure
 #[derive(Clone, Serialize, Deserialize)]
@@ -524,35 +464,6 @@ pub struct AccountSummary {
     pub account_type: String,
 }
 
-/// Position structure
-#[derive(Clone, Serialize, Deserialize)]
-pub struct Position {
-    pub average_price: f64,
-    pub average_price_usd: Option<f64>,
-    pub delta: f64,
-    pub direction: String,
-    pub estimated_liquidation_price: Option<f64>,
-    pub floating_profit_loss: f64,
-    pub floating_profit_loss_usd: Option<f64>,
-    pub gamma: f64,
-    pub index_price: f64,
-    pub initial_margin: f64,
-    pub instrument_name: String,
-    pub interest_value: Option<f64>,
-    pub kind: String,
-    pub leverage: Option<i32>,
-    pub maintenance_margin: f64,
-    pub mark_price: f64,
-    pub open_orders_margin: f64,
-    pub realized_funding: Option<f64>,
-    pub realized_profit_loss: f64,
-    pub settlement_price: f64,
-    pub size: f64,
-    pub size_currency: Option<f64>,
-    pub theta: f64,
-    pub total_profit_loss: f64,
-    pub vega: f64,
-}
 
 // =============================================================================
 // PUBLIC ENDPOINT TYPES
@@ -799,7 +710,6 @@ impl_json_display!(
     TradeExecution,
     OrderInfo,
     AccountSummary,
-    Position,
     Currency,
     IndexData,
     WithdrawalPriority,
@@ -846,7 +756,6 @@ impl_json_debug_pretty!(
     TradeExecution,
     OrderInfo,
     AccountSummary,
-    Position,
     Currency,
     IndexData,
     WithdrawalPriority,

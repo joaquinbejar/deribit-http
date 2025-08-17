@@ -18,8 +18,8 @@ pub use crate::model::http_types::AuthToken;
 // Re-export endpoint response types
 pub use crate::endpoints::{
     AccountSummary, BuyOrderRequest, Deposit, DepositsResponse, EditOrderRequest, FundingChartData,
-    FundingDataPoint, OrderInfo, OrderResponse, OrderType, PortfolioInfo, Position,
-    SellOrderRequest, Subaccount, TimeInForce, TradeExecution, TradingViewChartData,
+    FundingDataPoint, OrderInfo, OrderResponse, PortfolioInfo,
+    SellOrderRequest, Subaccount, TradeExecution, TradingViewChartData,
     TransactionLog, TransactionLogEntry, TransferResult, UserTrade, Withdrawal,
     WithdrawalsResponse,
 };
