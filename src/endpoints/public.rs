@@ -7,7 +7,7 @@ use crate::DeribitHttpClient;
 use crate::endpoints::types::*;
 use crate::error::HttpError;
 use crate::model::http_types::ApiResponse;
-use deribit_base::prelude::{Instrument, OrderBook, TickerData, Trade};
+use deribit_base::prelude::{Trade};
 
 /// Market data endpoints
 impl DeribitHttpClient {

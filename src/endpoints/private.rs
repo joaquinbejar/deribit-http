@@ -1081,6 +1081,469 @@ impl DeribitHttpClient {
             .ok_or_else(|| HttpError::InvalidResponse("No cancel count in response".to_string()))
     }
 
+    /// Cancel orders by label
+    ///
+    /// Cancels all orders with a specific label.
+    ///
+    /// # Arguments
+    ///
+    /// * `label` - The label to cancel orders for
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use deribit_http::DeribitHttpClient;
+    ///
+    /// let client = DeribitHttpClient::new(true);
+    /// // let cancelled_count = client.cancel_by_label("my_label").await?;
+    /// // tracing::info!("Cancelled {} orders", cancelled_count);
+    /// ```
+    pub async fn cancel_by_label(&self, label: &str) -> Result<u32, HttpError> {
+        let url = format!(
+            "{}/private/cancel_by_label?label={}",
+            self.base_url(),
+            urlencoding::encode(label)
+        );
+
+        let response = self
+            .http_client()
+            .get(&url)
+            .send()
+            .await
+            .map_err(|e| HttpError::NetworkError(e.to_string()))?;
+
+        if !response.status().is_success() {
+            let error_text = response
+                .text()
+                .await
+                .unwrap_or_else(|_| "Unknown error".to_string());
+            return Err(HttpError::RequestFailed(format!(
+                "Cancel by label failed: {}",
+                error_text
+            )));
+        }
+
+        let api_response: ApiResponse<u32> = response
+            .json()
+            .await
+            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
+
+        if let Some(error) = api_response.error {
+            return Err(HttpError::RequestFailed(format!(
+                "API error: {} - {}",
+                error.code, error.message
+            )));
+        }
+
+        api_response
+            .result
+            .ok_or_else(|| HttpError::InvalidResponse("No cancel count in response".to_string()))
+    }
+
+    /// Cancel all orders by instrument
+    ///
+    /// Cancels all orders for a specific instrument.
+    ///
+    /// # Arguments
+    ///
+    /// * `instrument_name` - The instrument name
+    /// * `order_type` - Order type filter (optional)
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use deribit_http::DeribitHttpClient;
+    ///
+    /// let client = DeribitHttpClient::new(true);
+    /// // let cancelled_count = client.cancel_all_by_instrument("BTC-PERPETUAL", None).await?;
+    /// // tracing::info!("Cancelled {} orders", cancelled_count);
+    /// ```
+    pub async fn cancel_all_by_instrument(
+        &self,
+        instrument_name: &str,
+        order_type: Option<&str>,
+    ) -> Result<u32, HttpError> {
+        let mut query_params = vec![("instrument_name".to_string(), instrument_name.to_string())];
+
+        if let Some(order_type) = order_type {
+            query_params.push(("type".to_string(), order_type.to_string()));
+        }
+
+        let query_string = query_params
+            .iter()
+            .map(|(k, v)| format!("{}={}", k, urlencoding::encode(v)))
+            .collect::<Vec<_>>()
+            .join("&");
+
+        let url = format!(
+            "{}/private/cancel_all_by_instrument?{}",
+            self.base_url(),
+            query_string
+        );
+
+        let response = self
+            .http_client()
+            .get(&url)
+            .send()
+            .await
+            .map_err(|e| HttpError::NetworkError(e.to_string()))?;
+
+        if !response.status().is_success() {
+            let error_text = response
+                .text()
+                .await
+                .unwrap_or_else(|_| "Unknown error".to_string());
+            return Err(HttpError::RequestFailed(format!(
+                "Cancel all by instrument failed: {}",
+                error_text
+            )));
+        }
+
+        let api_response: ApiResponse<u32> = response
+            .json()
+            .await
+            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
+
+        if let Some(error) = api_response.error {
+            return Err(HttpError::RequestFailed(format!(
+                "API error: {} - {}",
+                error.code, error.message
+            )));
+        }
+
+        api_response
+            .result
+            .ok_or_else(|| HttpError::InvalidResponse("No cancel count in response".to_string()))
+    }
+
+    /// Cancel all orders by currency
+    ///
+    /// Cancels all orders for a specific currency.
+    ///
+    /// # Arguments
+    ///
+    /// * `currency` - The currency symbol (BTC, ETH, etc.)
+    /// * `kind` - Instrument kind filter (optional)
+    /// * `order_type` - Order type filter (optional)
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use deribit_http::DeribitHttpClient;
+    ///
+    /// let client = DeribitHttpClient::new(true);
+    /// // let cancelled_count = client.cancel_all_by_currency("BTC", Some("future"), None).await?;
+    /// // tracing::info!("Cancelled {} orders", cancelled_count);
+    /// ```
+    pub async fn cancel_all_by_currency(
+        &self,
+        currency: &str,
+        kind: Option<&str>,
+        order_type: Option<&str>,
+    ) -> Result<u32, HttpError> {
+        let mut query_params = vec![("currency".to_string(), currency.to_string())];
+
+        if let Some(kind) = kind {
+            query_params.push(("kind".to_string(), kind.to_string()));
+        }
+
+        if let Some(order_type) = order_type {
+            query_params.push(("type".to_string(), order_type.to_string()));
+        }
+
+        let query_string = query_params
+            .iter()
+            .map(|(k, v)| format!("{}={}", k, urlencoding::encode(v)))
+            .collect::<Vec<_>>()
+            .join("&");
+
+        let url = format!(
+            "{}/private/cancel_all_by_currency?{}",
+            self.base_url(),
+            query_string
+        );
+
+        let response = self
+            .http_client()
+            .get(&url)
+            .send()
+            .await
+            .map_err(|e| HttpError::NetworkError(e.to_string()))?;
+
+        if !response.status().is_success() {
+            let error_text = response
+                .text()
+                .await
+                .unwrap_or_else(|_| "Unknown error".to_string());
+            return Err(HttpError::RequestFailed(format!(
+                "Cancel all by currency failed: {}",
+                error_text
+            )));
+        }
+
+        let api_response: ApiResponse<u32> = response
+            .json()
+            .await
+            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
+
+        if let Some(error) = api_response.error {
+            return Err(HttpError::RequestFailed(format!(
+                "API error: {} - {}",
+                error.code, error.message
+            )));
+        }
+
+        api_response
+            .result
+            .ok_or_else(|| HttpError::InvalidResponse("No cancel count in response".to_string()))
+    }
+
+    /// Cancel all orders by kind or type
+    ///
+    /// Cancels all orders matching specific kind and/or type criteria.
+    ///
+    /// # Arguments
+    ///
+    /// * `currency` - The currency symbol (BTC, ETH, etc.)
+    /// * `kind` - Instrument kind filter (optional)
+    /// * `order_type` - Order type filter (optional)
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use deribit_http::DeribitHttpClient;
+    ///
+    /// let client = DeribitHttpClient::new(true);
+    /// // let cancelled_count = client.cancel_all_by_kind_or_type("BTC", Some("future"), Some("limit")).await?;
+    /// // tracing::info!("Cancelled {} orders", cancelled_count);
+    /// ```
+    pub async fn cancel_all_by_kind_or_type(
+        &self,
+        currency: &str,
+        kind: Option<&str>,
+        order_type: Option<&str>,
+    ) -> Result<u32, HttpError> {
+        let mut query_params = vec![("currency".to_string(), currency.to_string())];
+
+        if let Some(kind) = kind {
+            query_params.push(("kind".to_string(), kind.to_string()));
+        }
+
+        if let Some(order_type) = order_type {
+            query_params.push(("type".to_string(), order_type.to_string()));
+        }
+
+        let query_string = query_params
+            .iter()
+            .map(|(k, v)| format!("{}={}", k, urlencoding::encode(v)))
+            .collect::<Vec<_>>()
+            .join("&");
+
+        let url = format!(
+            "{}/private/cancel_all_by_kind_or_type?{}",
+            self.base_url(),
+            query_string
+        );
+
+        let response = self
+            .http_client()
+            .get(&url)
+            .send()
+            .await
+            .map_err(|e| HttpError::NetworkError(e.to_string()))?;
+
+        if !response.status().is_success() {
+            let error_text = response
+                .text()
+                .await
+                .unwrap_or_else(|_| "Unknown error".to_string());
+            return Err(HttpError::RequestFailed(format!(
+                "Cancel all by kind or type failed: {}",
+                error_text
+            )));
+        }
+
+        let api_response: ApiResponse<u32> = response
+            .json()
+            .await
+            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
+
+        if let Some(error) = api_response.error {
+            return Err(HttpError::RequestFailed(format!(
+                "API error: {} - {}",
+                error.code, error.message
+            )));
+        }
+
+        api_response
+            .result
+            .ok_or_else(|| HttpError::InvalidResponse("No cancel count in response".to_string()))
+    }
+
+    /// Cancel all orders by currency pair
+    ///
+    /// Cancels all orders for a specific currency pair.
+    ///
+    /// # Arguments
+    ///
+    /// * `currency_pair` - The currency pair (e.g., "BTC_USD", "ETH_USD")
+    /// * `kind` - Instrument kind filter (optional)
+    /// * `order_type` - Order type filter (optional)
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use deribit_http::DeribitHttpClient;
+    ///
+    /// let client = DeribitHttpClient::new(true);
+    /// // let cancelled_count = client.cancel_all_by_currency_pair("ETH_USD", Some("future"), None).await?;
+    /// // tracing::info!("Cancelled {} orders", cancelled_count);
+    /// ```
+    pub async fn cancel_all_by_currency_pair(
+        &self,
+        currency_pair: &str,
+        kind: Option<&str>,
+        order_type: Option<&str>,
+    ) -> Result<u32, HttpError> {
+        let mut query_params = vec![("currency_pair".to_string(), currency_pair.to_string())];
+
+        if let Some(kind) = kind {
+            query_params.push(("kind".to_string(), kind.to_string()));
+        }
+
+        if let Some(order_type) = order_type {
+            query_params.push(("type".to_string(), order_type.to_string()));
+        }
+
+        let query_string = query_params
+            .iter()
+            .map(|(k, v)| format!("{}={}", k, urlencoding::encode(v)))
+            .collect::<Vec<_>>()
+            .join("&");
+
+        let url = format!(
+            "{}/private/cancel_all_by_currency_pair?{}",
+            self.base_url(),
+            query_string
+        );
+
+        let response = self
+            .http_client()
+            .get(&url)
+            .send()
+            .await
+            .map_err(|e| HttpError::NetworkError(e.to_string()))?;
+
+        if !response.status().is_success() {
+            let error_text = response
+                .text()
+                .await
+                .unwrap_or_else(|_| "Unknown error".to_string());
+            return Err(HttpError::RequestFailed(format!(
+                "Cancel all by currency pair failed: {}",
+                error_text
+            )));
+        }
+
+        let api_response: ApiResponse<u32> = response
+            .json()
+            .await
+            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
+
+        if let Some(error) = api_response.error {
+            return Err(HttpError::RequestFailed(format!(
+                "API error: {} - {}",
+                error.code, error.message
+            )));
+        }
+
+        api_response
+            .result
+            .ok_or_else(|| HttpError::InvalidResponse("No cancel count in response".to_string()))
+    }
+
+    /// Get open orders by currency
+    ///
+    /// Retrieves open orders for a specific currency.
+    ///
+    /// # Arguments
+    ///
+    /// * `currency` - The currency symbol (BTC, ETH, etc.)
+    /// * `kind` - Instrument kind filter (optional)
+    /// * `order_type` - Order type filter (optional)
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use deribit_http::DeribitHttpClient;
+    ///
+    /// let client = DeribitHttpClient::new(true);
+    /// // let orders = client.get_open_orders_by_currency("BTC", Some("future"), None).await?;
+    /// // tracing::info!("Found {} open orders", orders.len());
+    /// ```
+    pub async fn get_open_orders_by_currency(
+        &self,
+        currency: &str,
+        kind: Option<&str>,
+        order_type: Option<&str>,
+    ) -> Result<Vec<OrderInfo>, HttpError> {
+        let mut query_params = vec![("currency".to_string(), currency.to_string())];
+
+        if let Some(kind) = kind {
+            query_params.push(("kind".to_string(), kind.to_string()));
+        }
+
+        if let Some(order_type) = order_type {
+            query_params.push(("type".to_string(), order_type.to_string()));
+        }
+
+        let query_string = query_params
+            .iter()
+            .map(|(k, v)| format!("{}={}", k, urlencoding::encode(v)))
+            .collect::<Vec<_>>()
+            .join("&");
+
+        let url = format!(
+            "{}/private/get_open_orders_by_currency?{}",
+            self.base_url(),
+            query_string
+        );
+
+        let response = self
+            .http_client()
+            .get(&url)
+            .send()
+            .await
+            .map_err(|e| HttpError::NetworkError(e.to_string()))?;
+
+        if !response.status().is_success() {
+            let error_text = response
+                .text()
+                .await
+                .unwrap_or_else(|_| "Unknown error".to_string());
+            return Err(HttpError::RequestFailed(format!(
+                "Get open orders by currency failed: {}",
+                error_text
+            )));
+        }
+
+        let api_response: ApiResponse<Vec<OrderInfo>> = response
+            .json()
+            .await
+            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
+
+        if let Some(error) = api_response.error {
+            return Err(HttpError::RequestFailed(format!(
+                "API error: {} - {}",
+                error.code, error.message
+            )));
+        }
+
+        api_response
+            .result
+            .ok_or_else(|| HttpError::InvalidResponse("No orders data in response".to_string()))
+    }
+
     /// Get open orders
     ///
     /// Retrieves list of user's open orders across many currencies.
