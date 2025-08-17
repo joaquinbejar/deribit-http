@@ -611,6 +611,25 @@ impl DeribitHttpClient {
         Ok(test_result.version)
     }
 
+    /// Hello endpoint (WebSocket only)
+    ///
+    /// This endpoint is only available via WebSocket connections.
+    /// For HTTP clients, this method returns an error indicating WebSocket-only availability.
+    ///
+    /// # Arguments
+    ///
+    /// * `client_name` - Name of the client application
+    /// * `client_version` - Version of the client application
+    pub async fn hello(
+        &self,
+        _client_name: &str,
+        _client_version: &str,
+    ) -> Result<HelloResponse, HttpError> {
+        Err(HttpError::RequestFailed(
+            "Hello endpoint is only available via WebSocket connections".to_string(),
+        ))
+    }
+
     /// Get platform status and locked currency indices
     ///
     /// Returns information about the platform status and any locked currency indices.

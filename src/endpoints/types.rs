@@ -574,6 +574,8 @@ pub struct Currency {
     pub withdrawal_fee: f64,
     /// Withdrawal priorities
     pub withdrawal_priorities: Vec<WithdrawalPriority>,
+    /// APR for yield-generating tokens
+    pub apr: Option<f64>,
 }
 
 /// Index data structure
@@ -587,6 +589,18 @@ pub struct IndexData {
     pub components: Vec<std::collections::HashMap<String, f64>>,
     /// Timestamp
     pub timestamp: u64,
+    /// BTC price
+    pub btc: Option<f64>,
+    /// ETH price
+    pub eth: Option<f64>,
+    /// USDC price
+    pub usdc: Option<f64>,
+    /// USDT price
+    pub usdt: Option<f64>,
+    /// EURR price
+    pub eurr: Option<f64>,
+    /// EDP price
+    pub edp: Option<f64>,
 }
 
 /// Withdrawal priority structure
@@ -651,12 +665,14 @@ pub struct HelloResponse {
 pub struct StatusResponse {
     pub locked: bool,
     pub message: String,
+    pub locked_indices: Vec<String>,
 }
 
 /// APR history response structure
 #[derive(Clone, Serialize, Deserialize)]
 pub struct AprHistoryResponse {
     pub data: Vec<AprDataPoint>,
+    pub continuation: Option<String>,
 }
 
 /// APR data point structure
@@ -664,6 +680,7 @@ pub struct AprHistoryResponse {
 pub struct AprDataPoint {
     pub apr: f64,
     pub timestamp: u64,
+    pub day: i32,
 }
 
 /// Tick size step structure
@@ -691,6 +708,8 @@ pub struct DeliveryPriceData {
 #[derive(Clone, Serialize, Deserialize)]
 pub struct ExpirationsResponse {
     pub expirations: Vec<String>,
+    pub future: Option<Vec<String>>,
+    pub option: Option<Vec<String>>,
 }
 
 /// Funding rate data structure
@@ -701,6 +720,8 @@ pub struct FundingRateData {
     pub interest_rate: f64,
     pub prev_index_price: f64,
     pub timestamp: u64,
+    pub interest_8h: Option<f64>,
+    pub interest_1h: Option<f64>,
 }
 
 /// Settlements response structure
@@ -726,6 +747,7 @@ pub struct Settlement {
     #[serde(rename = "type")]
     pub settlement_type: String,
     pub timestamp: u64,
+    pub session_profit_loss: f64,
 }
 
 /// Last trades response structure
