@@ -160,8 +160,8 @@ pub use config::ApiCredentials;
 pub use connection::*;
 pub use endpoints::{
     AccountSummary, BuyOrderRequest, Deposit, DepositsResponse, EditOrderRequest, FundingChartData,
-    FundingDataPoint, Instrument, OrderBook, OrderInfo, OrderResponse, OrderType, PortfolioInfo,
-    Position, SellOrderRequest, Subaccount, TickerData, TickerStats, TimeInForce, Trade,
+    FundingDataPoint, MassQuoteRequest, MassQuoteResponse, OrderInfo, OrderResponse, OrderType,
+    PortfolioInfo, Position, QuoteResult, SellOrderRequest, Subaccount, TimeInForce,
     TradeExecution, TradingViewChartData, TransactionLog, TransactionLogEntry, TransferResult,
     UserTrade, Withdrawal, WithdrawalsResponse,
 };
