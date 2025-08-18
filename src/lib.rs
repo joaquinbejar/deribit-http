@@ -158,13 +158,6 @@ pub use error::*;
 pub use auth::{ApiKeyAuth, AuthManager};
 pub use config::ApiCredentials;
 pub use connection::*;
-pub use endpoints::{
-    AccountSummary, BuyOrderRequest, Deposit, DepositsResponse, EditOrderRequest, FundingChartData,
-    FundingDataPoint, MassQuoteRequest, MassQuoteResponse, OrderInfo, OrderResponse, PortfolioInfo,
-    QuoteResult, SellOrderRequest, Subaccount, TradeExecution, TradingViewChartData,
-    TransactionLog, TransactionLogEntry, TransferResult, UserTrade, Withdrawal,
-    WithdrawalsResponse,
-};
 pub use message::{HttpMessageBuilder, HttpRequestBuilder, HttpResponseHandler};
 pub use model::{ApiError, ApiResponse, AuthToken, http_types};
 pub use session::*;

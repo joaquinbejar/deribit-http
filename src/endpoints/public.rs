@@ -4,10 +4,14 @@
 //! market data, trading, account management, and system endpoints.
 
 use crate::DeribitHttpClient;
-use crate::endpoints::types::*;
 use crate::error::HttpError;
 use crate::model::http_types::ApiResponse;
-use deribit_base::prelude::{Instrument, OrderBook, TickerData, Trade};
+use deribit_base::prelude::{
+    AprHistoryResponse, BookSummary, ContractSizeResponse, Currency, DeliveryPricesResponse,
+    ExpirationsResponse, FundingChartData, FundingRateData, HelloResponse, IndexData,
+    IndexPriceData, Instrument, LastTradesResponse, OrderBook, SettlementsResponse, StatusResponse,
+    TestResponse, TickerData, Trade, TradingViewChartData,
+};
 
 /// Market data endpoints
 impl DeribitHttpClient {
@@ -383,18 +387,6 @@ impl DeribitHttpClient {
     ///
     /// * `instrument_name` - The instrument identifier (e.g., "BTC-PERPETUAL")
     ///
-    /// # Examples
-    ///
-    /// ```rust
-    /// # use deribit_http::DeribitHttpClient;
-    /// # #[tokio::main]
-    /// # async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    /// let client = DeribitHttpClient::new(true); // testnet
-    /// let summary = client.get_book_summary_by_instrument("BTC-PERPETUAL").await?;
-    /// println!("Volume: {} USD", summary.volume_usd.unwrap_or(0.0));
-    /// # Ok(())
-    /// # }
-    /// ```
     pub async fn get_book_summary_by_instrument(
         &self,
         instrument_name: &str,
