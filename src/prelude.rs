@@ -15,8 +15,6 @@ pub use crate::error::HttpError;
 pub use crate::auth::{ApiKeyAuth, AuthManager, AuthRequest};
 pub use crate::model::http_types::AuthToken;
 
-
-
 // Re-export message types
 pub use crate::message::{HttpMessageBuilder, HttpRequestBuilder, HttpResponseHandler};
 

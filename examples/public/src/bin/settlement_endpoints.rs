@@ -8,7 +8,7 @@
 
 use deribit_http::DeribitHttpClient;
 use std::env;
-use tracing::{error, info, warn};
+use tracing::{info, warn};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -200,8 +200,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     settlement.settlement_type
                 );
 
-                if let Some(position) = settlement.position {
-                    info!("      Position: {:.6}", position);
+                if let Some(position_size) = settlement.position_size {
+                    info!("      Position Size: {:.6}", position_size);
                 }
 
                 if let Some(pnl) = settlement.profit_loss {

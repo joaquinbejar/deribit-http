@@ -199,14 +199,13 @@ async fn main() -> Result<(), HttpError> {
         if side == "buy" {
             let buy_request = BuyOrderRequest {
                 instrument_name: instrument.to_string(),
-                amount: Some(amount),
-                contracts: None,
-                order_type: OrderType::Limit,
+                amount: amount,
+                type_: Some(OrderType::Limit),
                 price: Some(price),
                 label: Some(label.to_string()),
-                time_in_force: TimeInForce::GoodTilCancelled,
-                post_only: false, // Allow execution to potentially generate trades
-                reduce_only: false,
+                time_in_force: Some(TimeInForce::GoodTilCancelled),
+                post_only: Some(false), // Allow execution to potentially generate trades
+                reduce_only: Some(false),
             };
 
             match client.buy_order(buy_request).await {
@@ -232,14 +231,13 @@ async fn main() -> Result<(), HttpError> {
         } else {
             let sell_request = SellOrderRequest {
                 instrument_name: instrument.to_string(),
-                amount: Some(amount),
-                contracts: None,
-                order_type: OrderType::Limit,
+                amount: amount,
+                type_: Some(OrderType::Limit),
                 price: Some(price),
                 label: Some(label.to_string()),
-                time_in_force: TimeInForce::GoodTilCancelled,
-                post_only: false, // Allow execution to potentially generate trades
-                reduce_only: false,
+                time_in_force: Some(TimeInForce::GoodTilCancelled),
+                post_only: Some(false), // Allow execution to potentially generate trades
+                reduce_only: Some(false),
             };
 
             match client.sell_order(sell_request).await {

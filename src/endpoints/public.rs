@@ -39,7 +39,7 @@ impl DeribitHttpClient {
 
         let response = self
             .http_client()
-            .get(&url)
+            .get(url)
             .send()
             .await
             .map_err(|e| HttpError::NetworkError(e.to_string()))?;

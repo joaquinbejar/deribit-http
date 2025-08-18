@@ -16,7 +16,8 @@
 //!
 //! Then run: cargo run --bin mass_quote_endpoints
 
-use deribit_http::{DeribitHttpClient, HttpError, MassQuoteRequest};
+use deribit_base::prelude::{MassQuoteItem, MassQuoteRequest, OrderSide};
+use deribit_http::{DeribitHttpClient, HttpError};
 use std::env;
 use std::path::Path;
 use tokio::time::{Duration, sleep};
@@ -146,62 +147,76 @@ async fn main() -> Result<(), HttpError> {
     let eth_bid_price = eth_mark_price * 0.99; // 1% below mark
     let eth_ask_price = eth_mark_price * 1.01; // 1% above mark
 
-    let mass_quotes = vec![
-        MassQuoteRequest {
+    let mass_quote_items = vec![
+        // BTC bid quote
+        MassQuoteItem {
             instrument_name: "BTC-PERPETUAL".to_string(),
-            bid_price: Some(btc_bid_price),
-            ask_price: Some(btc_ask_price),
-            bid_amount: Some(100.0), // 100 USD worth on bid
-            ask_amount: Some(100.0), // 100 USD worth on ask
+            side: OrderSide::Buy,
+            amount: 100.0, // 100 USD worth
+            price: btc_bid_price,
         },
-        MassQuoteRequest {
-            instrument_name: "ETH-PERPETUAL".to_string(),
-            bid_price: Some(eth_bid_price),
-            ask_price: Some(eth_ask_price),
-            bid_amount: Some(500.0), // 500 USD worth on bid
-            ask_amount: Some(500.0), // 500 USD worth on ask
-        },
-        // Quote with only bid side
-        MassQuoteRequest {
+        // BTC ask quote
+        MassQuoteItem {
             instrument_name: "BTC-PERPETUAL".to_string(),
-            bid_price: Some(btc_mark_price * 0.98), // 2% below mark
-            ask_price: None,
-            bid_amount: Some(50.0),
-            ask_amount: None,
+            side: OrderSide::Sell,
+            amount: 100.0, // 100 USD worth
+            price: btc_ask_price,
         },
-        // Quote with only ask side
-        MassQuoteRequest {
+        // ETH bid quote
+        MassQuoteItem {
             instrument_name: "ETH-PERPETUAL".to_string(),
-            bid_price: None,
-            ask_price: Some(eth_mark_price * 1.02), // 2% above mark
-            bid_amount: None,
-            ask_amount: Some(250.0),
+            side: OrderSide::Buy,
+            amount: 500.0, // 500 USD worth
+            price: eth_bid_price,
+        },
+        // ETH ask quote
+        MassQuoteItem {
+            instrument_name: "ETH-PERPETUAL".to_string(),
+            side: OrderSide::Sell,
+            amount: 500.0, // 500 USD worth
+            price: eth_ask_price,
+        },
+        // Additional BTC bid at lower price
+        MassQuoteItem {
+            instrument_name: "BTC-PERPETUAL".to_string(),
+            side: OrderSide::Buy,
+            amount: 50.0,
+            price: btc_mark_price * 0.98, // 2% below mark
+        },
+        // Additional ETH ask at higher price
+        MassQuoteItem {
+            instrument_name: "ETH-PERPETUAL".to_string(),
+            side: OrderSide::Sell,
+            amount: 250.0,
+            price: eth_mark_price * 1.02, // 2% above mark
         },
     ];
 
+    let mass_quotes = MassQuoteRequest {
+        items: mass_quote_items,
+        label: Some("example_mass_quotes".to_string()),
+    };
+
     info!(
-        "📊 Submitting mass quotes for {} instruments:",
-        mass_quotes.len()
+        "📊 Submitting mass quotes with {} items:",
+        mass_quotes.items.len()
     );
-    for (i, quote) in mass_quotes.iter().enumerate() {
-        info!("   {}. {}", i + 1, quote.instrument_name);
-        if let Some(bid_price) = quote.bid_price {
-            info!(
-                "      📉 Bid: ${:.2} (Amount: {:.0} USD)",
-                bid_price,
-                quote.bid_amount.unwrap_or(0.0)
-            );
-        }
-        if let Some(ask_price) = quote.ask_price {
-            info!(
-                "      📈 Ask: ${:.2} (Amount: {:.0} USD)",
-                ask_price,
-                quote.ask_amount.unwrap_or(0.0)
-            );
-        }
+    for (i, item) in mass_quotes.items.iter().enumerate() {
+        let side_str = match item.side {
+            OrderSide::Buy => "📉 Bid",
+            OrderSide::Sell => "📈 Ask",
+        };
+        info!(
+            "   {}. {} - {}: ${:.2} (Amount: {:.0} USD)",
+            i + 1,
+            item.instrument_name,
+            side_str,
+            item.price,
+            item.amount
+        );
     }
 
-    match client.mass_quote(mass_quotes).await {
+    match client.mass_quote(vec![mass_quotes]).await {
         Ok(response) => {
             info!("✅ Mass quote submission successful");
             info!("📊 Quote results:");

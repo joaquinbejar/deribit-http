@@ -105,14 +105,13 @@ async fn main() -> Result<(), HttpError> {
 
     let buy_request = BuyOrderRequest {
         instrument_name: "BTC-PERPETUAL".to_string(),
-        amount: Some(10.0), // 10 USD worth
-        contracts: None,
-        order_type: OrderType::Limit,
+        amount: 10.0, // 10 USD worth of BTC
+        type_: Some(OrderType::Limit),
         price: Some(30000.0), // Low price to avoid execution
         label: Some("example_buy_order".to_string()),
-        time_in_force: TimeInForce::GoodTilCancelled,
-        post_only: true, // Ensure we don't execute immediately
-        reduce_only: false,
+        time_in_force: Some(TimeInForce::GoodTilCancelled),
+        post_only: Some(true), // Ensure we don't execute immediately
+        reduce_only: Some(false),
     };
 
     let buy_order_id = match client.buy_order(buy_request).await {
@@ -140,14 +139,13 @@ async fn main() -> Result<(), HttpError> {
 
     let sell_request = SellOrderRequest {
         instrument_name: "BTC-PERPETUAL".to_string(),
-        amount: Some(10.0), // 10 USD worth
-        contracts: None,
-        order_type: OrderType::Limit,
+        amount: 10.0, // 10 USD worth of BTC
+        type_: Some(OrderType::Limit),
         price: Some(100000.0), // High price to avoid execution
         label: Some("example_sell_order".to_string()),
-        time_in_force: TimeInForce::GoodTilCancelled,
-        post_only: true, // Ensure we don't execute immediately
-        reduce_only: false,
+        time_in_force: Some(TimeInForce::GoodTilCancelled),
+        post_only: Some(true), // Ensure we don't execute immediately
+        reduce_only: Some(false),
     };
 
     let sell_order_id = match client.sell_order(sell_request).await {
@@ -177,9 +175,9 @@ async fn main() -> Result<(), HttpError> {
         order_id: buy_order_id.clone(),
         amount: Some(15.0),   // Change amount from 10 to 15 USD
         price: Some(25000.0), // Change price from 30000 to 25000
-        advanced: None,
-        post_only: true,
-        reduce_only: false,
+        post_only: Some(true),
+        reduce_only: Some(false),
+        time_in_force: Some(TimeInForce::GoodTilCancelled),
     };
 
     match client.edit_order(edit_request).await {
@@ -200,26 +198,12 @@ async fn main() -> Result<(), HttpError> {
     // =================================================================
     // 4. EDIT ORDER BY LABEL (/private/edit_by_label)
     // =================================================================
-    info!("🏷️  4. EDIT ORDER BY LABEL");
-    info!("---------------------------");
-
-    match client
-        .edit_by_label("example_sell_order", Some(20.0), Some(95000.0))
-        .await
-    {
-        Ok(order_response) => {
-            info!("✅ Order edited by label successfully");
-            info!("📋 Order ID: {}", order_response.order.order_id);
-            info!("💰 New Price: ${:.2}", order_response.order.price);
-            info!("📊 New Amount: {:.6} BTC", order_response.order.amount);
-            info!("🏷️  Label: {:?}", order_response.order.label);
-            info!("📊 Status: {}", order_response.order.order_state);
-        }
-        Err(e) => {
-            warn!("⚠️  Failed to edit order by label: {}", e);
-            info!("ℹ️  This might be expected if the order was already filled or cancelled");
-        }
-    };
+    // info!("🏷️  4. EDIT ORDER BY LABEL");
+    // info!("---------------------------");
+    // NOTE: edit_by_label method is not implemented in the current HTTP client
+    // This functionality would require additional implementation
+    info!("🏷️  4. EDIT ORDER BY LABEL - SKIPPED (Method not implemented)");
+    info!("------------------------------------------------------------------");
     println!();
 
     // =================================================================

@@ -148,9 +148,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     summary.mark_price, summary.open_interest
                 );
 
-                if let Some(volume_usd) = summary.volume_usd {
-                    info!("      Volume USD: ${:.2}", volume_usd);
-                }
+                info!("      Volume USD: ${:.2}", summary.volume_usd);
             }
 
             if book_summaries.len() > 3 {
@@ -179,9 +177,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             info!("   📊 Volume: {}", summary.volume);
             info!("   🏦 Open Interest: {}", summary.open_interest);
 
-            if let Some(volume_usd) = summary.volume_usd {
-                info!("   💵 Volume USD: ${:.2}", volume_usd);
-            }
+            info!("      Volume USD: ${:.2}", summary.volume_usd);
 
             if let Some(funding_8h) = summary.funding_8h {
                 info!("   📈 8h Funding Rate: {:.6}", funding_8h);

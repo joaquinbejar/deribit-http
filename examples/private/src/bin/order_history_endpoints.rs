@@ -219,14 +219,13 @@ async fn main() -> Result<(), HttpError> {
         if side == "buy" {
             let buy_request = BuyOrderRequest {
                 instrument_name: instrument.to_string(),
-                amount: Some(amount),
-                contracts: None,
-                order_type: order_type.clone(),
+                amount: amount,
+                type_: Some(order_type.clone()),
                 price: Some(price),
                 label: Some(label.to_string()),
-                time_in_force: TimeInForce::GoodTilCancelled,
-                post_only: true, // Avoid immediate execution
-                reduce_only: false,
+                time_in_force: Some(TimeInForce::GoodTilCancelled),
+                post_only: Some(true), // Avoid immediate execution
+                reduce_only: Some(false),
             };
 
             match client.buy_order(buy_request).await {
@@ -252,14 +251,13 @@ async fn main() -> Result<(), HttpError> {
         } else {
             let sell_request = SellOrderRequest {
                 instrument_name: instrument.to_string(),
-                amount: Some(amount),
-                contracts: None,
-                order_type: order_type.clone(),
+                amount: amount,
+                type_: Some(order_type.clone()),
                 price: Some(price),
                 label: Some(label.to_string()),
-                time_in_force: TimeInForce::GoodTilCancelled,
-                post_only: true, // Avoid immediate execution
-                reduce_only: false,
+                time_in_force: Some(TimeInForce::GoodTilCancelled),
+                post_only: Some(true), // Avoid immediate execution
+                reduce_only: Some(false),
             };
 
             match client.sell_order(sell_request).await {
@@ -425,7 +423,7 @@ async fn main() -> Result<(), HttpError> {
 
     // Test BTC stop order history
     match client
-        .get_stop_order_history("BTC", Some("future"), Some(15), Some(0))
+        .get_order_history("BTC", Some("future"), Some(15), Some(0))
         .await
     {
         Ok(orders) => {
@@ -473,7 +471,7 @@ async fn main() -> Result<(), HttpError> {
 
     // Test ETH stop order history
     match client
-        .get_stop_order_history("ETH", Some("future"), Some(15), Some(0))
+        .get_order_history("ETH", Some("future"), Some(15), Some(0))
         .await
     {
         Ok(orders) => {
