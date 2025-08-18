@@ -77,7 +77,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     info!("      P&L: {:.6}", pnl);
                 }
 
-                info!("      Session P&L: {:.6}", settlement.session_profit_loss);
+                let session_pnl = settlement.session_profit_loss.unwrap_or(0.0);
+                info!("      Session P&L: {:.6}", session_pnl);
             }
 
             if settlements.settlements.len() > 5 {
@@ -155,9 +156,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             );
 
             for settlement in &settlements.settlements {
+                let session_pnl = settlement.session_profit_loss.unwrap_or(0.0);
                 info!(
                     "   ETH settlement: {} - Session P&L: {:.6}",
-                    settlement.settlement_type, settlement.session_profit_loss
+                    settlement.settlement_type, session_pnl
                 );
             }
         }
@@ -208,7 +210,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     info!("      P&L: {:.6}", pnl);
                 }
 
-                info!("      Session P&L: {:.6}", settlement.session_profit_loss);
+                let session_pnl = settlement.session_profit_loss.unwrap_or(0.0);
+                info!("      Session P&L: {:.6}", session_pnl);
 
                 if let Some(funding) = settlement.funding {
                     info!("      Funding: {:.6}", funding);
@@ -240,11 +243,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             );
 
             for (i, settlement) in settlements.settlements.iter().enumerate() {
+                let session_pnl = settlement.session_profit_loss.unwrap_or(0.0);
                 info!(
                     "   {}. {} settlement - Session P&L: {:.6}",
                     i + 1,
                     settlement.settlement_type,
-                    settlement.session_profit_loss
+                    session_pnl
                 );
             }
         }
@@ -254,7 +258,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     }
 
-    // Test with a BTC future (if available)
+    // Test with a BTC future (demonstrating error handling for inactive instruments)
     match client
         .get_last_settlements_by_instrument("BTC-29MAR24", Some("delivery"), Some(2), None, None)
         .await
@@ -282,9 +286,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             }
         }
         Err(e) => {
-            warn!("⚠️ Get BTC future delivery settlements error: {}", e);
+            info!("ℹ️ Expected result for inactive BTC future: {}", e);
             info!(
-                "💡 This is expected if the specific future is not available or has no deliveries"
+                "💡 This demonstrates proper error handling when instruments are not active in testnet"
             );
         }
     }

@@ -120,17 +120,30 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         Ok(expirations) => {
             info!("✅ Expirations for BTC futures retrieved successfully");
 
-            if let Some(futures) = &expirations.future {
-                info!("📊 Found {} BTC future expirations:", futures.len());
-                for (i, expiration) in futures.iter().enumerate() {
-                    info!("   {}. {}", i + 1, expiration);
+            // Look for BTC expirations (key could be "btc" or "BTC")
+            let btc_key = expirations.currencies.keys()
+                .find(|k| k.to_lowercase() == "btc")
+                .cloned();
+
+            if let Some(key) = btc_key {
+                if let Some(btc_expirations) = expirations.currencies.get(&key) {
+                    if let Some(futures) = &btc_expirations.future {
+                        info!("📊 Found {} BTC future expirations:", futures.len());
+                        for (i, expiration) in futures.iter().enumerate() {
+                            info!("   {}. {}", i + 1, expiration);
+                        }
+                    } else {
+                        info!("💡 No BTC future expirations found");
+                    }
+
+                    if let Some(options) = &btc_expirations.option {
+                        info!("📊 Also found {} BTC option expirations", options.len());
+                    }
+                } else {
+                    info!("💡 No BTC expirations data found");
                 }
             } else {
-                info!("💡 No BTC future expirations found");
-            }
-
-            if let Some(options) = &expirations.option {
-                info!("📊 Also found {} BTC option expirations", options.len());
+                info!("💡 No BTC currency found in response");
             }
         }
         Err(e) => {
@@ -143,20 +156,33 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         Ok(expirations) => {
             info!("✅ Expirations for ETH options retrieved successfully");
 
-            if let Some(options) = &expirations.option {
-                info!("📊 Found {} ETH option expirations:", options.len());
-                for (i, expiration) in options.iter().take(5).enumerate() {
-                    info!("   {}. {}", i + 1, expiration);
-                }
+            // Look for ETH expirations (key could be "eth" or "ETH")
+            let eth_key = expirations.currencies.keys()
+                .find(|k| k.to_lowercase() == "eth")
+                .cloned();
 
-                if options.len() > 5 {
-                    info!(
-                        "💡 Showing first 5 of {} ETH option expirations",
-                        options.len()
-                    );
+            if let Some(key) = eth_key {
+                if let Some(eth_expirations) = expirations.currencies.get(&key) {
+                    if let Some(options) = &eth_expirations.option {
+                        info!("📊 Found {} ETH option expirations:", options.len());
+                        for (i, expiration) in options.iter().take(5).enumerate() {
+                            info!("   {}. {}", i + 1, expiration);
+                        }
+
+                        if options.len() > 5 {
+                            info!(
+                                "💡 Showing first 5 of {} ETH option expirations",
+                                options.len()
+                            );
+                        }
+                    } else {
+                        info!("💡 No ETH option expirations found");
+                    }
+                } else {
+                    info!("💡 No ETH expirations data found");
                 }
             } else {
-                info!("💡 No ETH option expirations found");
+                info!("💡 No ETH currency found in response");
             }
         }
         Err(e) => {
@@ -171,15 +197,48 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             info!("✅ All expirations retrieved successfully");
 
             let mut total_expirations = 0;
+            let mut futures_count = 0;
+            let mut options_count = 0;
 
+            // For "any" currency, check direct fields first
             if let Some(futures) = &expirations.future {
-                info!("📈 Total future expirations: {}", futures.len());
+                futures_count = futures.len();
                 total_expirations += futures.len();
+                info!("📈 Total future expirations: {}", futures_count);
             }
 
             if let Some(options) = &expirations.option {
-                info!("📊 Total option expirations: {}", options.len());
+                options_count = options.len();
                 total_expirations += options.len();
+                info!("📊 Total option expirations: {}", options_count);
+            }
+
+            // If no direct fields, check currencies map
+            if total_expirations == 0 {
+                for (currency, currency_expirations) in &expirations.currencies {
+                    if let Some(futures) = &currency_expirations.future {
+                        futures_count += futures.len();
+                        total_expirations += futures.len();
+                    }
+
+                    if let Some(options) = &currency_expirations.option {
+                        options_count += options.len();
+                        total_expirations += options.len();
+                    }
+
+                    info!("📈 {} expirations found for currency: {}", 
+                          currency_expirations.future.as_ref().map_or(0, |f| f.len()) + 
+                          currency_expirations.option.as_ref().map_or(0, |o| o.len()), 
+                          currency);
+                }
+
+                if futures_count > 0 {
+                    info!("📈 Total future expirations: {}", futures_count);
+                }
+
+                if options_count > 0 {
+                    info!("📊 Total option expirations: {}", options_count);
+                }
             }
 
             info!(

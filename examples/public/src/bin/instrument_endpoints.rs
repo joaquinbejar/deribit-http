@@ -55,7 +55,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             info!("✅ BTC-PERPETUAL instrument retrieved successfully");
             info!("📊 Instrument Details:");
             info!("   📝 Name: {}", instrument.instrument_name);
-            info!("   📏 Contract Size: {}", instrument.contract_size);
+            if let Some(contract_size) = instrument.contract_size {
+                info!("   📏 Contract Size: {}", contract_size);
+            } else {
+                info!("   📏 Contract Size: Not available");
+            }
             if let Some(creation) = instrument.creation_timestamp {
                 info!("   📅 Creation: {}", creation);
             } else {
@@ -79,7 +83,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             info!("✅ BTC future instrument retrieved successfully");
             info!("📊 BTC Future Details:");
             info!("   📝 Name: {}", instrument.instrument_name);
-            info!("   📏 Contract Size: {}", instrument.contract_size);
+            if let Some(contract_size) = instrument.contract_size {
+                info!("   📏 Contract Size: {}", contract_size);
+            } else {
+                info!("   📏 Contract Size: Not available");
+            }
             if let Some(creation) = instrument.creation_timestamp {
                 info!("   📅 Creation: {}", creation);
             } else {
@@ -102,7 +110,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             info!("✅ BTC option instrument retrieved successfully");
             info!("📊 BTC Option Details:");
             info!("   📝 Name: {}", instrument.instrument_name);
-            info!("   📏 Contract Size: {}", instrument.contract_size);
+            if let Some(contract_size) = instrument.contract_size {
+                info!("   📏 Contract Size: {}", contract_size);
+            } else {
+                info!("   📏 Contract Size: Not available");
+            }
             if let Some(creation) = instrument.creation_timestamp {
                 info!("   📅 Creation: {}", creation);
             } else {
@@ -125,7 +137,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             info!("✅ ETH-PERPETUAL instrument retrieved successfully");
             info!("📊 ETH Perpetual Details:");
             info!("   📝 Name: {}", instrument.instrument_name);
-            info!("   📏 Contract Size: {}", instrument.contract_size);
+            if let Some(contract_size) = instrument.contract_size {
+                info!("   📏 Contract Size: {}", contract_size);
+            } else {
+                info!("   📏 Contract Size: Not available");
+            }
             if let Some(creation) = instrument.creation_timestamp {
                 info!("   📅 Creation: {}", creation);
             } else {
@@ -194,11 +210,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
             // Show first few instruments as examples
             for (i, instrument) in instruments.iter().take(5).enumerate() {
+                let contract_size_display = instrument.contract_size
+                    .map(|size| size.to_string())
+                    .unwrap_or_else(|| "N/A".to_string());
                 info!(
                     "   {}. {} (Contract Size: {})",
                     i + 1,
                     instrument.instrument_name,
-                    instrument.contract_size
+                    contract_size_display
                 );
             }
 
@@ -264,12 +283,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     "Unknown"
                 };
 
+                let contract_size_display = instrument.contract_size
+                    .map(|size| size.to_string())
+                    .unwrap_or_else(|| "N/A".to_string());
                 info!(
                     "   {}. {} ({} Option, Size: {})",
                     i + 1,
                     instrument.instrument_name,
                     option_type,
-                    instrument.contract_size
+                    contract_size_display
                 );
             }
 
@@ -291,11 +313,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
             // Show summary and first few instruments
             for (i, instrument) in instruments.iter().take(3).enumerate() {
+                let contract_size_display = instrument.contract_size
+                    .map(|size| size.to_string())
+                    .unwrap_or_else(|| "N/A".to_string());
                 info!(
                     "   {}. {} (Contract Size: {})",
                     i + 1,
                     instrument.instrument_name,
-                    instrument.contract_size
+                    contract_size_display
                 );
             }
 

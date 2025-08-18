@@ -91,18 +91,24 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     match client.get_status().await {
         Ok(status) => {
             info!("✅ Platform status retrieved successfully");
-            info!("🔒 Platform locked: {}", status.locked);
+            
+            let locked = status.locked.unwrap_or(false);
+            info!("🔒 Platform locked: {}", locked);
 
-            if status.locked_indices.is_empty() {
-                info!("🟢 No currency indices are currently locked");
-            } else {
-                info!(
-                    "⚠️ Locked currency indices ({}):",
-                    status.locked_indices.len()
-                );
-                for index in &status.locked_indices {
-                    info!("   • {}", index);
+            if let Some(locked_indices) = &status.locked_indices {
+                if locked_indices.is_empty() {
+                    info!("🟢 No currency indices are currently locked");
+                } else {
+                    info!(
+                        "⚠️ Locked currency indices ({}):",
+                        locked_indices.len()
+                    );
+                    for index in locked_indices {
+                        info!("   • {}", index);
+                    }
                 }
+            } else {
+                info!("🟢 No currency indices information available");
             }
         }
         Err(e) => {

@@ -648,21 +648,35 @@ impl DeribitHttpClient {
             )));
         }
 
-        let api_response: ApiResponse<StatusResponse> = response
-            .json()
-            .await
-            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
+        // Try direct deserialization first (non-JSON-RPC response)
+        match response.json::<StatusResponse>().await {
+            Ok(status) => Ok(status),
+            Err(_) => {
+                // Fallback to JSON-RPC wrapper format
+                let response = self
+                    .http_client()
+                    .get(&url)
+                    .send()
+                    .await
+                    .map_err(|e| HttpError::NetworkError(e.to_string()))?;
+                
+                let api_response: ApiResponse<StatusResponse> = response
+                    .json()
+                    .await
+                    .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
 
-        if let Some(error) = api_response.error {
-            return Err(HttpError::RequestFailed(format!(
-                "API error: {} - {}",
-                error.code, error.message
-            )));
+                if let Some(error) = api_response.error {
+                    return Err(HttpError::RequestFailed(format!(
+                        "API error: {} - {}",
+                        error.code, error.message
+                    )));
+                }
+
+                api_response
+                    .result
+                    .ok_or_else(|| HttpError::InvalidResponse("No status data in response".to_string()))
+            }
         }
-
-        api_response
-            .result
-            .ok_or_else(|| HttpError::InvalidResponse("No status data in response".to_string()))
     }
 
     /// Get APR history for yield tokens
@@ -933,7 +947,7 @@ impl DeribitHttpClient {
         let mut url = format!(
             "{}/public/get_last_trades_by_instrument?instrument_name={}",
             self.base_url(),
-            instrument_name
+            urlencoding::encode(instrument_name)
         );
 
         if let Some(c) = count {
@@ -962,7 +976,7 @@ impl DeribitHttpClient {
             )));
         }
 
-        let api_response: ApiResponse<Vec<Trade>> = response
+        let api_response: ApiResponse<LastTradesResponse> = response
             .json()
             .await
             .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
@@ -974,9 +988,43 @@ impl DeribitHttpClient {
             )));
         }
 
-        api_response
+        let trades_response = api_response
             .result
-            .ok_or_else(|| HttpError::InvalidResponse("No trades data in response".to_string()))
+            .ok_or_else(|| HttpError::InvalidResponse("No trades data in response".to_string()))?;
+
+        // Convert LastTrade to Trade
+        let trades: Vec<Trade> = trades_response.trades.into_iter().map(|last_trade| {
+            Trade {
+                trade_id: last_trade.trade_id,
+                instrument_name: last_trade.instrument_name,
+                order_id: String::new(), // Not available in LastTrade
+                direction: match last_trade.direction.as_str() {
+                    "buy" => deribit_base::model::order::OrderSide::Buy,
+                    "sell" => deribit_base::model::order::OrderSide::Sell,
+                    _ => deribit_base::model::order::OrderSide::Buy, // Default fallback
+                },
+                amount: last_trade.amount,
+                price: last_trade.price,
+                timestamp: last_trade.timestamp as i64,
+                fee: 0.0, // Not available in LastTrade
+                fee_currency: String::new(), // Not available in LastTrade
+                liquidity: deribit_base::model::trade::Liquidity::Taker, // Default
+                mark_price: 0.0, // Not available in LastTrade
+                index_price: last_trade.index_price,
+                instrument_kind: None, // Not available in LastTrade
+                trade_seq: Some(last_trade.trade_seq),
+                user_role: None,
+                block_trade: None,
+                underlying_price: None,
+                iv: last_trade.iv,
+                label: None,
+                profit_loss: None,
+                tick_direction: Some(last_trade.tick_direction),
+                self_trade: None,
+            }
+        }).collect();
+
+        Ok(trades)
     }
 
     /// Get historical volatility
