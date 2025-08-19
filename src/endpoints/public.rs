@@ -8,9 +8,9 @@ use crate::error::HttpError;
 use crate::model::http_types::ApiResponse;
 use deribit_base::prelude::{
     AprHistoryResponse, BookSummary, ContractSizeResponse, Currency, DeliveryPricesResponse,
-    ExpirationsResponse, FundingChartData, FundingRateData, HelloResponse, IndexData,
-    IndexPriceData, Instrument, LastTradesResponse, OrderBook, SettlementsResponse, StatusResponse,
-    TestResponse, TickerData, Trade, TradingViewChartData,
+    ExpirationsResponse, FundingChartData, FundingRateData, IndexData, IndexPriceData, Instrument,
+    LastTradesResponse, OrderBook, SettlementsResponse, StatusResponse, TestResponse, TickerData,
+    Trade, TradingViewChartData,
 };
 
 /// Market data endpoints
@@ -603,25 +603,6 @@ impl DeribitHttpClient {
         Ok(test_result.version)
     }
 
-    /// Hello endpoint (WebSocket only)
-    ///
-    /// This endpoint is only available via WebSocket connections.
-    /// For HTTP clients, this method returns an error indicating WebSocket-only availability.
-    ///
-    /// # Arguments
-    ///
-    /// * `client_name` - Name of the client application
-    /// * `client_version` - Version of the client application
-    pub async fn hello(
-        &self,
-        _client_name: &str,
-        _client_version: &str,
-    ) -> Result<HelloResponse, HttpError> {
-        Err(HttpError::RequestFailed(
-            "Hello endpoint is only available via WebSocket connections".to_string(),
-        ))
-    }
-
     /// Get platform status and locked currency indices
     ///
     /// Returns information about the platform status and any locked currency indices.
@@ -659,7 +640,7 @@ impl DeribitHttpClient {
                     .send()
                     .await
                     .map_err(|e| HttpError::NetworkError(e.to_string()))?;
-                
+
                 let api_response: ApiResponse<StatusResponse> = response
                     .json()
                     .await
@@ -672,9 +653,9 @@ impl DeribitHttpClient {
                     )));
                 }
 
-                api_response
-                    .result
-                    .ok_or_else(|| HttpError::InvalidResponse("No status data in response".to_string()))
+                api_response.result.ok_or_else(|| {
+                    HttpError::InvalidResponse("No status data in response".to_string())
+                })
             }
         }
     }
@@ -993,36 +974,40 @@ impl DeribitHttpClient {
             .ok_or_else(|| HttpError::InvalidResponse("No trades data in response".to_string()))?;
 
         // Convert LastTrade to Trade
-        let trades: Vec<Trade> = trades_response.trades.into_iter().map(|last_trade| {
-            Trade {
-                trade_id: last_trade.trade_id,
-                instrument_name: last_trade.instrument_name,
-                order_id: String::new(), // Not available in LastTrade
-                direction: match last_trade.direction.as_str() {
-                    "buy" => deribit_base::model::order::OrderSide::Buy,
-                    "sell" => deribit_base::model::order::OrderSide::Sell,
-                    _ => deribit_base::model::order::OrderSide::Buy, // Default fallback
-                },
-                amount: last_trade.amount,
-                price: last_trade.price,
-                timestamp: last_trade.timestamp as i64,
-                fee: 0.0, // Not available in LastTrade
-                fee_currency: String::new(), // Not available in LastTrade
-                liquidity: deribit_base::model::trade::Liquidity::Taker, // Default
-                mark_price: 0.0, // Not available in LastTrade
-                index_price: last_trade.index_price,
-                instrument_kind: None, // Not available in LastTrade
-                trade_seq: Some(last_trade.trade_seq),
-                user_role: None,
-                block_trade: None,
-                underlying_price: None,
-                iv: last_trade.iv,
-                label: None,
-                profit_loss: None,
-                tick_direction: Some(last_trade.tick_direction),
-                self_trade: None,
-            }
-        }).collect();
+        let trades: Vec<Trade> = trades_response
+            .trades
+            .into_iter()
+            .map(|last_trade| {
+                Trade {
+                    trade_id: last_trade.trade_id,
+                    instrument_name: last_trade.instrument_name,
+                    order_id: String::new(), // Not available in LastTrade
+                    direction: match last_trade.direction.as_str() {
+                        "buy" => deribit_base::model::order::OrderSide::Buy,
+                        "sell" => deribit_base::model::order::OrderSide::Sell,
+                        _ => deribit_base::model::order::OrderSide::Buy, // Default fallback
+                    },
+                    amount: last_trade.amount,
+                    price: last_trade.price,
+                    timestamp: last_trade.timestamp as i64,
+                    fee: 0.0,                    // Not available in LastTrade
+                    fee_currency: String::new(), // Not available in LastTrade
+                    liquidity: deribit_base::model::trade::Liquidity::Taker, // Default
+                    mark_price: 0.0,             // Not available in LastTrade
+                    index_price: last_trade.index_price,
+                    instrument_kind: None, // Not available in LastTrade
+                    trade_seq: Some(last_trade.trade_seq),
+                    user_role: None,
+                    block_trade: None,
+                    underlying_price: None,
+                    iv: last_trade.iv,
+                    label: None,
+                    profit_loss: None,
+                    tick_direction: Some(last_trade.tick_direction),
+                    self_trade: None,
+                }
+            })
+            .collect();
 
         Ok(trades)
     }

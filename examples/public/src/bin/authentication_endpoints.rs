@@ -4,7 +4,7 @@
 //! - /public/auth - Initial OAuth2 authentication
 //! - /public/exchange_token - Token exchange for different subject_id
 //! - /public/fork_token - Create new session with same permissions
-//! - /private/logout - Logout and invalidate token
+//! Note: HTTP client tokens expire automatically (no logout endpoint)
 
 use deribit_http::{DeribitHttpClient, HttpError, config::HttpConfig};
 use std::env;
@@ -263,48 +263,12 @@ async fn main() -> Result<(), HttpError> {
     println!();
 
     // =================================================================
-    // 5. LOGOUT (/private/logout)
+    // 5. SESSION INFORMATION
     // =================================================================
-    info!("🚪 5. LOGOUT AND SESSION TERMINATION");
-    info!("------------------------------------");
-
-    match client.logout().await {
-        Ok(()) => {
-            info!("✅ Logout successful");
-            info!("🔒 Session terminated correctly");
-
-            // Verify that the client is no longer authenticated
-            if !client.is_authenticated().await {
-                info!("✅ Client is no longer authenticated (as expected)");
-            } else {
-                warn!("⚠️ Client still appears to be authenticated");
-            }
-        }
-        Err(e) => {
-            error!("❌ Logout error: {}", e);
-        }
-    }
-    println!();
-
-    // =================================================================
-    // 6. POST-LOGOUT VERIFICATION
-    // =================================================================
-    info!("🔍 6. POST-LOGOUT VERIFICATION");
-    info!("------------------------------");
-
-    // Try to make a call after logout attempt
-    // Note: Since logout via HTTP is not available, the token remains valid until expiration
-    match client.get_server_time().await {
-        Ok(server_time) => {
-            info!("ℹ️ Post-logout call successful: {}", server_time);
-            info!(
-                "💡 This is expected since HTTP logout is not available - token remains valid until expiration"
-            );
-        }
-        Err(e) => {
-            info!("❌ Post-logout call failed: {}", e);
-        }
-    }
+    info!("ℹ️ 5. SESSION INFORMATION");
+    info!("-------------------------");
+    info!("💡 Note: HTTP client tokens remain valid until expiration");
+    info!("🔌 For logout functionality, use the deribit-websocket client");
     println!();
 
     // =================================================================
@@ -315,7 +279,7 @@ async fn main() -> Result<(), HttpError> {
     info!("✅ /public/auth - Initial OAuth2 authentication");
     info!("🔄 /public/exchange_token - Token exchange");
     info!("🍴 /public/fork_token - Token fork");
-    info!("🚪 /private/logout - Logout and session termination");
+    info!("ℹ️ Session management - HTTP tokens expire automatically");
     println!();
     info!("🎉 Example completed successfully!");
     info!("💡 Tip: Check the logs to see details of each operation");

@@ -121,7 +121,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             info!("✅ Expirations for BTC futures retrieved successfully");
 
             // Look for BTC expirations (key could be "btc" or "BTC")
-            let btc_key = expirations.currencies.keys()
+            let btc_key = expirations
+                .currencies
+                .keys()
                 .find(|k| k.to_lowercase() == "btc")
                 .cloned();
 
@@ -157,7 +159,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             info!("✅ Expirations for ETH options retrieved successfully");
 
             // Look for ETH expirations (key could be "eth" or "ETH")
-            let eth_key = expirations.currencies.keys()
+            let eth_key = expirations
+                .currencies
+                .keys()
                 .find(|k| k.to_lowercase() == "eth")
                 .cloned();
 
@@ -226,10 +230,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                         total_expirations += options.len();
                     }
 
-                    info!("📈 {} expirations found for currency: {}", 
-                          currency_expirations.future.as_ref().map_or(0, |f| f.len()) + 
-                          currency_expirations.option.as_ref().map_or(0, |o| o.len()), 
-                          currency);
+                    info!(
+                        "📈 {} expirations found for currency: {}",
+                        currency_expirations.future.as_ref().map_or(0, |f| f.len())
+                            + currency_expirations.option.as_ref().map_or(0, |o| o.len()),
+                        currency
+                    );
                 }
 
                 if futures_count > 0 {

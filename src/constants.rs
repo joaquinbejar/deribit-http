@@ -16,8 +16,6 @@ pub const TESTNET_BASE_URL: &str = "https://test.deribit.com/api/v2";
 pub mod endpoints {
     /// Public authentication endpoint
     pub const AUTH: &str = "/public/auth";
-    /// Private logout endpoint
-    pub const LOGOUT: &str = "/private/logout";
 
     // Market data endpoints
     /// Get ticker information for an instrument

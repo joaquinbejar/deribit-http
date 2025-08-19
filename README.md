@@ -128,8 +128,7 @@ Useful re-exported models: `Subaccount`, `TransactionLog`, `DepositsResponse`, `
 
 ### Limitations and important notes
 - This crate does not implement WebSocket or streaming. Some Deribit endpoints exist only over WS
-  (for example, `/public/hello` and `/private/logout`). In these cases, client methods will
-  return `HttpError::ConfigError` with an explanation.
+  (for example, `/public/hello` and `/private/logout`) and are not available in this HTTP client.
 - API Key authentication: the `authenticate_api_key` stub exists but is not yet implemented in the HTTP client.
 - Deribit uses JSON-RPC over HTTP; this client exposes ergonomic methods that build URLs with query params
   and parse `ApiResponse<T>` in a strongly-typed manner.

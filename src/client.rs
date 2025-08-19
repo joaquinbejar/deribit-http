@@ -87,6 +87,72 @@ impl DeribitHttpClient {
             .map_err(|e| HttpError::NetworkError(e.to_string()))
     }
 
+    /// Make an authenticated HTTP GET request for private endpoints
+    pub async fn make_authenticated_request(
+        &self,
+        url: &str,
+    ) -> Result<reqwest::Response, HttpError> {
+        // Determine rate limit category from URL
+        let category = categorize_endpoint(url);
+
+        // Wait for rate limit permission
+        self.rate_limiter.wait_for_permission(category).await;
+
+        // Get authorization header
+        let auth_manager = self.auth_manager.lock().await;
+        let auth_header = auth_manager.get_authorization_header().ok_or_else(|| {
+            HttpError::AuthenticationFailed(
+                "No valid authentication token available. Please authenticate first.".to_string(),
+            )
+        })?;
+
+        // Debug: log the authorization header being used
+        tracing::debug!("Using authorization header: {}", auth_header);
+        drop(auth_manager);
+
+        // Make the authenticated request
+        self.client
+            .get(url)
+            .header("Authorization", auth_header)
+            .send()
+            .await
+            .map_err(|e| HttpError::NetworkError(e.to_string()))
+    }
+
+    /// Make an authenticated HTTP POST request for private endpoints
+    pub async fn make_authenticated_post_request<T: serde::Serialize>(
+        &self,
+        url: &str,
+        body: &T,
+    ) -> Result<reqwest::Response, HttpError> {
+        // Determine rate limit category from URL
+        let category = categorize_endpoint(url);
+
+        // Wait for rate limit permission
+        self.rate_limiter.wait_for_permission(category).await;
+
+        // Get authorization header
+        let auth_manager = self.auth_manager.lock().await;
+        let auth_header = auth_manager.get_authorization_header().ok_or_else(|| {
+            HttpError::AuthenticationFailed(
+                "No valid authentication token available. Please authenticate first.".to_string(),
+            )
+        })?;
+
+        // Debug: log the authorization header being used
+        tracing::debug!("Using authorization header: {}", auth_header);
+        drop(auth_manager);
+
+        // Make the authenticated POST request
+        self.client
+            .post(url)
+            .header("Authorization", auth_header)
+            .json(body)
+            .send()
+            .await
+            .map_err(|e| HttpError::NetworkError(e.to_string()))
+    }
+
     /// Get rate limiter for advanced usage
     pub fn rate_limiter(&self) -> &RateLimiter {
         &self.rate_limiter
@@ -257,21 +323,5 @@ impl DeribitHttpClient {
             .map_err(|e| HttpError::InvalidResponse(format!("Failed to parse token: {}", e)))?;
 
         Ok(token)
-    }
-
-    /// Logout and invalidate the current session
-    ///
-    /// **Note**: The `/private/logout` endpoint is only available via WebSocket connections
-    /// according to the Deribit API documentation. This HTTP client cannot perform logout
-    /// operations. Tokens will automatically expire based on their configured expiration time.
-    ///
-    /// For applications requiring logout functionality, consider using the Deribit WebSocket API.
-    pub async fn logout(&self) -> Result<(), HttpError> {
-        Err(HttpError::ConfigError(
-            "Logout is only available via WebSocket connections. The /private/logout endpoint \
-             cannot be accessed via HTTP. Tokens will expire automatically based on their \
-             configured expiration time."
-                .to_string(),
-        ))
     }
 }

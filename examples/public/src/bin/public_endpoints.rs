@@ -2,9 +2,9 @@
 //!
 //! This example demonstrates the correct functioning of the following public endpoints:
 //! - `/public/get_time` - Server time
-//! - `/public/hello` - WebSocket client introduction (WebSocket-only)
 //! - `/public/status` - Platform status and locked currencies
 //! - `/public/test` - Connectivity test
+//! Note: `/public/hello` is WebSocket-only and not available in HTTP client
 //!
 //! Usage: cargo run --bin public_endpoints
 
@@ -64,34 +64,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!();
 
     // =================================================================
-    // 2. HELLO ENDPOINT (/public/hello) - WebSocket Only
+    // 2. PLATFORM STATUS (/public/status)
     // =================================================================
-    info!("👋 2. HELLO ENDPOINT (WebSocket Only)");
-    info!("------------------------------------");
-
-    match client.hello("deribit-http-client", "0.1.0").await {
-        Ok(response) => {
-            // This should not happen since hello is WebSocket-only
-            info!("✅ Hello response: API version {}", response.version);
-        }
-        Err(e) => {
-            info!("ℹ️ Hello endpoint correctly returned expected error:");
-            info!("📝 {}", e);
-            info!("💡 This is expected behavior - hello is only available via WebSocket");
-        }
-    }
-    println!();
-
-    // =================================================================
-    // 3. PLATFORM STATUS (/public/status)
-    // =================================================================
-    info!("📊 3. PLATFORM STATUS");
+    info!("📊 2. PLATFORM STATUS");
     info!("--------------------");
 
     match client.get_status().await {
         Ok(status) => {
             info!("✅ Platform status retrieved successfully");
-            
+
             let locked = status.locked.unwrap_or(false);
             info!("🔒 Platform locked: {}", locked);
 
@@ -99,10 +80,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 if locked_indices.is_empty() {
                     info!("🟢 No currency indices are currently locked");
                 } else {
-                    info!(
-                        "⚠️ Locked currency indices ({}):",
-                        locked_indices.len()
-                    );
+                    info!("⚠️ Locked currency indices ({}):", locked_indices.len());
                     for index in locked_indices {
                         info!("   • {}", index);
                     }
@@ -118,9 +96,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!();
 
     // =================================================================
-    // 4. CONNECTIVITY TEST (/public/test)
+    // 3. CONNECTIVITY TEST (/public/test)
     // =================================================================
-    info!("🔌 4. CONNECTIVITY TEST");
+    info!("🔌 3. CONNECTIVITY TEST");
     info!("----------------------");
 
     match client.test_connection().await {
@@ -141,9 +119,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     info!("📋 SUMMARY OF TESTED PUBLIC ENDPOINTS");
     info!("====================================");
     info!("✅ /public/get_time - Server time retrieval");
-    info!("ℹ️ /public/hello - WebSocket client introduction (properly handled as WS-only)");
     info!("✅ /public/status - Platform status and locked currencies");
     info!("✅ /public/test - Connectivity test");
+    info!("ℹ️ Note: /public/hello is WebSocket-only (not available in HTTP client)");
     println!();
 
     info!("🎉 Public endpoints example completed successfully!");

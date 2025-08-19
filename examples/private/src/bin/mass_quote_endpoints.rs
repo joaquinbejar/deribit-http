@@ -16,7 +16,7 @@
 //!
 //! Then run: cargo run --bin mass_quote_endpoints
 
-use deribit_base::prelude::{MassQuoteItem, MassQuoteRequest, OrderSide};
+use deribit_base::prelude::{MassQuoteItem, MassQuoteRequest, OrderSide, setup_logger};
 use deribit_http::{DeribitHttpClient, HttpError};
 use std::env;
 use std::path::Path;
@@ -25,24 +25,12 @@ use tracing::{error, info, warn};
 
 #[tokio::main]
 async fn main() -> Result<(), HttpError> {
-    // Initialize logging
-    tracing_subscriber::fmt()
-        .with_target(false)
-        .with_thread_ids(false)
-        .with_file(false)
-        .with_line_number(false)
-        .init();
-
-    // Check if .env file exists
-    if !Path::new("../../.env").exists() {
-        return Err(HttpError::ConfigError(
-            "Missing .env file. Please create one with DERIBIT_CLIENT_ID and DERIBIT_CLIENT_SECRET"
-                .to_string(),
-        ));
+    // Load environment variables from .env file if it exists
+    if Path::new(".env").exists() {
+        dotenv::dotenv().ok();
     }
 
-    // Load environment variables
-    dotenv::dotenv().ok();
+    setup_logger();
 
     info!("🚀 Deribit HTTP Client - Mass Quote Endpoints Example");
     info!("====================================================");
@@ -216,7 +204,7 @@ async fn main() -> Result<(), HttpError> {
         );
     }
 
-    match client.mass_quote(vec![mass_quotes]).await {
+    match client.mass_quote(mass_quotes).await {
         Ok(response) => {
             info!("✅ Mass quote submission successful");
             info!("📊 Quote results:");
@@ -322,7 +310,7 @@ async fn main() -> Result<(), HttpError> {
     info!("❌ 3. CANCEL MASS QUOTES");
     info!("------------------------");
 
-    match client.cancel_quotes().await {
+    match client.cancel_quotes(Some("all")).await {
         Ok(cancelled_count) => {
             info!("✅ Mass quote cancellation successful");
             info!("📊 Cancelled quotes count: {}", cancelled_count);

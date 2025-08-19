@@ -55,12 +55,7 @@ impl DeribitHttpClient {
             query_string
         );
 
-        let response = self
-            .http_client()
-            .get(url)
-            .send()
-            .await
-            .map_err(|e| HttpError::NetworkError(e.to_string()))?;
+        let response = self.make_authenticated_request(&url).await?;
 
         if !response.status().is_success() {
             let error_text = response
@@ -149,12 +144,7 @@ impl DeribitHttpClient {
             query_string
         );
 
-        let response = self
-            .http_client()
-            .get(url)
-            .send()
-            .await
-            .map_err(|e| HttpError::NetworkError(e.to_string()))?;
+        let response = self.make_authenticated_request(&url).await?;
 
         if !response.status().is_success() {
             let error_text = response
@@ -227,12 +217,7 @@ impl DeribitHttpClient {
 
         let url = format!("{}/private/get_deposits?{}", self.base_url(), query_string);
 
-        let response = self
-            .http_client()
-            .get(url)
-            .send()
-            .await
-            .map_err(|e| HttpError::NetworkError(e.to_string()))?;
+        let response = self.make_authenticated_request(&url).await?;
 
         if !response.status().is_success() {
             let error_text = response
@@ -309,12 +294,7 @@ impl DeribitHttpClient {
             query_string
         );
 
-        let response = self
-            .http_client()
-            .get(url)
-            .send()
-            .await
-            .map_err(|e| HttpError::NetworkError(e.to_string()))?;
+        let response = self.make_authenticated_request(&url).await?;
 
         if !response.status().is_success() {
             let error_text = response
@@ -387,12 +367,7 @@ impl DeribitHttpClient {
             query_string
         );
 
-        let response = self
-            .http_client()
-            .get(url)
-            .send()
-            .await
-            .map_err(|e| HttpError::NetworkError(e.to_string()))?;
+        let response = self.make_authenticated_request(&url).await?;
 
         if !response.status().is_success() {
             let error_text = response
@@ -465,12 +440,7 @@ impl DeribitHttpClient {
             query_string
         );
 
-        let response = self
-            .http_client()
-            .get(url)
-            .send()
-            .await
-            .map_err(|e| HttpError::NetworkError(e.to_string()))?;
+        let response = self.make_authenticated_request(&url).await?;
 
         if !response.status().is_success() {
             let error_text = response
@@ -553,12 +523,7 @@ impl DeribitHttpClient {
 
         let url = format!("{}/private/buy?{}", self.base_url(), query_string);
 
-        let response = self
-            .http_client()
-            .get(url)
-            .send()
-            .await
-            .map_err(|e| HttpError::NetworkError(e.to_string()))?;
+        let response = self.make_authenticated_request(&url).await?;
 
         if !response.status().is_success() {
             let error_text = response
@@ -571,10 +536,21 @@ impl DeribitHttpClient {
             )));
         }
 
-        let api_response: ApiResponse<OrderResponse> = response
-            .json()
+        // Debug: capture raw response text first
+        let response_text = response
+            .text()
             .await
-            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
+            .map_err(|e| HttpError::NetworkError(e.to_string()))?;
+
+        tracing::debug!("Raw API response: {}", response_text);
+
+        let api_response: ApiResponse<OrderResponse> = serde_json::from_str(&response_text)
+            .map_err(|e| {
+                HttpError::InvalidResponse(format!(
+                    "Failed to parse JSON: {} - Raw response: {}",
+                    e, response_text
+                ))
+            })?;
 
         if let Some(error) = api_response.error {
             return Err(HttpError::RequestFailed(format!(
@@ -640,12 +616,7 @@ impl DeribitHttpClient {
 
         let url = format!("{}/private/sell?{}", self.base_url(), query_string);
 
-        let response = self
-            .http_client()
-            .get(url)
-            .send()
-            .await
-            .map_err(|e| HttpError::NetworkError(e.to_string()))?;
+        let response = self.make_authenticated_request(&url).await?;
 
         if !response.status().is_success() {
             let error_text = response
@@ -690,12 +661,7 @@ impl DeribitHttpClient {
             urlencoding::encode(order_id)
         );
 
-        let response = self
-            .http_client()
-            .get(url)
-            .send()
-            .await
-            .map_err(|e| HttpError::NetworkError(e.to_string()))?;
+        let response = self.make_authenticated_request(&url).await?;
 
         if !response.status().is_success() {
             let error_text = response
@@ -723,6 +689,312 @@ impl DeribitHttpClient {
         api_response
             .result
             .ok_or_else(|| HttpError::InvalidResponse("No order data in response".to_string()))
+    }
+
+    /// Cancel all orders
+    ///
+    /// Cancels all orders for the account.
+    ///
+    /// # Returns
+    ///
+    /// Returns the number of cancelled orders.
+    pub async fn cancel_all(&self) -> Result<u32, HttpError> {
+        let url = format!("{}/private/cancel_all", self.base_url());
+
+        let response = self.make_authenticated_request(&url).await?;
+
+        if !response.status().is_success() {
+            let error_text = response
+                .text()
+                .await
+                .unwrap_or_else(|_| "Unknown error".to_string());
+            return Err(HttpError::RequestFailed(format!(
+                "Cancel all orders failed: {}",
+                error_text
+            )));
+        }
+
+        let api_response: ApiResponse<u32> = response
+            .json()
+            .await
+            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
+
+        if let Some(error) = api_response.error {
+            return Err(HttpError::RequestFailed(format!(
+                "API error: {} - {}",
+                error.code, error.message
+            )));
+        }
+
+        api_response
+            .result
+            .ok_or_else(|| HttpError::InvalidResponse("No result in response".to_string()))
+    }
+
+    /// Cancel all orders by currency
+    ///
+    /// Cancels all orders for the specified currency.
+    ///
+    /// # Arguments
+    ///
+    /// * `currency` - Currency to cancel orders for (BTC, ETH, USDC, etc.)
+    ///
+    /// # Returns
+    ///
+    /// Returns the number of cancelled orders.
+    pub async fn cancel_all_by_currency(&self, currency: &str) -> Result<u32, HttpError> {
+        let url = format!(
+            "{}/private/cancel_all_by_currency?currency={}",
+            self.base_url(),
+            urlencoding::encode(currency)
+        );
+
+        let response = self.make_authenticated_request(&url).await?;
+
+        if !response.status().is_success() {
+            let error_text = response
+                .text()
+                .await
+                .unwrap_or_else(|_| "Unknown error".to_string());
+            return Err(HttpError::RequestFailed(format!(
+                "Cancel all orders by currency failed: {}",
+                error_text
+            )));
+        }
+
+        let api_response: ApiResponse<u32> = response
+            .json()
+            .await
+            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
+
+        if let Some(error) = api_response.error {
+            return Err(HttpError::RequestFailed(format!(
+                "API error: {} - {}",
+                error.code, error.message
+            )));
+        }
+
+        api_response
+            .result
+            .ok_or_else(|| HttpError::InvalidResponse("No result in response".to_string()))
+    }
+
+    /// Cancel all orders by currency pair
+    ///
+    /// Cancels all orders for the specified currency pair.
+    ///
+    /// # Arguments
+    ///
+    /// * `currency_pair` - Currency pair to cancel orders for (e.g., "BTC_USD")
+    ///
+    /// # Returns
+    ///
+    /// Returns the number of cancelled orders.
+    pub async fn cancel_all_by_currency_pair(&self, currency_pair: &str) -> Result<u32, HttpError> {
+        let url = format!(
+            "{}/private/cancel_all_by_currency_pair?currency_pair={}",
+            self.base_url(),
+            urlencoding::encode(currency_pair)
+        );
+
+        let response = self.make_authenticated_request(&url).await?;
+
+        if !response.status().is_success() {
+            let error_text = response
+                .text()
+                .await
+                .unwrap_or_else(|_| "Unknown error".to_string());
+            return Err(HttpError::RequestFailed(format!(
+                "Cancel all orders by currency pair failed: {}",
+                error_text
+            )));
+        }
+
+        let api_response: ApiResponse<u32> = response
+            .json()
+            .await
+            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
+
+        if let Some(error) = api_response.error {
+            return Err(HttpError::RequestFailed(format!(
+                "API error: {} - {}",
+                error.code, error.message
+            )));
+        }
+
+        api_response
+            .result
+            .ok_or_else(|| HttpError::InvalidResponse("No result in response".to_string()))
+    }
+
+    /// Cancel all orders by instrument
+    ///
+    /// Cancels all orders for the specified instrument.
+    ///
+    /// # Arguments
+    ///
+    /// * `instrument_name` - Instrument name to cancel orders for (e.g., "BTC-PERPETUAL")
+    ///
+    /// # Returns
+    ///
+    /// Returns the number of cancelled orders.
+    pub async fn cancel_all_by_instrument(&self, instrument_name: &str) -> Result<u32, HttpError> {
+        let url = format!(
+            "{}/private/cancel_all_by_instrument?instrument_name={}",
+            self.base_url(),
+            urlencoding::encode(instrument_name)
+        );
+
+        let response = self.make_authenticated_request(&url).await?;
+
+        if !response.status().is_success() {
+            let error_text = response
+                .text()
+                .await
+                .unwrap_or_else(|_| "Unknown error".to_string());
+            return Err(HttpError::RequestFailed(format!(
+                "Cancel all orders by instrument failed: {}",
+                error_text
+            )));
+        }
+
+        let api_response: ApiResponse<u32> = response
+            .json()
+            .await
+            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
+
+        if let Some(error) = api_response.error {
+            return Err(HttpError::RequestFailed(format!(
+                "API error: {} - {}",
+                error.code, error.message
+            )));
+        }
+
+        api_response
+            .result
+            .ok_or_else(|| HttpError::InvalidResponse("No result in response".to_string()))
+    }
+
+    /// Cancel all orders by kind or type
+    ///
+    /// Cancels all orders for the specified kind or type.
+    ///
+    /// # Arguments
+    ///
+    /// * `kind` - Kind of orders to cancel (future, option, spot, etc.) - optional
+    /// * `order_type` - Type of orders to cancel (limit, market, etc.) - optional
+    ///
+    /// # Returns
+    ///
+    /// Returns the number of cancelled orders.
+    pub async fn cancel_all_by_kind_or_type(
+        &self,
+        kind: Option<&str>,
+        order_type: Option<&str>,
+    ) -> Result<u32, HttpError> {
+        let mut query_params = Vec::new();
+
+        if let Some(kind) = kind {
+            query_params.push(("kind".to_string(), kind.to_string()));
+        }
+
+        if let Some(order_type) = order_type {
+            query_params.push(("type".to_string(), order_type.to_string()));
+        }
+
+        let query_string = if query_params.is_empty() {
+            String::new()
+        } else {
+            "?".to_string()
+                + &query_params
+                    .iter()
+                    .map(|(k, v)| format!("{}={}", k, urlencoding::encode(v)))
+                    .collect::<Vec<_>>()
+                    .join("&")
+        };
+
+        let url = format!(
+            "{}/private/cancel_all_by_kind_or_type{}",
+            self.base_url(),
+            query_string
+        );
+
+        let response = self.make_authenticated_request(&url).await?;
+
+        if !response.status().is_success() {
+            let error_text = response
+                .text()
+                .await
+                .unwrap_or_else(|_| "Unknown error".to_string());
+            return Err(HttpError::RequestFailed(format!(
+                "Cancel all orders by kind or type failed: {}",
+                error_text
+            )));
+        }
+
+        let api_response: ApiResponse<u32> = response
+            .json()
+            .await
+            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
+
+        if let Some(error) = api_response.error {
+            return Err(HttpError::RequestFailed(format!(
+                "API error: {} - {}",
+                error.code, error.message
+            )));
+        }
+
+        api_response
+            .result
+            .ok_or_else(|| HttpError::InvalidResponse("No result in response".to_string()))
+    }
+
+    /// Cancel orders by label
+    ///
+    /// Cancels all orders with the specified label.
+    ///
+    /// # Arguments
+    ///
+    /// * `label` - Label of orders to cancel
+    ///
+    /// # Returns
+    ///
+    /// Returns the number of cancelled orders.
+    pub async fn cancel_by_label(&self, label: &str) -> Result<u32, HttpError> {
+        let url = format!(
+            "{}/private/cancel_by_label?label={}",
+            self.base_url(),
+            urlencoding::encode(label)
+        );
+
+        let response = self.make_authenticated_request(&url).await?;
+
+        if !response.status().is_success() {
+            let error_text = response
+                .text()
+                .await
+                .unwrap_or_else(|_| "Unknown error".to_string());
+            return Err(HttpError::RequestFailed(format!(
+                "Cancel orders by label failed: {}",
+                error_text
+            )));
+        }
+
+        let api_response: ApiResponse<u32> = response
+            .json()
+            .await
+            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
+
+        if let Some(error) = api_response.error {
+            return Err(HttpError::RequestFailed(format!(
+                "API error: {} - {}",
+                error.code, error.message
+            )));
+        }
+
+        api_response
+            .result
+            .ok_or_else(|| HttpError::InvalidResponse("No result in response".to_string()))
     }
 
     /// Get account summary
@@ -766,12 +1038,7 @@ impl DeribitHttpClient {
             query_string
         );
 
-        let response = self
-            .http_client()
-            .get(url)
-            .send()
-            .await
-            .map_err(|e| HttpError::NetworkError(e.to_string()))?;
+        let response = self.make_authenticated_request(&url).await?;
 
         if !response.status().is_success() {
             let error_text = response
@@ -853,12 +1120,7 @@ impl DeribitHttpClient {
 
         let url = format!("{}/private/get_positions{}", self.base_url(), query_string);
 
-        let response = self
-            .http_client()
-            .get(url)
-            .send()
-            .await
-            .map_err(|e| HttpError::NetworkError(e.to_string()))?;
+        let response = self.make_authenticated_request(&url).await?;
 
         if !response.status().is_success() {
             let error_text = response
@@ -927,12 +1189,7 @@ impl DeribitHttpClient {
 
         let url = format!("{}/private/edit?{}", self.base_url(), query_string);
 
-        let response = self
-            .http_client()
-            .get(url)
-            .send()
-            .await
-            .map_err(|e| HttpError::NetworkError(e.to_string()))?;
+        let response = self.make_authenticated_request(&url).await?;
 
         if !response.status().is_success() {
             let error_text = response
@@ -972,46 +1229,16 @@ impl DeribitHttpClient {
     ///
     pub async fn mass_quote(
         &self,
-        quotes: Vec<MassQuoteRequest>,
+        _quotes: MassQuoteRequest,
     ) -> Result<MassQuoteResponse, HttpError> {
-        // This endpoint typically requires POST with JSON body
-        // For now, we'll implement a basic version
-        let url = format!("{}/private/mass_quote", self.base_url());
-
-        let response = self
-            .http_client()
-            .post(&url)
-            .json(&quotes)
-            .send()
-            .await
-            .map_err(|e| HttpError::NetworkError(e.to_string()))?;
-
-        if !response.status().is_success() {
-            let error_text = response
-                .text()
-                .await
-                .unwrap_or_else(|_| "Unknown error".to_string());
-            return Err(HttpError::RequestFailed(format!(
-                "Mass quote failed: {}",
-                error_text
-            )));
-        }
-
-        let api_response: ApiResponse<MassQuoteResponse> = response
-            .json()
-            .await
-            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
-
-        if let Some(error) = api_response.error {
-            return Err(HttpError::RequestFailed(format!(
-                "API error: {} - {}",
-                error.code, error.message
-            )));
-        }
-
-        api_response
-            .result
-            .ok_or_else(|| HttpError::InvalidResponse("No mass quote data in response".to_string()))
+        Err(HttpError::ConfigError(
+            "Mass quote endpoint is only available via WebSocket connections. \
+             According to Deribit's technical specifications, private/mass_quote requires \
+             WebSocket for real-time quote management, MMP group integration, and \
+             Cancel-on-Disconnect functionality. Please use the deribit-websocket client \
+             for mass quote operations."
+                .to_string(),
+        ))
     }
 
     /// Get user trades by instrument
@@ -1070,12 +1297,7 @@ impl DeribitHttpClient {
             query_string
         );
 
-        let response = self
-            .http_client()
-            .get(url)
-            .send()
-            .await
-            .map_err(|e| HttpError::NetworkError(e.to_string()))?;
+        let response = self.make_authenticated_request(&url).await?;
 
         if !response.status().is_success() {
             let error_text = response
@@ -1109,15 +1331,23 @@ impl DeribitHttpClient {
     ///
     /// Cancels all mass quotes.
     ///
-    pub async fn cancel_quotes(&self) -> Result<u32, HttpError> {
-        let url = format!("{}/private/cancel_quotes", self.base_url());
+    /// # Arguments
+    ///
+    /// * `cancel_type` - Type of cancellation ("all", "by_currency", "by_instrument", etc.)
+    ///
+    pub async fn cancel_quotes(&self, cancel_type: Option<&str>) -> Result<u32, HttpError> {
+        let mut url = format!("{}/private/cancel_quotes", self.base_url());
 
-        let response = self
-            .http_client()
-            .get(url)
-            .send()
-            .await
-            .map_err(|e| HttpError::NetworkError(e.to_string()))?;
+        if let Some(cancel_type) = cancel_type {
+            url.push_str(&format!(
+                "?cancel_type={}",
+                urlencoding::encode(cancel_type)
+            ));
+        } else {
+            url.push_str("?cancel_type=all");
+        }
+
+        let response = self.make_authenticated_request(&url).await?;
 
         if !response.status().is_success() {
             let error_text = response
@@ -1188,12 +1418,7 @@ impl DeribitHttpClient {
             query_string
         );
 
-        let response = self
-            .http_client()
-            .get(url)
-            .send()
-            .await
-            .map_err(|e| HttpError::NetworkError(e.to_string()))?;
+        let response = self.make_authenticated_request(&url).await?;
 
         if !response.status().is_success() {
             let error_text = response
@@ -1238,12 +1463,7 @@ impl DeribitHttpClient {
             urlencoding::encode(label)
         );
 
-        let response = self
-            .http_client()
-            .get(url)
-            .send()
-            .await
-            .map_err(|e| HttpError::NetworkError(e.to_string()))?;
+        let response = self.make_authenticated_request(&url).await?;
 
         if !response.status().is_success() {
             let error_text = response
@@ -1288,12 +1508,7 @@ impl DeribitHttpClient {
             urlencoding::encode(order_id)
         );
 
-        let response = self
-            .http_client()
-            .get(url)
-            .send()
-            .await
-            .map_err(|e| HttpError::NetworkError(e.to_string()))?;
+        let response = self.make_authenticated_request(&url).await?;
 
         if !response.status().is_success() {
             let error_text = response
@@ -1361,12 +1576,7 @@ impl DeribitHttpClient {
             query_string
         );
 
-        let response = self
-            .http_client()
-            .get(url)
-            .send()
-            .await
-            .map_err(|e| HttpError::NetworkError(e.to_string()))?;
+        let response = self.make_authenticated_request(&url).await?;
 
         if !response.status().is_success() {
             let error_text = response
@@ -1428,12 +1638,7 @@ impl DeribitHttpClient {
             query_string
         );
 
-        let response = self
-            .http_client()
-            .get(url)
-            .send()
-            .await
-            .map_err(|e| HttpError::NetworkError(e.to_string()))?;
+        let response = self.make_authenticated_request(&url).await?;
 
         if !response.status().is_success() {
             let error_text = response

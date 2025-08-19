@@ -14,6 +14,7 @@
 //!
 //! Then run: cargo run --bin cancellation_endpoints
 
+use deribit_base::prelude::setup_logger;
 use deribit_http::{BuyOrderRequest, DeribitHttpClient, HttpError, OrderType, TimeInForce};
 use std::env;
 use std::path::Path;
@@ -22,13 +23,12 @@ use tracing::{error, info, warn};
 
 #[tokio::main]
 async fn main() -> Result<(), HttpError> {
-    // Initialize logging
-    tracing_subscriber::fmt().with_env_filter("debug").init();
-
     // Load environment variables from .env file if it exists
     if Path::new(".env").exists() {
         dotenv::dotenv().ok();
     }
+
+    setup_logger();
 
     info!("🚀 Starting Cancellation Endpoints Example");
     info!("===========================================");
@@ -125,14 +125,16 @@ async fn main() -> Result<(), HttpError> {
     // =================================================================
     // SUMMARY
     // =================================================================
-    info!("📋 SUMMARY OF TESTED CANCELLATION ENDPOINTS");
-    info!("============================================");
+    info!("📋 SUMMARY OF AVAILABLE CANCELLATION ENDPOINTS");
+    info!("===============================================");
     info!("✅ /private/cancel - Cancel single order by ID");
-    info!("⚠️  Note: Many other cancellation endpoints are not yet implemented:");
-    info!("   - /private/cancel_by_label");
-    info!("   - /private/cancel_all_orders");
-    info!("   - /private/cancel_all_by_currency");
-    info!("   - /private/cancel_all_by_instrument");
+    info!("✅ /private/cancel_all - Cancel all orders");
+    info!("✅ /private/cancel_by_label - Cancel orders by label");
+    info!("✅ /private/cancel_all_by_currency - Cancel all orders by currency");
+    info!("✅ /private/cancel_all_by_instrument - Cancel all orders by instrument");
+    info!("✅ /private/cancel_all_by_currency_pair - Cancel all orders by currency pair");
+    info!("✅ /private/cancel_all_by_kind_or_type - Cancel orders by kind or type");
+    info!("💡 All cancellation endpoints are now fully implemented and ready to use!");
     println!();
 
     info!("🎉 Cancellation endpoints example completed successfully!");

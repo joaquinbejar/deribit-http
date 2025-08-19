@@ -210,7 +210,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
             // Show first few instruments as examples
             for (i, instrument) in instruments.iter().take(5).enumerate() {
-                let contract_size_display = instrument.contract_size
+                let contract_size_display = instrument
+                    .contract_size
                     .map(|size| size.to_string())
                     .unwrap_or_else(|| "N/A".to_string());
                 info!(
@@ -283,7 +284,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     "Unknown"
                 };
 
-                let contract_size_display = instrument.contract_size
+                let contract_size_display = instrument
+                    .contract_size
                     .map(|size| size.to_string())
                     .unwrap_or_else(|| "N/A".to_string());
                 info!(
@@ -313,7 +315,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
             // Show summary and first few instruments
             for (i, instrument) in instruments.iter().take(3).enumerate() {
-                let contract_size_display = instrument.contract_size
+                let contract_size_display = instrument
+                    .contract_size
                     .map(|size| size.to_string())
                     .unwrap_or_else(|| "N/A".to_string());
                 info!(
