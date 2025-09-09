@@ -161,9 +161,12 @@ We welcome contributions to this project! If you would like to contribute, pleas
 
 If you have any questions, issues, or would like to provide feedback, please feel free to contact the project maintainer:
 
-**Joaquin Bejar Garcia**
-- Email: jb@taunais.com
-- GitHub: [joaquinbejar](https://github.com/joaquinbejar)
+### **Contact Information**
+- **Author**: Joaquín Béjar García
+- **Email**: jb@taunais.com
+- **Telegram**: [@joaquin_bejar](https://t.me/joaquin_bejar)
+- **Repository**: <https://github.com/joaquinbejar/deribit-http>
+- **Documentation**: <https://docs.rs/deribit-http>
 
 We appreciate your interest and look forward to your contributions!
 
