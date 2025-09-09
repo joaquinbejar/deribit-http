@@ -6,6 +6,7 @@
 use crate::DeribitHttpClient;
 use crate::error::HttpError;
 use crate::model::http_types::ApiResponse;
+use deribit_base::model::options::OptionInstrument;
 use deribit_base::prelude::{
     AprHistoryResponse, BookSummary, ContractSizeResponse, Currency, DeliveryPricesResponse,
     ExpirationsResponse, FundingChartData, FundingRateData, IndexData, IndexPriceData, Instrument,
@@ -844,6 +845,66 @@ impl DeribitHttpClient {
         api_response
             .result
             .ok_or_else(|| HttpError::InvalidResponse("No order book data in response".to_string()))
+    }
+
+    /// Retrieves a list of option instruments for a given currency and expiry date.
+    ///
+    /// This asynchronous function fetches option instruments for the specified `currency`
+    /// and `expiry` date and returns a filtered list of options along with their associated
+    /// ticker information.
+    ///
+    /// # Arguments
+    ///
+    /// * `currency` - A string slice that represents the name of the currency (e.g., "BTC", "ETH").
+    /// * `expiry` - A string slice representing the expiry date for the options (e.g., "20231027").
+    ///
+    /// # Returns
+    ///
+    /// Returns a `Result` containing a vector of `OptionInstrument` on success,
+    /// or an `HttpError` on failure.
+    ///
+    /// - On success, it returns a `Vec<OptionInstrument>`, where each option contains
+    ///   the instrument details and ticker information.
+    /// - On failure, it returns an `HttpError`, such as in cases where the instrument
+    ///   data could not be retrieved or tickers are inaccessible.
+    ///
+    /// # Errors
+    ///
+    /// This function may return an `HttpError` in the following scenarios:
+    ///
+    /// * If fetching the instrument data fails.
+    /// * If retrieving ticker information for an instrument fails.
+    ///
+    /// # Implementation Details
+    ///
+    /// 1. Fetches instruments for the specified `currency` filtered by type `option`.
+    /// 2. Filters the instruments to ensure they match the `currency`-`expiry` base name.
+    /// 3. Constructs an `OptionInstrument` for each filtered instrument, including
+    ///    the instrument details and ticker information.
+    ///
+    pub async fn get_options(
+        &self,
+        currency: &str,
+        expiry: &str,
+    ) -> Result<Vec<OptionInstrument>, HttpError> {
+        let mut instruments = self
+            .get_instruments(currency, Some("option"), Some(false))
+            .await
+            .map_err(|e| HttpError::RequestFailed(e.to_string()))?;
+
+        let base_name = format!("{}-{}", currency, expiry).to_uppercase();
+        // filter instruments by base name in instrument_name
+        instruments.retain(|i| i.instrument_name.starts_with(&base_name));
+
+        let mut options: Vec<OptionInstrument> = Vec::with_capacity(instruments.len());
+        for instrument in instruments {
+            let option = OptionInstrument {
+                instrument: instrument.clone(),
+                ticker: self.get_ticker(instrument.instrument_name.as_str()).await?,
+            };
+            options.push(option)
+        }
+        Ok(options)
     }
 
     /// Get available instruments
