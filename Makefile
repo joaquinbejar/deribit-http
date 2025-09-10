@@ -86,21 +86,21 @@ coverage:
 	export LOGLEVEL=WARN
 	cargo install cargo-tarpaulin
 	mkdir -p coverage
-	cargo tarpaulin --verbose --all-features --workspace --timeout 0 --out Xml
+	cargo tarpaulin --verbose --all-features --timeout 0 --out Xml
 
 .PHONY: coverage-html
 coverage-html:
 	export LOGLEVEL=WARN
 	cargo install cargo-tarpaulin
 	mkdir -p coverage
-	cargo tarpaulin --color Always --engine llvm --tests --all-targets --all-features --workspace --timeout 0 --out Html --output-dir coverage
+	cargo tarpaulin --color Always --engine llvm --tests --all-targets --all-features --timeout 0 --out Html --output-dir coverage
 
 .PHONY: coverage-json
 coverage-json:
 	export LOGLEVEL=WARN
 	cargo install cargo-tarpaulin
 	mkdir -p coverage
-	cargo tarpaulin --color Always --engine llvm --tests --all-targets --all-features --workspace --timeout 0 --out Json --output-dir coverage
+	cargo tarpaulin --color Always --engine llvm --tests --all-targets --all-features  --timeout 0 --out Json --output-dir coverage
 
 
 .PHONY: open-coverage
