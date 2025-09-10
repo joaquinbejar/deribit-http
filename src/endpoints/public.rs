@@ -6,12 +6,13 @@
 use crate::DeribitHttpClient;
 use crate::error::HttpError;
 use crate::model::http_types::ApiResponse;
-use deribit_base::model::options::OptionInstrument;
+use std::collections::HashMap;
+
 use deribit_base::prelude::{
     AprHistoryResponse, BookSummary, ContractSizeResponse, Currency, DeliveryPricesResponse,
     ExpirationsResponse, FundingChartData, FundingRateData, IndexData, IndexPriceData, Instrument,
-    LastTradesResponse, OrderBook, SettlementsResponse, StatusResponse, TestResponse, TickerData,
-    Trade, TradingViewChartData,
+    LastTradesResponse, OptionInstrument, OptionInstrumentPair, OptionType, OrderBook,
+    SettlementsResponse, StatusResponse, TestResponse, TickerData, Trade, TradingViewChartData,
 };
 
 /// Market data endpoints
@@ -905,6 +906,46 @@ impl DeribitHttpClient {
             options.push(option)
         }
         Ok(options)
+    }
+
+    pub async fn get_options_pair(
+        &self,
+        currency: &str,
+        expiry: &str,
+    ) -> Result<HashMap<u64, OptionInstrumentPair>, HttpError> {
+        let option_instruments = self.get_options(currency, expiry).await?;
+
+        let mut strikes_map: HashMap<u64, OptionInstrumentPair> =
+            HashMap::with_capacity(option_instruments.len() / 2);
+        for instrument in option_instruments {
+            let strike_price = instrument.instrument.strike.unwrap() as u64;
+            if !strikes_map.contains_key(&strike_price) {
+                strikes_map.insert(
+                    strike_price,
+                    OptionInstrumentPair {
+                        call: None,
+                        put: None,
+                    },
+                );
+            };
+            match instrument.instrument.option_type.clone() {
+                Some(option_type) => match option_type {
+                    OptionType::Call => {
+                        strikes_map.get_mut(&strike_price).unwrap().call = Some(instrument.clone());
+                    }
+                    OptionType::Put => {
+                        strikes_map.get_mut(&strike_price).unwrap().put = Some(instrument.clone());
+                    }
+                },
+                None => {
+                    return Err(HttpError::RequestFailed(
+                        "Option instrument has no option type".to_string(),
+                    ));
+                }
+            }
+        }
+
+        Ok(strikes_map)
     }
 
     /// Get available instruments
