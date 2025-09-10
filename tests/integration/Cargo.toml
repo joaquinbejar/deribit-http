@@ -1,17 +1,26 @@
 [package]
-name = "integration-tests"
+name = "deribit-http-integration-tests"
 version = "0.1.0"
-edition = "2024"
+edition = "2021"
+publish = false
 
 [lib]
-doctest = false
-test = false
+name = "integration_tests"
+path = "./lib.rs"
 
 [dependencies]
-deribit-http = { workspace = true }
+deribit-http = { path = "../.." }
 deribit-base = { workspace = true }
+tokio = { workspace = true, features = ["full"] }
 tracing = { workspace = true }
-tokio = { workspace = true }
 tracing-subscriber = { workspace = true }
-dotenv = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+reqwest = { workspace = true }
+url = { workspace = true }
 chrono = { workspace = true }
+dotenv = { workspace = true }
+mockito = "1.7"
+assert-json-diff = "2.0"
+pretty_assertions = "1.4"
+serial_test = "3.2"
