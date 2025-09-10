@@ -1,6 +1,6 @@
 [package]
 name = "deribit-http"
-version = "0.1.3"
+version = "0.1.4"
 edition = "2024"
 authors = ["Joaquin Bejar <jb@taunais.com>"]
 description = "HTTP REST API client for Deribit trading platform"
@@ -15,8 +15,20 @@ categories = ["finance", "api-bindings", "web-programming::http-client"]
 members = [
     "examples/public",
     "examples/private",
+    "tests/integration",
 ]
 
+include = [
+    "benches/**/*",
+    "src/**/*",
+    "Cargo.toml",
+    "README.md",
+    "LICENSE",
+    "examples/**/*.rs",
+    "tests/**/*.rs",
+    "Makefile",
+    "rust-toolchain.toml",
+]
 
 [dependencies]
 deribit-base = { workspace = true }
@@ -33,6 +45,9 @@ sha2 = { workspace = true }
 urlencoding = { workspace = true }
 url = { workspace = true }
 pretty-simple-display = { workspace = true }
+
+[dev-dependencies]
+mockito = "1.7"
 
 [workspace.dependencies]
 deribit-http = { path = "." }
