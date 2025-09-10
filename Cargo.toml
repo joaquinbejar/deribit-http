@@ -1,6 +1,6 @@
 [package]
 name = "deribit-http"
-version = "0.2.0"
+version = "0.2.1"
 edition = "2024"
 authors = ["Joaquin Bejar <jb@taunais.com>"]
 description = "HTTP REST API client for Deribit trading platform"
@@ -51,7 +51,7 @@ mockito = "1.7"
 
 [workspace.dependencies]
 deribit-http = { path = "." }
-deribit-base = "0.2.5"
+deribit-base = "0.2.6"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 tracing = "0.1"
