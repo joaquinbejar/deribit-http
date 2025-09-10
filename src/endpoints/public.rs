@@ -333,7 +333,7 @@ impl DeribitHttpClient {
     /// # async fn main() -> Result<(), Box<dyn std::error::Error>> {
     /// let client = DeribitHttpClient::new(true); // testnet
     /// let instrument = client.get_instrument("BTC-PERPETUAL").await?;
-    /// println!("Contract size: {}", instrument.contract_size);
+    /// println!("Contract size: {:?}", instrument.contract_size);
     /// # Ok(())
     /// # }
     /// ```
@@ -744,7 +744,7 @@ impl DeribitHttpClient {
     /// # async fn main() -> Result<(), Box<dyn std::error::Error>> {
     /// let client = DeribitHttpClient::new(true);
     /// let ticker = client.get_ticker("BTC-PERPETUAL").await?;
-    /// println!("Last price: {}", ticker.last_price);
+    /// println!("Last price: {:?}", ticker.last_price);
     /// # Ok(())
     /// # }
     /// ```
@@ -938,7 +938,7 @@ impl DeribitHttpClient {
     /// # use deribit_http::DeribitHttpClient;
     /// # #[tokio::main]
     /// # async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    /// let client = DeribitHttpClient::new();
+    /// let client = DeribitHttpClient::new(true);
     /// let pairs = client.get_options_pair("BTC", "10SEP25").await?;
     ///
     /// for (strike, pair) in pairs {
@@ -2090,7 +2090,7 @@ impl DeribitHttpClient {
     ///
     /// # Examples
     ///
-    /// ```rust
+    /// ```rust,no_run
     /// # use deribit_http::DeribitHttpClient;
     /// # #[tokio::main]
     /// # async fn main() -> Result<(), Box<dyn std::error::Error>> {

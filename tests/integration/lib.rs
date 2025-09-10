@@ -1,11 +1,11 @@
 /******************************************************************************
-    Author: Joaquín Béjar García
-    Email: jb@taunais.com 
-    Date: 10/9/25
- ******************************************************************************/
+   Author: Joaquín Béjar García
+   Email: jb@taunais.com
+   Date: 10/9/25
+******************************************************************************/
 
 //! Integration tests library for deribit-http
-//! 
+//!
 //! This library provides common utilities and test modules for integration testing
 //! of the Deribit HTTP client functionality.
 
@@ -20,10 +20,13 @@ pub mod session;
 pub mod wallet;
 
 // Re-export commonly used types and functions for tests
-pub use deribit_http::*;
-pub use deribit_base::*;
-pub use tokio;
-pub use serde_json;
-pub use mockito;
 pub use assert_json_diff;
+pub use deribit_base::error;
+pub use deribit_base::model;
+pub use deribit_http::client::DeribitHttpClient;
+pub use deribit_http::config::HttpConfig;
+pub use mockito;
 pub use pretty_assertions;
+pub use serde_json;
+pub use serial_test;
+pub use tokio;

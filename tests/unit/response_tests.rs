@@ -18,16 +18,14 @@ mod response_handler_tests {
 
     #[test]
     fn test_response_handler_new() {
-        let handler = HttpResponseHandler::new();
-        // Test that we can create a handler
-        assert!(true);
+        let _handler = HttpResponseHandler::new();
+        // Test passes if no panic occurs during construction
     }
 
     #[test]
     fn test_response_handler_default() {
-        let handler = HttpResponseHandler;
-        // Test that default implementation works
-        assert!(true);
+        let _handler = HttpResponseHandler;
+        // Test passes if default implementation works
     }
 
     #[test]
@@ -323,13 +321,12 @@ mod response_handler_tests {
     #[test]
     fn test_clone_and_serialize_traits() {
         let handler = HttpResponseHandler::new();
-        let cloned = handler.clone();
+        let _cloned = handler.clone();
 
         // Test serialization
         let serialized = serde_json::to_string(&handler).unwrap();
-        let deserialized: HttpResponseHandler = serde_json::from_str(&serialized).unwrap();
+        let _deserialized: HttpResponseHandler = serde_json::from_str(&serialized).unwrap();
 
-        // All handlers should be equivalent since they have no state
-        assert!(true);
+        // Test passes if clone and serialization complete without error
     }
 }

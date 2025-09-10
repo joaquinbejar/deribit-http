@@ -45,7 +45,7 @@
 //! - API Key: the `authenticate_api_key` method exists but is currently not implemented and will return an error.
 //!
 //! Private example:
-//! ```rust
+//! ```rust,no_run
 //! use deribit_http::DeribitHttpClient;
 //!
 //! #[tokio::main]

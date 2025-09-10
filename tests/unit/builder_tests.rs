@@ -9,10 +9,9 @@ mod message_builder_tests {
     #[test]
     fn test_http_message_builder_new() {
         let base_url = "https://test.deribit.com".to_string();
-        let builder = HttpMessageBuilder::new(base_url.clone());
+        let _builder = HttpMessageBuilder::new(base_url.clone());
 
-        // Verify the builder was created successfully
-        assert!(true);
+        // Test passes if no panic occurs during construction
     }
 
     #[test]
@@ -20,9 +19,8 @@ mod message_builder_tests {
         let base_url = "https://test.deribit.com".to_string();
         let builder = HttpMessageBuilder::new(base_url.clone());
 
-        let request_builder = builder.request_builder();
-        // Verify we can access the request builder
-        assert!(true);
+        let _request_builder = builder.request_builder();
+        // Test passes if no panic occurs during access
     }
 
     #[test]
@@ -30,19 +28,17 @@ mod message_builder_tests {
         let base_url = "https://test.deribit.com".to_string();
         let builder = HttpMessageBuilder::new(base_url.clone());
 
-        let response_handler = builder.response_handler();
-        // Verify we can access the response handler
-        assert!(true);
+        let _response_handler = builder.response_handler();
+        // Test passes if no panic occurs during access
     }
 
     #[test]
     fn test_clone_trait() {
         let base_url = "https://test.deribit.com".to_string();
         let builder = HttpMessageBuilder::new(base_url.clone());
-        let cloned_builder = builder.clone();
+        let _cloned_builder = builder.clone();
 
-        // Verify cloning works
-        assert!(true);
+        // Test passes if no panic occurs during cloning
     }
 
     #[test]
@@ -52,10 +48,9 @@ mod message_builder_tests {
 
         // Test serialization
         let serialized = serde_json::to_string(&builder).unwrap();
-        let deserialized: HttpMessageBuilder = serde_json::from_str(&serialized).unwrap();
+        let _deserialized: HttpMessageBuilder = serde_json::from_str(&serialized).unwrap();
 
-        // Verify serialization/deserialization works
-        assert!(true);
+        // Test passes if serialization/deserialization completes without error
     }
 
     #[test]
@@ -63,11 +58,10 @@ mod message_builder_tests {
         let testnet_url = "https://test.deribit.com".to_string();
         let mainnet_url = "https://www.deribit.com".to_string();
 
-        let testnet_builder = HttpMessageBuilder::new(testnet_url);
-        let mainnet_builder = HttpMessageBuilder::new(mainnet_url);
+        let _testnet_builder = HttpMessageBuilder::new(testnet_url);
+        let _mainnet_builder = HttpMessageBuilder::new(mainnet_url);
 
-        // Verify we can create builders with different URLs
-        assert!(true);
+        // Test passes if builders can be created with different URLs
     }
 
     #[test]
@@ -75,10 +69,9 @@ mod message_builder_tests {
         let base_url = "https://test.deribit.com".to_string();
         let builder = HttpMessageBuilder::new(base_url.clone());
 
-        let request_builder = builder.request_builder();
-        let response_handler = builder.response_handler();
+        let _request_builder = builder.request_builder();
+        let _response_handler = builder.response_handler();
 
-        // Verify both components are accessible independently
-        assert!(true);
+        // Test passes if both components are accessible independently
     }
 }
