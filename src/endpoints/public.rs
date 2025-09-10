@@ -908,6 +908,46 @@ impl DeribitHttpClient {
         Ok(options)
     }
 
+    /// Fetches option instruments for a given currency and expiry date, grouped by strike price.
+    ///
+    /// This method retrieves all option instruments for the specified currency and expiry,
+    /// then groups them into pairs (call and put) by strike price. Each strike price
+    /// maps to an `OptionInstrumentPair` containing the call and put options if available.
+    ///
+    /// # Arguments
+    ///
+    /// * `currency` - The currency symbol (e.g., "BTC", "ETH")
+    /// * `expiry` - The expiry date in format "DDMMMYY" (e.g., "10SEP25")
+    ///
+    /// # Returns
+    ///
+    /// Returns a `HashMap` where:
+    /// - Key: Strike price as `u64`
+    /// - Value: `OptionInstrumentPair` containing call and put options for that strike
+    ///
+    /// # Errors
+    ///
+    /// Returns `HttpError` if:
+    /// - The API request fails
+    /// - An option instrument has no option type
+    /// - Network or authentication errors occur
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// # use deribit_http::DeribitHttpClient;
+    /// # #[tokio::main]
+    /// # async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    /// let client = DeribitHttpClient::new();
+    /// let pairs = client.get_options_pair("BTC", "10SEP25").await?;
+    ///
+    /// for (strike, pair) in pairs {
+    ///     println!("Strike {}: Call={:?}, Put={:?}",
+    ///              strike, pair.call.is_some(), pair.put.is_some());
+    /// }
+    /// # Ok(())
+    /// # }
+    /// ```
     pub async fn get_options_pair(
         &self,
         currency: &str,
@@ -919,15 +959,12 @@ impl DeribitHttpClient {
             HashMap::with_capacity(option_instruments.len() / 2);
         for instrument in option_instruments {
             let strike_price = instrument.instrument.strike.unwrap() as u64;
-            if !strikes_map.contains_key(&strike_price) {
-                strikes_map.insert(
-                    strike_price,
-                    OptionInstrumentPair {
-                        call: None,
-                        put: None,
-                    },
-                );
-            };
+            strikes_map
+                .entry(strike_price)
+                .or_insert(OptionInstrumentPair {
+                    call: None,
+                    put: None,
+                });
             match instrument.instrument.option_type.clone() {
                 Some(option_type) => match option_type {
                     OptionType::Call => {
