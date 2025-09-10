@@ -1,9 +1,11 @@
 //! Message builder utilities for HTTP client
 
 use crate::message::{HttpRequestBuilder, HttpResponseHandler};
+use pretty_simple_display::{DebugPretty, DisplaySimple};
+use serde::{Deserialize, Serialize};
 
 /// Main message builder for HTTP operations
-#[derive(Debug, Clone)]
+#[derive(DebugPretty, DisplaySimple, Clone, Serialize, Deserialize)]
 pub struct HttpMessageBuilder {
     request_builder: HttpRequestBuilder,
     response_handler: HttpResponseHandler,

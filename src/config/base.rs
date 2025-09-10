@@ -1,12 +1,13 @@
 //! Base configuration for HTTP client
 
 use crate::constants::{DEFAULT_TIMEOUT, MAX_RETRIES, PRODUCTION_BASE_URL, TESTNET_BASE_URL};
+use pretty_simple_display::{DebugPretty, DisplaySimple};
 use serde::{Deserialize, Serialize};
 use std::time::Duration;
 use url::Url;
 
 /// Configuration for the HTTP client
-#[derive(Debug, Clone)]
+#[derive(DebugPretty, DisplaySimple, Clone, Serialize, Deserialize)]
 pub struct HttpConfig {
     /// Base URL for API requests
     pub base_url: Url,
@@ -23,7 +24,7 @@ pub struct HttpConfig {
 }
 
 /// API credentials for authentication
-#[derive(Clone, Serialize, Deserialize)]
+#[derive(DebugPretty, DisplaySimple, Clone, Serialize, Deserialize)]
 pub struct ApiCredentials {
     /// Client ID for OAuth2
     pub client_id: String,
@@ -113,10 +114,6 @@ impl HttpConfig {
         self.credentials.as_ref()
     }
 }
-
-// Implement Display and Debug traits using macros from deribit-base
-deribit_base::impl_json_display!(ApiCredentials);
-deribit_base::impl_json_debug_pretty!(ApiCredentials);
 
 // HttpConfig cannot use JSON macros because it contains non-serializable fields (Url)
 // so we keep the derived Debug trait

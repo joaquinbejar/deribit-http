@@ -12,6 +12,8 @@
 
 use deribit_base::prelude::*;
 use deribit_http::DeribitHttpClient;
+use pretty_simple_display::{DebugPretty, DisplaySimple};
+use serde::Serialize;
 use std::env;
 use tracing::{error, info, warn};
 
@@ -268,13 +270,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 // HELPER STRUCTURES AND FUNCTIONS
 // =================================================================
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize)]
 enum OptionType {
     Call,
     Put,
 }
 
-#[derive(Debug, Clone)]
+#[derive(DebugPretty, DisplaySimple, Clone, Serialize)]
 #[allow(dead_code)]
 struct ParsedOptionWithTicker {
     instrument_name: String,

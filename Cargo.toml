@@ -32,11 +32,11 @@ hmac = { workspace = true }
 sha2 = { workspace = true }
 urlencoding = { workspace = true }
 url = { workspace = true }
-
+pretty-simple-display = { workspace = true }
 
 [workspace.dependencies]
 deribit-http = { path = "." }
-deribit-base = "0.2.4"
+deribit-base = "0.2.5"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 tracing = "0.1"
@@ -52,3 +52,4 @@ urlencoding = "2.1"
 dotenv = "0.15"
 chrono = "0.4"
 url = "2.5"
+pretty-simple-display = "0.1"

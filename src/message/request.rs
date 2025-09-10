@@ -1,11 +1,12 @@
 //! HTTP request message handling
 
 use crate::model::http_types::{HttpRequest, RequestParams};
+use pretty_simple_display::{DebugPretty, DisplaySimple};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
 /// Request builder for HTTP messages
-#[derive(Clone, Serialize, Deserialize)]
+#[derive(DebugPretty, DisplaySimple, Clone, Serialize, Deserialize)]
 pub struct HttpRequestBuilder {
     base_url: String,
 }
@@ -84,7 +85,3 @@ impl HttpRequestBuilder {
         String::new()
     }
 }
-
-// Implement Display and Debug traits using macros from deribit-base
-deribit_base::impl_json_display!(HttpRequestBuilder);
-deribit_base::impl_json_debug_pretty!(HttpRequestBuilder);

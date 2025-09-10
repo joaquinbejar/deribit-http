@@ -2,11 +2,11 @@
 
 use crate::error::HttpError;
 use crate::model::http_types::{ApiError, ApiResponse, HttpResponse};
-use deribit_base::{impl_json_debug_pretty, impl_json_display};
+use pretty_simple_display::{DebugPretty, DisplaySimple};
 use serde::{Deserialize, Serialize};
 
 /// Response handler for HTTP messages
-#[derive(Clone, Serialize, Deserialize)]
+#[derive(DebugPretty, DisplaySimple, Clone, Serialize, Deserialize)]
 pub struct HttpResponseHandler;
 
 impl HttpResponseHandler {
@@ -69,6 +69,3 @@ impl Default for HttpResponseHandler {
         Self::new()
     }
 }
-
-impl_json_debug_pretty!(HttpResponseHandler);
-impl_json_display!(HttpResponseHandler);

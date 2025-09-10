@@ -9,6 +9,7 @@ use crate::error::HttpError;
 use crate::model::http_types::AuthToken;
 use base64::Engine;
 use hmac::{Hmac, Mac};
+use pretty_simple_display::{DebugPretty, DisplaySimple};
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use sha2::Sha256;
@@ -18,7 +19,7 @@ use urlencoding;
 type HmacSha256 = Hmac<Sha256>;
 
 /// OAuth2 authentication request
-#[derive(Clone, Serialize, Deserialize)]
+#[derive(DebugPretty, DisplaySimple, Clone, Serialize, Deserialize)]
 pub struct AuthRequest {
     /// Grant type (always "client_credentials" for Deribit)
     pub grant_type: String,
@@ -31,7 +32,7 @@ pub struct AuthRequest {
 }
 
 /// API key authentication parameters
-#[derive(Clone, Serialize, Deserialize)]
+#[derive(DebugPretty, DisplaySimple, Clone, Serialize, Deserialize)]
 pub struct ApiKeyAuth {
     /// API key
     pub key: String,
@@ -234,13 +235,6 @@ impl AuthManager {
             .as_millis() as u64
     }
 }
-
-// Implement Display and Debug traits using macros from deribit-base
-deribit_base::impl_json_display!(AuthRequest);
-deribit_base::impl_json_debug_pretty!(AuthRequest);
-
-deribit_base::impl_json_display!(ApiKeyAuth);
-deribit_base::impl_json_debug_pretty!(ApiKeyAuth);
 
 // AuthManager cannot use the JSON macros because it contains non-serializable fields
 // (Client, SystemTime), so we keep the derived Debug trait

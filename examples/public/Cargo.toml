@@ -11,3 +11,6 @@ tracing = { workspace = true }
 tokio = { workspace = true }
 tracing-subscriber = { workspace = true }
 dotenv = { workspace = true }
+serde = { version = "1.0.219", features = ["derive"] }
+pretty-simple-display = { workspace = true }
+serde_json = { workspace = true }

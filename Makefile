@@ -93,11 +93,20 @@ coverage-html:
 	export LOGLEVEL=WARN
 	cargo install cargo-tarpaulin
 	mkdir -p coverage
-	cargo tarpaulin --color Always --engine llvm --tests --all-targets --all-features --workspace --timeout 0 --out Html
+	cargo tarpaulin --color Always --engine llvm --tests --all-targets --all-features --workspace --timeout 0 --out Html --output-dir coverage
+
+.PHONY: coverage-json
+coverage-json:
+	export LOGLEVEL=WARN
+	cargo install cargo-tarpaulin
+	mkdir -p coverage
+	cargo tarpaulin --color Always --engine llvm --tests --all-targets --all-features --workspace --timeout 0 --out Json --output-dir coverage
+
 
 .PHONY: open-coverage
 open-coverage:
-	open tarpaulin-report.html
+	open coverage/tarpaulin-report.html
+
 
 # Rule to show git log
 git-log:

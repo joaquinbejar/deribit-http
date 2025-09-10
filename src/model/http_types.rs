@@ -1,10 +1,11 @@
 //! HTTP-specific types and models
 
+use pretty_simple_display::{DebugPretty, DisplaySimple};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
 /// HTTP request structure
-#[derive(Clone, Serialize, Deserialize)]
+#[derive(DebugPretty, DisplaySimple, Clone, Serialize, Deserialize)]
 pub struct HttpRequest {
     /// HTTP method (GET, POST, PUT, DELETE, etc.)
     pub method: String,
@@ -17,7 +18,7 @@ pub struct HttpRequest {
 }
 
 /// HTTP response structure
-#[derive(Clone, Serialize, Deserialize)]
+#[derive(DebugPretty, DisplaySimple, Clone, Serialize, Deserialize)]
 pub struct HttpResponse {
     /// HTTP status code
     pub status: u16,
@@ -52,7 +53,7 @@ pub struct ApiResponse<T> {
 }
 
 /// API error structure
-#[derive(Clone, Serialize, Deserialize)]
+#[derive(DebugPretty, DisplaySimple, Clone, Serialize, Deserialize)]
 pub struct ApiError {
     /// Error code number
     pub code: i32,
@@ -63,7 +64,7 @@ pub struct ApiError {
 }
 
 /// Authentication token structure
-#[derive(Clone, Serialize, Deserialize)]
+#[derive(DebugPretty, DisplaySimple, Clone, Serialize, Deserialize)]
 pub struct AuthToken {
     /// OAuth2 access token
     pub access_token: String,
@@ -78,7 +79,7 @@ pub struct AuthToken {
 }
 
 /// Request parameters
-#[derive(Clone, Default, Serialize, Deserialize)]
+#[derive(DebugPretty, DisplaySimple, Clone, Default, Serialize, Deserialize)]
 pub struct RequestParams {
     params: HashMap<String, serde_json::Value>,
 }
@@ -107,7 +108,3 @@ impl RequestParams {
         self.params.is_empty()
     }
 }
-
-// Implement Display and Debug traits using macros from deribit-base
-deribit_base::impl_json_display!(HttpResponse, ApiError, AuthToken, RequestParams);
-deribit_base::impl_json_debug_pretty!(HttpResponse, ApiError, AuthToken, RequestParams);
