@@ -1,7 +1,7 @@
 //! HTTP client implementation for Deribit REST API
 
 use crate::auth::AuthManager;
-use crate::config::{HttpConfig, validate_config};
+use crate::config::HttpConfig;
 use crate::error::HttpError;
 use crate::model::http_types::AuthToken;
 use crate::rate_limit::{RateLimiter, categorize_endpoint};
@@ -24,21 +24,13 @@ pub struct DeribitHttpClient {
 
 impl DeribitHttpClient {
     /// Create a new HTTP client
-    pub fn new(test_net: bool) -> Self {
-        let config = if test_net {
-            HttpConfig::testnet()
-        } else {
-            HttpConfig::production()
-        };
-
+    pub fn new() -> Self {
+        let config = HttpConfig::default();
         Self::with_config(config).expect("Failed to create client with default config")
     }
 
     /// Create a new HTTP client with custom configuration
     pub fn with_config(config: HttpConfig) -> Result<Self, HttpError> {
-        // Validate configuration
-        validate_config(&config)?;
-
         // Build reqwest client
         let client = Client::builder()
             .timeout(config.timeout)
@@ -47,7 +39,7 @@ impl DeribitHttpClient {
             .map_err(|e| HttpError::NetworkError(e.to_string()))?;
 
         let auth_manager = AuthManager::new(client.clone(), config.clone());
-
+        println!("{:?}", auth_manager);
         Ok(Self {
             client,
             config: Arc::new(config),
@@ -99,10 +91,10 @@ impl DeribitHttpClient {
         self.rate_limiter.wait_for_permission(category).await;
 
         // Get authorization header
-        let auth_manager = self.auth_manager.lock().await;
-        let auth_header = auth_manager.get_authorization_header().ok_or_else(|| {
+        let mut auth_manager = self.auth_manager.lock().await;
+        let auth_header = auth_manager.get_authorization_header().await.ok_or_else(|| {
             HttpError::AuthenticationFailed(
-                "No valid authentication token available. Please authenticate first.".to_string(),
+                "No valid authentication token available.".to_string(),
             )
         })?;
 
@@ -132,10 +124,10 @@ impl DeribitHttpClient {
         self.rate_limiter.wait_for_permission(category).await;
 
         // Get authorization header
-        let auth_manager = self.auth_manager.lock().await;
-        let auth_header = auth_manager.get_authorization_header().ok_or_else(|| {
+        let mut auth_manager = self.auth_manager.lock().await;
+        let auth_header = auth_manager.get_authorization_header().await.ok_or_else(|| {
             HttpError::AuthenticationFailed(
-                "No valid authentication token available. Please authenticate first.".to_string(),
+                "No valid authentication token available.".to_string(),
             )
         })?;
 
@@ -158,41 +150,8 @@ impl DeribitHttpClient {
         &self.rate_limiter
     }
 
-    /// Authenticate using OAuth2 client credentials
-    pub async fn authenticate_oauth2(
-        &self,
-        client_id: &str,
-        client_secret: &str,
-    ) -> Result<AuthToken, HttpError> {
-        let mut auth_manager = self.auth_manager.lock().await;
-        auth_manager
-            .authenticate_oauth2(client_id, client_secret)
-            .await
-    }
 
-    /// Authenticate using API key and secret (placeholder - not implemented in AuthManager yet)
-    pub async fn authenticate_api_key(
-        &self,
-        _api_key: &str,
-        _api_secret: &str,
-    ) -> Result<AuthToken, HttpError> {
-        // TODO: Implement API key authentication in AuthManager
-        Err(HttpError::AuthenticationFailed(
-            "API key authentication not yet implemented".to_string(),
-        ))
-    }
-
-    /// Get current authentication token
-    pub async fn get_auth_token(&self) -> Option<AuthToken> {
-        let auth_manager = self.auth_manager.lock().await;
-        auth_manager.get_token().cloned()
-    }
-
-    /// Check if client is authenticated
-    pub async fn is_authenticated(&self) -> bool {
-        let auth_manager = self.auth_manager.lock().await;
-        auth_manager.get_token().is_some() && !auth_manager.is_token_expired()
-    }
+    
 
     /// Exchange refresh token for a new access token with different subject_id
     pub async fn exchange_token(
@@ -257,8 +216,11 @@ impl DeribitHttpClient {
         let _auth_manager = self.auth_manager.lock().await;
         let _expires_at =
             std::time::SystemTime::now() + std::time::Duration::from_secs(token.expires_in);
-        // Note: We would need to update AuthManager to store the new token
-        // For now, just return the token
+        
+        self.auth_manager
+            .lock()
+            .await
+            .update_token(token.clone());
 
         Ok(token)
     }
@@ -322,6 +284,17 @@ impl DeribitHttpClient {
         let token: AuthToken = serde_json::from_value(result.clone())
             .map_err(|e| HttpError::InvalidResponse(format!("Failed to parse token: {}", e)))?;
 
+        self.auth_manager
+            .lock()
+            .await
+            .update_token(token.clone());
+        
         Ok(token)
+    }
+}
+
+impl Default for DeribitHttpClient {
+    fn default() -> Self {
+        Self::new()
     }
 }

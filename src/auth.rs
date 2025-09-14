@@ -14,6 +14,7 @@ use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use sha2::Sha256;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
+use tracing::{error, debug};
 use urlencoding;
 
 type HmacSha256 = Hmac<Sha256>;
@@ -67,19 +68,33 @@ impl AuthManager {
     /// Authenticate using OAuth2 client credentials
     pub async fn authenticate_oauth2(
         &mut self,
-        client_id: &str,
-        client_secret: &str,
     ) -> Result<AuthToken, HttpError> {
+        let credentials = match self.config.credentials.clone() {
+            Some(creds) => match creds.is_valid() {
+                true => creds,
+                false => {
+                    return Err(HttpError::AuthenticationFailed(
+                        "Invalid credentials for OAuth2".to_string(),
+                    ))
+                }   
+            },
+            None => {
+                return Err(HttpError::AuthenticationFailed(
+                    "No credentials configured".to_string(),
+                ))
+            }
+        };
+        let (client_id, client_secret) = credentials.get_client_credentials()?;
         // Build URL with query parameters as per Deribit API documentation
         let url = format!(
             "{}/public/auth?grant_type=client_credentials&client_id={}&client_secret={}",
             self.config.base_url,
-            urlencoding::encode(client_id),
-            urlencoding::encode(client_secret)
+            urlencoding::encode(client_id.as_str()),
+            urlencoding::encode(client_secret.as_str())
         );
 
         // Debug: log the URL being used
-        tracing::debug!("Authentication URL: {}", url);
+        debug!("Authentication URL: {}", url);
 
         let response = self
             .client
@@ -166,11 +181,15 @@ impl AuthManager {
 
     /// Get current authentication token
     pub fn get_token(&self) -> Option<&AuthToken> {
-        self.token.as_ref()
+        if self.is_token_expired() {
+            self.token.as_ref()
+        } else { 
+            None 
+        }
     }
 
     /// Check if token is expired or about to expire
-    pub fn is_token_expired(&self) -> bool {
+    fn is_token_expired(&self) -> bool {
         match self.token_expires_at {
             Some(expires_at) => {
                 // Consider token expired if it expires within the next 60 seconds
@@ -180,34 +199,58 @@ impl AuthManager {
             None => true,
         }
     }
-
-    /// Get authorization header value
-    pub fn get_authorization_header(&self) -> Option<String> {
-        self.token
-            .as_ref()
-            .map(|token| format!("{} {}", token.token_type, token.access_token))
+    
+    ///
+    /// Checks whether the token is valid.
+    ///
+    /// The function determines the validity of a token based on two conditions:
+    /// 1. The token must exist (i.e., it is `Some`).
+    /// 2. The token must not be expired, as determined by the `is_token_expired` function.
+    ///
+    /// # Returns
+    /// * `true` - if the token exists and is not expired.
+    /// * `false` - if the token does not exist or is expired.
+    ///
+    fn is_token_valid(&self) -> bool {
+        match self.token {
+            Some(_) => !self.is_token_expired(),
+            None => false,
+        }
     }
 
-    /// Refresh token if needed
-    pub async fn ensure_valid_token(&mut self) -> Result<(), HttpError> {
-        if self.is_token_expired() {
-            let credentials = self.config.credentials.clone();
-            if let Some(creds) = credentials {
-                if !creds.client_id.is_empty() {
-                    self.authenticate_oauth2(&creds.client_id, &creds.client_secret)
-                        .await?;
-                } else {
-                    return Err(HttpError::AuthenticationFailed(
-                        "No valid credentials for token refresh".to_string(),
-                    ));
+    /// Get authorization header value
+    pub async fn get_authorization_header(&mut self) -> Option<String> {
+        match self.is_token_valid() {
+            true => {
+                let token = self.token.as_ref().unwrap();
+                Some(format!("{} {}", token.token_type, token.access_token))
+            },
+            false => {
+                match  self.config.credentials.as_ref() {
+                    Some(credentials) => {
+                        match credentials.is_valid() {
+                            true => {
+                                match self.authenticate_oauth2().await {
+                                    Ok(token) => {
+                                        Some(format!("{} {}", token.token_type, token.access_token))
+                                    },
+                                    Err(e) => {
+                                        error!("Failed to authenticate: {}", e);
+                                        None   
+                                    }
+                                }
+                            },
+                            false => {
+                                None
+                            }
+                        }
+                    },
+                    None => {
+                        None
+                    }
                 }
-            } else {
-                return Err(HttpError::AuthenticationFailed(
-                    "No credentials configured".to_string(),
-                ));
             }
         }
-        Ok(())
     }
 
     /// Generate nonce for API key authentication
@@ -234,10 +277,12 @@ impl AuthManager {
             .unwrap_or_default()
             .as_millis() as u64
     }
-}
 
-// AuthManager cannot use the JSON macros because it contains non-serializable fields
-// (Client, SystemTime), so we keep the derived Debug trait
+    pub fn update_token(&mut self, token: AuthToken) {
+        self.token_expires_at = Some(SystemTime::now() + Duration::from_secs(token.expires_in));
+        self.token = Some(token);
+    }
+}
 
 #[cfg(test)]
 mod tests {

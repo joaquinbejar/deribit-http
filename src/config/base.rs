@@ -1,10 +1,12 @@
 //! Base configuration for HTTP client
 
+use std::env;
 use crate::constants::{DEFAULT_TIMEOUT, MAX_RETRIES, PRODUCTION_BASE_URL, TESTNET_BASE_URL};
 use pretty_simple_display::{DebugPretty, DisplaySimple};
 use serde::{Deserialize, Serialize};
 use std::time::Duration;
 use url::Url;
+use crate::config::credentials::ApiCredentials;
 
 /// Configuration for the HTTP client
 #[derive(DebugPretty, DisplaySimple, Clone, Serialize, Deserialize)]
@@ -23,47 +25,52 @@ pub struct HttpConfig {
     pub credentials: Option<ApiCredentials>,
 }
 
-/// API credentials for authentication
-#[derive(DebugPretty, DisplaySimple, Clone, Serialize, Deserialize)]
-pub struct ApiCredentials {
-    /// Client ID for OAuth2
-    pub client_id: String,
-    /// Client secret for OAuth2
-    pub client_secret: String,
-    /// API key (alternative to OAuth2)
-    pub api_key: Option<String>,
-    /// API secret (for API key authentication)
-    pub api_secret: Option<String>,
-}
 
 impl Default for HttpConfig {
     fn default() -> Self {
+        dotenv::dotenv().ok();
+        // Credentials
+        let credentials = ApiCredentials::new().ok();
+        
+        // Testnet flag
+        let testnet = env::var("DERIBIT_TESTNET")
+            .map(|val| val.to_lowercase() == "true")
+            .unwrap_or(true); // Default to testnet for safety
+        
+        // Base URL
+        let base_url = if testnet {
+            Url::parse(TESTNET_BASE_URL).expect("Invalid testnet URL")
+        } else {
+            Url::parse(PRODUCTION_BASE_URL).expect("Invalid base URL")
+        };
+        
+        // Maximum number of retries
+        let  max_retries = env::var("DERIBIT_HTTP_MAX_RETRIES")
+            .map(|val| val.parse::<u32>().unwrap_or(MAX_RETRIES))
+        .unwrap_or(MAX_RETRIES);
+        
+        // Timeout in seconds
+        let timeout_u64 = env::var("DERIBIT_HTTP_TIMEOUT")
+        .map(|val| val.parse::<u64>().unwrap_or(DEFAULT_TIMEOUT))
+        .unwrap_or(DEFAULT_TIMEOUT);
+        let timeout =  Duration::from_secs(timeout_u64);
+        
+        let user_agent = env::var("DERIBIT_HTTP_USER_AGENT")
+        .unwrap_or_else(|_| format!("deribit-http/{}", env!("CARGO_PKG_VERSION")));
+        
         Self {
-            base_url: Url::parse(PRODUCTION_BASE_URL).expect("Invalid base URL"),
-            timeout: Duration::from_secs(DEFAULT_TIMEOUT),
-            max_retries: MAX_RETRIES,
-            user_agent: format!("deribit-http/{}", env!("CARGO_PKG_VERSION")),
-            testnet: false,
-            credentials: None,
+            base_url,
+            timeout,
+            max_retries,
+            user_agent,
+            testnet,
+            credentials,
         }
     }
 }
 
 impl HttpConfig {
-    /// Create a new configuration for testnet
-    pub fn testnet() -> Self {
-        Self {
-            base_url: Url::parse(TESTNET_BASE_URL).expect("Invalid testnet URL"),
-            testnet: true,
-            ..Default::default()
-        }
-    }
-
-    /// Create a new configuration for production
-    pub fn production() -> Self {
-        Self::default()
-    }
-
+    
     /// Set the timeout for requests
     pub fn with_timeout(mut self, timeout: Duration) -> Self {
         self.timeout = timeout;
@@ -85,21 +92,8 @@ impl HttpConfig {
     /// Set OAuth2 credentials
     pub fn with_oauth2(mut self, client_id: String, client_secret: String) -> Self {
         self.credentials = Some(ApiCredentials {
-            client_id,
-            client_secret,
-            api_key: None,
-            api_secret: None,
-        });
-        self
-    }
-
-    /// Set API key credentials
-    pub fn with_api_key(mut self, api_key: String, api_secret: String) -> Self {
-        self.credentials = Some(ApiCredentials {
-            client_id: String::new(),
-            client_secret: String::new(),
-            api_key: Some(api_key),
-            api_secret: Some(api_secret),
+            client_id: Some(client_id),
+            client_secret: Some(client_secret),
         });
         self
     }
@@ -113,7 +107,6 @@ impl HttpConfig {
     pub fn credentials(&self) -> Option<&ApiCredentials> {
         self.credentials.as_ref()
     }
+    
 }
 
-// HttpConfig cannot use JSON macros because it contains non-serializable fields (Url)
-// so we keep the derived Debug trait

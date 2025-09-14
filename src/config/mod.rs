@@ -1,7 +1,8 @@
 //! Configuration module for HTTP client
 
 pub mod base;
-pub mod utils;
+
+pub mod credentials;
 
 pub use base::*;
-pub use utils::*;
+pub use credentials::*;
