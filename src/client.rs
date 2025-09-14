@@ -39,7 +39,7 @@ impl DeribitHttpClient {
             .map_err(|e| HttpError::NetworkError(e.to_string()))?;
 
         let auth_manager = AuthManager::new(client.clone(), config.clone());
-        println!("{:?}", auth_manager);
+
         Ok(Self {
             client,
             config: Arc::new(config),
