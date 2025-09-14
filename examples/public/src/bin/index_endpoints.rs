@@ -10,7 +10,7 @@
 use deribit_base::prelude::setup_logger;
 use deribit_http::DeribitHttpClient;
 use tracing::{error, info, warn};
-
+ 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Initialize logging
@@ -118,26 +118,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     }
 
-    // Test with USDC
-    match client.get_index("USDC").await {
-        Ok(index_data) => {
-            info!("✅ Current index for USDC retrieved successfully");
-            info!("📊 USDC Index data:");
-
-            if let Some(usdc_price) = index_data.usdc {
-                info!("   💰 USDC Index Price: ${:.6}", usdc_price);
-            }
-
-            info!(
-                "   📈 USDC Estimated Delivery Price: ${:.6}",
-                index_data.edp
-            );
-        }
-        Err(e) => {
-            warn!("⚠️ Get index for USDC error: {}", e);
-            info!("💡 This may be expected for stablecoin indexes");
-        }
-    }
     println!();
 
     // =================================================================
@@ -191,28 +171,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         info!("⚠️ eth_usd index not found in available indexes, skipping test");
     }
 
-    // Test with btc_usdc if available
-    if available_indexes.contains(&"btc_usdc".to_string()) {
-        match client.get_index_price("btc_usdc").await {
-            Ok(index_price_data) => {
-                info!("✅ Index price for btc_usdc retrieved successfully");
-                info!("📊 BTC/USDC Index details:");
-                info!("   💰 Index Price: ${:.2}", index_price_data.index_price);
-                info!(
-                    "   📈 Estimated Delivery Price: ${:.2}",
-                    index_price_data.estimated_delivery_price
-                );
-            }
-            Err(e) => {
-                warn!("⚠️ Get index price for btc_usdc error: {}", e);
-            }
-        }
-    } else {
-        info!("ℹ️ btc_usdc index not found in available indexes, skipping test");
-    }
-
     // Test with a non-existent index to demonstrate error handling
-    match client.get_index_price("non_existent_index").await {
+    match client.get_index_price("NON_EXISTENT_INDEX").await {
         Ok(index_price_data) => {
             info!(
                 "⚠️ Unexpected success for non-existent index: ${:.2}",
@@ -220,7 +180,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             );
         }
         Err(e) => {
-            info!("✅ Expected error for non-existent index: {}", e);
+            info!("✅  Expected error for NON-EXISTENT INDEX: {}", e);
             info!("💡 This demonstrates proper error handling for invalid index names");
         }
     }
