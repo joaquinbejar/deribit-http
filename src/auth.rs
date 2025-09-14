@@ -14,7 +14,7 @@ use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use sha2::Sha256;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
-use tracing::{error, debug};
+use tracing::{debug, error};
 use urlencoding;
 
 type HmacSha256 = Hmac<Sha256>;
@@ -66,22 +66,20 @@ impl AuthManager {
     }
 
     /// Authenticate using OAuth2 client credentials
-    pub async fn authenticate_oauth2(
-        &mut self,
-    ) -> Result<AuthToken, HttpError> {
+    pub async fn authenticate_oauth2(&mut self) -> Result<AuthToken, HttpError> {
         let credentials = match self.config.credentials.clone() {
             Some(creds) => match creds.is_valid() {
                 true => creds,
                 false => {
                     return Err(HttpError::AuthenticationFailed(
                         "Invalid credentials for OAuth2".to_string(),
-                    ))
-                }   
+                    ));
+                }
             },
             None => {
                 return Err(HttpError::AuthenticationFailed(
                     "No credentials configured".to_string(),
-                ))
+                ));
             }
         };
         let (client_id, client_secret) = credentials.get_client_credentials()?;
@@ -183,8 +181,8 @@ impl AuthManager {
     pub fn get_token(&self) -> Option<&AuthToken> {
         if self.is_token_expired() {
             self.token.as_ref()
-        } else { 
-            None 
+        } else {
+            None
         }
     }
 
@@ -199,7 +197,7 @@ impl AuthManager {
             None => true,
         }
     }
-    
+
     ///
     /// Checks whether the token is valid.
     ///
@@ -224,32 +222,20 @@ impl AuthManager {
             true => {
                 let token = self.token.as_ref().unwrap();
                 Some(format!("{} {}", token.token_type, token.access_token))
-            },
-            false => {
-                match  self.config.credentials.as_ref() {
-                    Some(credentials) => {
-                        match credentials.is_valid() {
-                            true => {
-                                match self.authenticate_oauth2().await {
-                                    Ok(token) => {
-                                        Some(format!("{} {}", token.token_type, token.access_token))
-                                    },
-                                    Err(e) => {
-                                        error!("Failed to authenticate: {}", e);
-                                        None   
-                                    }
-                                }
-                            },
-                            false => {
-                                None
-                            }
+            }
+            false => match self.config.credentials.as_ref() {
+                Some(credentials) => match credentials.is_valid() {
+                    true => match self.authenticate_oauth2().await {
+                        Ok(token) => Some(format!("{} {}", token.token_type, token.access_token)),
+                        Err(e) => {
+                            error!("Failed to authenticate: {}", e);
+                            None
                         }
                     },
-                    None => {
-                        None
-                    }
-                }
-            }
+                    false => None,
+                },
+                None => None,
+            },
         }
     }
 
@@ -278,6 +264,32 @@ impl AuthManager {
             .as_millis() as u64
     }
 
+    /// Updates the authentication token and its expiration time for the current instance.
+    ///
+    /// This method updates the internal state of the object by setting a new authentication token
+    /// and calculating its expiration time based on the current system time and the token's
+    /// `expires_in` duration.
+    ///
+    /// # Arguments
+    ///
+    /// * `token` - An instance of `AuthToken` containing the new authentication token and its
+    ///   metadata (e.g., expiration duration).
+    ///
+    /// # Effects
+    ///
+    /// * The `self.token` field is set to the provided `token`.
+    /// * The `self.token_expires_at` field is set to the current system time plus the `expires_in`
+    ///   duration from the provided `token`.
+    ///
+    /// # Note
+    ///
+    /// Ensure that the provided `AuthToken` is valid and its `expires_in` duration is correctly
+    /// defined in seconds, as it will determine the computed expiration time.
+    ///
+    /// # Panics
+    ///
+    /// This function does not explicitly panic, but unexpected behavior could occur if the
+    /// system time manipulation or `Duration` calculations fail (e.g., overflow).
     pub fn update_token(&mut self, token: AuthToken) {
         self.token_expires_at = Some(SystemTime::now() + Duration::from_secs(token.expires_in));
         self.token = Some(token);
