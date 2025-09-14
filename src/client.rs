@@ -92,11 +92,14 @@ impl DeribitHttpClient {
 
         // Get authorization header
         let mut auth_manager = self.auth_manager.lock().await;
-        let auth_header = auth_manager.get_authorization_header().await.ok_or_else(|| {
-            HttpError::AuthenticationFailed(
-                "No valid authentication token available.".to_string(),
-            )
-        })?;
+        let auth_header = auth_manager
+            .get_authorization_header()
+            .await
+            .ok_or_else(|| {
+                HttpError::AuthenticationFailed(
+                    "No valid authentication token available.".to_string(),
+                )
+            })?;
 
         // Debug: log the authorization header being used
         tracing::debug!("Using authorization header: {}", auth_header);
@@ -125,11 +128,14 @@ impl DeribitHttpClient {
 
         // Get authorization header
         let mut auth_manager = self.auth_manager.lock().await;
-        let auth_header = auth_manager.get_authorization_header().await.ok_or_else(|| {
-            HttpError::AuthenticationFailed(
-                "No valid authentication token available.".to_string(),
-            )
-        })?;
+        let auth_header = auth_manager
+            .get_authorization_header()
+            .await
+            .ok_or_else(|| {
+                HttpError::AuthenticationFailed(
+                    "No valid authentication token available.".to_string(),
+                )
+            })?;
 
         // Debug: log the authorization header being used
         tracing::debug!("Using authorization header: {}", auth_header);
@@ -149,9 +155,6 @@ impl DeribitHttpClient {
     pub fn rate_limiter(&self) -> &RateLimiter {
         &self.rate_limiter
     }
-
-
-    
 
     /// Exchange refresh token for a new access token with different subject_id
     pub async fn exchange_token(
@@ -216,11 +219,8 @@ impl DeribitHttpClient {
         let _auth_manager = self.auth_manager.lock().await;
         let _expires_at =
             std::time::SystemTime::now() + std::time::Duration::from_secs(token.expires_in);
-        
-        self.auth_manager
-            .lock()
-            .await
-            .update_token(token.clone());
+
+        self.auth_manager.lock().await.update_token(token.clone());
 
         Ok(token)
     }
@@ -284,11 +284,8 @@ impl DeribitHttpClient {
         let token: AuthToken = serde_json::from_value(result.clone())
             .map_err(|e| HttpError::InvalidResponse(format!("Failed to parse token: {}", e)))?;
 
-        self.auth_manager
-            .lock()
-            .await
-            .update_token(token.clone());
-        
+        self.auth_manager.lock().await.update_token(token.clone());
+
         Ok(token)
     }
 }
