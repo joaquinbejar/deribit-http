@@ -1699,7 +1699,6 @@ impl DeribitHttpClient {
         if let Some(offset) = offset {
             query_params.push(("offset".to_string(), offset.to_string()));
         }
-        
 
         let query_string = query_params
             .iter()
