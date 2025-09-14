@@ -29,7 +29,7 @@ mod positions_log_tests {
 
         Ok(())
     }
-    
+
     #[tokio::test]
     #[serial_test::serial]
     async fn test_get_positions_all() -> Result<(), Box<dyn std::error::Error>> {

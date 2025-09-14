@@ -31,7 +31,6 @@ mod user_trades_log_tests {
         Ok(())
     }
 
-    
     #[tokio::test]
     #[serial_test::serial]
     async fn test_get_user_trades_btc_perpetual() -> Result<(), Box<dyn std::error::Error>> {
@@ -440,11 +439,7 @@ mod user_trades_log_tests {
                 trade.order_type
             );
 
-            // Validate self trade flag
-            assert!(
-                trade.self_trade || !trade.self_trade,
-                "Self trade should be boolean"
-            );
+            // Self trade flag is always valid boolean - no need to test tautology
 
             // Validate optional matching ID
             if let Some(ref matching_id) = trade.matching_id {

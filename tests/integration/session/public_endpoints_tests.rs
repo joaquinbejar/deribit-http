@@ -1,7 +1,7 @@
 //! Integration tests for public endpoints
 
 #[cfg(test)]
-mod public_endpoints_tests {
+mod tests {
     use deribit_http::DeribitHttpClient;
     use mockito::Server;
 

@@ -14,7 +14,6 @@ use deribit_base::prelude::*;
 use deribit_http::DeribitHttpClient;
 use pretty_simple_display::{DebugPretty, DisplaySimple};
 use serde::Serialize;
-use std::env;
 use tracing::{error, info, warn};
 
 #[tokio::main]
@@ -23,27 +22,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     setup_logger();
     info!("🚀 Deribit HTTP Client - BTC Option Chain Example");
     info!("=================================================");
-    info!("📅 Target Expiry: 2025-09-10");
+    info!("📅 Target Expiry: 2025-09-15");
     println!();
-
-    // Determine if we should use testnet or production
-    let use_testnet = env::var("DERIBIT_TESTNET")
-        .map(|val| val.to_lowercase() == "true")
-        .unwrap_or(true); // Default to testnet for safety
-
-    info!(
-        "🌐 Environment: {}",
-        if use_testnet { "Testnet" } else { "Production" }
-    );
+    
 
     // Create HTTP client
     let client = DeribitHttpClient::new();
-    info!(
-        "✅ HTTP client created for {}: {}",
-        if use_testnet { "testnet" } else { "production" },
-        client.base_url()
-    );
-    println!();
+
 
     // =================================================================
     // 1. FETCH ALL BTC OPTIONS WITH TICKER DATA
@@ -66,13 +51,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     };
 
     // =================================================================
-    // 2. FILTER BY EXPIRY DATE (2025-09-10)
+    // 2. FILTER BY EXPIRY DATE (2025-09-15)
     // =================================================================
     info!("🔍 2. FILTERING BY EXPIRY DATE");
     info!("------------------------------");
 
     // Convert target date to Deribit format (10SEP25)
-    let target_expiry = "10SEP25";
+    let target_expiry = "15SEP25";
     info!("🎯 Looking for options with expiry: {}", target_expiry);
 
     let option_chain: Vec<OptionInstrument> = all_btc_options
@@ -91,7 +76,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             if let Some(expiry) = extract_expiry_from_name(&option.instrument.instrument_name)
                 && !expiry_dates.contains(&expiry)
             {
-                expiry_dates.push(expiry);
+                expiry_dates.push(expiry.clone());
             }
         }
         expiry_dates.sort();

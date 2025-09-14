@@ -1,7 +1,7 @@
 //! Integration tests for private endpoints
 
 #[cfg(test)]
-mod private_endpoints_tests {
+mod tests {
     use deribit_base::prelude::{BuyOrderRequest, EditOrderRequest, SellOrderRequest};
     use deribit_http::DeribitHttpClient;
     use mockito::Server;

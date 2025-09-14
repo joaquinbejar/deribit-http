@@ -20,7 +20,7 @@ release:
 # Run unit tests
 .PHONY: test
 test:
-	LOGLEVEL=WARN cargo test --lib --bins
+	LOGLEVEL=WARN cargo test --lib --bins --all-features
 
 # Run integration tests
 .PHONY: integration-tests

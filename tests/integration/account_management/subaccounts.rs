@@ -10,10 +10,11 @@ mod user_trades_log_tests {
     use tracing::{debug, info, warn};
 
     /// Check if .env file exists and contains required variables
-
     fn check_env_file() -> Result<(), Box<dyn std::error::Error>> {
         if !Path::new(".env").exists() {
-            return Err("Missing .env file. Please create one with authentication credentials".into());
+            return Err(
+                "Missing .env file. Please create one with authentication credentials".into(),
+            );
         }
 
         dotenv::dotenv().ok();
@@ -27,29 +28,6 @@ mod user_trades_log_tests {
             return Err("Missing authentication credentials".into());
         }
 
-        Ok(())
-    }
-
-    /// Authenticate client using available credentials
-
-    async fn authenticate_client(
-        _client: &DeribitHttpClient,
-    ) -> Result<(), Box<dyn std::error::Error>> {
-        if let (Ok(_client_id), Ok(_client_secret)) = (
-            std::env::var("DERIBIT_CLIENT_ID"),
-            std::env::var("DERIBIT_CLIENT_SECRET"),
-        ) {
-            // Authentication is now automatic - no need to call authenticate_oauth2
-            info!("Using automatic authentication with OAuth2 credentials");
-        } else if let (Ok(_api_key), Ok(_api_secret)) = (
-            std::env::var("DERIBIT_API_KEY"),
-            std::env::var("DERIBIT_API_SECRET"),
-        ) {
-            // Authentication is now automatic - no need to call authenticate_api_key
-            info!("Using automatic authentication with API key credentials");
-        } else {
-            return Err("No valid authentication credentials found".into());
-        }
         Ok(())
     }
 
@@ -94,15 +72,7 @@ mod user_trades_log_tests {
                 assert!(!tif.is_empty(), "TIF should not be empty if present");
             }
 
-            // Boolean fields should be valid
-            assert!(
-                subaccount.login_enabled || !subaccount.login_enabled,
-                "Login enabled should be boolean"
-            );
-            assert!(
-                subaccount.receive_notifications || !subaccount.receive_notifications,
-                "Receive notifications should be boolean"
-            );
+            // Boolean fields are always valid - no need to test tautologies
             // ID should be positive
             assert!(subaccount.id > 0, "Subaccount ID should be positive");
 
@@ -355,7 +325,9 @@ mod user_trades_log_tests {
             let sub2 = subaccounts2
                 .iter()
                 .find(|s| s.id == sub1.id)
-                .unwrap_or_else(|| panic!("Subaccount with ID {} should exist in both calls", sub1.id));
+                .unwrap_or_else(|| {
+                    panic!("Subaccount with ID {} should exist in both calls", sub1.id)
+                });
 
             assert_eq!(
                 sub1.email, sub2.email,

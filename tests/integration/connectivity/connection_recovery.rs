@@ -254,7 +254,7 @@ mod connection_recovery_tests {
                 let initial_request = client.get_account_summary("BTC", None).await;
 
                 match initial_request {
-                    Ok(summary) => {
+                    Ok(_) => {
                         info!("Initial authenticated request successful");
                     }
                     Err(e) => {
@@ -271,7 +271,7 @@ mod connection_recovery_tests {
                 let recovery_request = client.get_account_summary("BTC", None).await;
 
                 match recovery_request {
-                    Ok(summary) => {
+                    Ok(_) => {
                         info!("Authentication persisted successfully after recovery");
                     }
                     Err(e) => {
@@ -485,7 +485,6 @@ mod connection_recovery_tests {
 
             // Test multiple requests with this configuration
             let mut config_success_count = 0;
-            let mut config_failure_count = 0;
 
             for i in 0..3 {
                 let start_time = Instant::now();
@@ -504,7 +503,6 @@ mod connection_recovery_tests {
                         );
                     }
                     Err(e) => {
-                        config_failure_count += 1;
                         debug!(
                             "{} config request #{} failed in {:?}: {:?}",
                             description,

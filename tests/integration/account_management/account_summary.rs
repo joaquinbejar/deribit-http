@@ -15,7 +15,9 @@ mod account_summary_tests {
     /// Check if .env file exists and contains required variables
     fn check_env_file() -> Result<(), Box<dyn std::error::Error>> {
         if !Path::new(".env").exists() {
-            return Err("Missing .env file. Please create one with authentication credentials".into());
+            return Err(
+                "Missing .env file. Please create one with authentication credentials".into(),
+            );
         }
 
         dotenv::dotenv().ok();
@@ -29,28 +31,6 @@ mod account_summary_tests {
             return Err("Missing authentication credentials".into());
         }
 
-        Ok(())
-    }
-
-    /// Authenticate client using environment variables
-    async fn authenticate_client(
-        _client: &DeribitHttpClient,
-    ) -> Result<(), Box<dyn std::error::Error>> {
-        if let (Ok(_client_id), Ok(_client_secret)) = (
-            std::env::var("DERIBIT_CLIENT_ID"),
-            std::env::var("DERIBIT_CLIENT_SECRET"),
-        ) {
-            // Authentication is now automatic - no need to call authenticate_oauth2
-            info!("Using automatic authentication with OAuth2 credentials");
-        } else if let (Ok(_api_key), Ok(_api_secret)) = (
-            std::env::var("DERIBIT_API_KEY"),
-            std::env::var("DERIBIT_API_SECRET"),
-        ) {
-            // Authentication is now automatic - no need to call authenticate_api_key
-            info!("Using automatic authentication with API key credentials");
-        } else {
-            return Err("No valid authentication credentials found".into());
-        }
         Ok(())
     }
 

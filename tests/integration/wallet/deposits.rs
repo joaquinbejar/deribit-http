@@ -5,14 +5,16 @@
 
 #[cfg(test)]
 mod deposits_tests {
-    use tracing::{debug, info};
     use deribit_http::DeribitHttpClient;
     use std::path::Path;
+    use tracing::{debug, info};
 
     /// Check if .env file exists and contains required variables
     fn check_env_file() -> Result<(), Box<dyn std::error::Error>> {
         if !Path::new(".env").exists() {
-            return Err("Missing .env file. Please create one with authentication credentials".into());
+            return Err(
+                "Missing .env file. Please create one with authentication credentials".into(),
+            );
         }
 
         dotenv::dotenv().ok();
@@ -28,7 +30,7 @@ mod deposits_tests {
 
         Ok(())
     }
-    
+
     #[tokio::test]
     #[serial_test::serial]
     async fn test_get_deposits_btc() -> Result<(), Box<dyn std::error::Error>> {

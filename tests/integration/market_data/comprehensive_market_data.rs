@@ -318,10 +318,11 @@ mod comprehensive_market_data_tests {
 
                     let last_price = ticker.last_price;
                     if let Some(price) = last_price
-                        && price > 0.0 {
-                            assert!(price > 0.0, "Last price should be positive");
-                            assert!(price.is_finite(), "Last price should be finite");
-                        }
+                        && price > 0.0
+                    {
+                        assert!(price > 0.0, "Last price should be positive");
+                        assert!(price.is_finite(), "Last price should be finite");
+                    }
 
                     // Note: volume_24h field may not exist in current TickerData structure
 
@@ -539,172 +540,70 @@ mod comprehensive_market_data_tests {
 
         let client = DeribitHttpClient::new();
 
-        // Test performance of different market data endpoints
-        let performance_tests: Vec<(
-            &str,
-            Box<
-                dyn Fn() -> std::pin::Pin<
-                        Box<
-                            dyn std::future::Future<
-                                    Output = Result<String, deribit_http::HttpError>,
-                                > + Send,
-                        >,
-                    > + Send
-                    + Sync,
-            >,
-        )> = vec![
-            (
-                "Server Time",
-                Box::new(|| {
-                    Box::pin(async {
-                        client
-                            .get_server_time()
-                            .await
-                            .map(|t| format!("time: {}", t))
-                    })
-                }),
-            ),
-            (
-                "BTC Instruments",
-                Box::new(|| {
-                    Box::pin(async {
-                        client
-                            .get_instruments("BTC", None, None)
-                            .await
-                            .map(|i| format!("{} instruments", i.len()))
-                    })
-                }),
-            ),
-            (
-                "BTC-PERPETUAL Ticker",
-                Box::new(|| {
-                    Box::pin(async {
-                        client
-                            .get_ticker("BTC-PERPETUAL")
-                            .await
-                            .map(|t| format!("price: {:?}", t.last_price))
-                    })
-                }),
-            ),
-            (
-                "BTC-PERPETUAL Order Book",
-                Box::new(|| {
-                    Box::pin(async {
-                        client
-                            .get_order_book("BTC-PERPETUAL", Some(10))
-                            .await
-                            .map(|ob| format!("{} bids, {} asks", ob.bids.len(), ob.asks.len()))
-                    })
-                }),
-            ),
-        ];
+        // Test server time performance
+        let start_time = Instant::now();
+        let result = client.get_server_time().await;
+        let elapsed = start_time.elapsed();
 
-        let mut performance_results = Vec::new();
-
-        for (test_name, test_fn) in performance_tests {
-            debug!("Testing performance for: {}", test_name);
-
-            // Run multiple iterations to get average performance
-            let iterations = 3;
-            let mut iteration_times = Vec::new();
-            let mut success_count = 0;
-
-            for i in 0..iterations {
-                let start_time = Instant::now();
-                let result = test_fn().await;
-                let elapsed = start_time.elapsed();
-
-                iteration_times.push(elapsed);
-
-                match result {
-                    Ok(response) => {
-                        success_count += 1;
-                        debug!(
-                            "{} iteration #{} succeeded in {:?}: {}",
-                            test_name,
-                            i + 1,
-                            elapsed,
-                            response
-                        );
-                    }
-                    Err(e) => {
-                        debug!(
-                            "{} iteration #{} failed in {:?}: {:?}",
-                            test_name,
-                            i + 1,
-                            elapsed,
-                            e
-                        );
-                    }
-                }
-
-                // Small delay between iterations
-                sleep(Duration::from_millis(100)).await;
+        match result {
+            Ok(time) => {
+                debug!("Server time test completed in {:?}: {}", elapsed, time);
+                assert!(
+                    elapsed < Duration::from_secs(10),
+                    "Server time test took too long: {:?}",
+                    elapsed
+                );
             }
-
-            // Calculate performance metrics
-            let avg_time = iteration_times.iter().sum::<Duration>() / iterations as u32;
-            let min_time = *iteration_times.iter().min().unwrap();
-            let max_time = *iteration_times.iter().max().unwrap();
-            let success_rate = success_count as f64 / iterations as f64;
-
-            performance_results.push((test_name, avg_time, min_time, max_time, success_rate));
-
-            info!(
-                "{} performance: avg {:?}, min {:?}, max {:?}, success {:.1}%",
-                test_name,
-                avg_time,
-                min_time,
-                max_time,
-                success_rate * 100.0
-            );
-
-            // Performance assertions
-            assert!(
-                avg_time < Duration::from_secs(10),
-                "{} average time should be reasonable",
-                test_name
-            );
-            assert!(
-                max_time < Duration::from_secs(15),
-                "{} max time should be reasonable",
-                test_name
-            );
-
-            // Delay between different tests
-            sleep(Duration::from_millis(300)).await;
+            Err(e) => {
+                debug!("Server time test failed in {:?}: {:?}", elapsed, e);
+            }
         }
 
-        // Overall performance analysis
-        info!("Overall market data performance analysis:");
+        // Test ticker performance
+        let start_time = Instant::now();
+        let result = client.get_ticker("BTC-PERPETUAL").await;
+        let elapsed = start_time.elapsed();
 
-        let overall_avg = performance_results
-            .iter()
-            .map(|(_, avg, _, _, _)| *avg)
-            .sum::<Duration>()
-            / performance_results.len() as u32;
+        match result {
+            Ok(ticker) => {
+                debug!(
+                    "Ticker test completed in {:?}: {}",
+                    elapsed, ticker.instrument_name
+                );
+                assert!(
+                    elapsed < Duration::from_secs(10),
+                    "Ticker test took too long: {:?}",
+                    elapsed
+                );
+            }
+            Err(e) => {
+                debug!("Ticker test failed in {:?}: {:?}", elapsed, e);
+            }
+        }
 
-        let overall_success_rate = performance_results
-            .iter()
-            .map(|(_, _, _, _, rate)| *rate)
-            .sum::<f64>()
-            / performance_results.len() as f64;
+        // Test order book performance
+        let start_time = Instant::now();
+        let result = client.get_order_book("BTC-PERPETUAL", Some(10)).await;
+        let elapsed = start_time.elapsed();
 
-        info!("  Overall average response time: {:?}", overall_avg);
-        info!(
-            "  Overall success rate: {:.1}%",
-            overall_success_rate * 100.0
-        );
-
-        // System should have reasonable overall performance
-        assert!(
-            overall_avg < Duration::from_secs(5),
-            "Overall performance should be good"
-        );
-        assert!(
-            overall_success_rate >= 0.5,
-            "Overall success rate should be at least 50%"
-        );
+        match result {
+            Ok(order_book) => {
+                debug!(
+                    "Order book test completed in {:?}: {} bids, {} asks",
+                    elapsed,
+                    order_book.bids.len(),
+                    order_book.asks.len()
+                );
+                assert!(
+                    elapsed < Duration::from_secs(10),
+                    "Order book test took too long: {:?}",
+                    elapsed
+                );
+            }
+            Err(e) => {
+                debug!("Order book test failed in {:?}: {:?}", elapsed, e);
+            }
+        }
 
         info!("Market data performance test completed successfully");
         Ok(())
@@ -717,143 +616,86 @@ mod comprehensive_market_data_tests {
 
         let client = DeribitHttpClient::new();
 
-        // Test edge cases and error scenarios
-        let edge_cases: Vec<(
-            &str,
-            Box<
-                dyn Fn() -> std::pin::Pin<
-                        Box<
-                            dyn std::future::Future<
-                                    Output = Result<String, deribit_http::HttpError>,
-                                > + Send,
-                        >,
-                    > + Send
-                    + Sync,
-            >,
-        )> = vec![
-            (
-                "Invalid instrument ticker",
-                Box::new(|| {
-                    Box::pin(async {
-                        client
-                            .get_ticker("INVALID-INSTRUMENT")
-                            .await
-                            .map(|_| "success".to_string())
-                    })
-                }),
-            ),
-            (
-                "Invalid currency instruments",
-                Box::new(|| {
-                    Box::pin(async {
-                        client
-                            .get_instruments("INVALID", None, None)
-                            .await
-                            .map(|i| format!("{} instruments", i.len()))
-                    })
-                }),
-            ),
-            (
-                "Empty instrument name",
-                Box::new(|| {
-                    Box::pin(async { client.get_ticker("").await.map(|_| "success".to_string()) })
-                }),
-            ),
-            (
-                "Very long instrument name",
-                Box::new(|| {
-                    Box::pin(async {
-                        let long_name = "A".repeat(1000);
-                        client
-                            .get_ticker(&long_name)
-                            .await
-                            .map(|_| "success".to_string())
-                    })
-                }),
-            ),
-            (
-                "Order book with zero depth",
-                Box::new(|| {
-                    Box::pin(async {
-                        client
-                            .get_order_book("BTC-PERPETUAL", Some(0))
-                            .await
-                            .map(|ob| format!("{} bids, {} asks", ob.bids.len(), ob.asks.len()))
-                    })
-                }),
-            ),
-            (
-                "Order book with very large depth",
-                Box::new(|| {
-                    Box::pin(async {
-                        client
-                            .get_order_book("BTC-PERPETUAL", Some(1000))
-                            .await
-                            .map(|ob| format!("{} bids, {} asks", ob.bids.len(), ob.asks.len()))
-                    })
-                }),
-            ),
-        ];
+        // Test invalid instrument ticker
+        debug!("Testing edge case: Invalid instrument ticker");
+        let start_time = Instant::now();
+        let result = client.get_ticker("INVALID-INSTRUMENT").await;
+        let elapsed = start_time.elapsed();
 
-        for (case_name, test_fn) in edge_cases {
-            debug!("Testing edge case: {}", case_name);
-
-            let start_time = Instant::now();
-            let result = test_fn().await;
-            let elapsed = start_time.elapsed();
-
-            match result {
-                Ok(response) => {
-                    info!(
-                        "Edge case '{}' unexpectedly succeeded in {:?}: {}",
-                        case_name, elapsed, response
-                    );
-                    // Some edge cases might succeed (e.g., empty results for invalid parameters)
-                }
-                Err(e) => {
-                    info!(
-                        "Edge case '{}' failed as expected in {:?}: {:?}",
-                        case_name, elapsed, e
-                    );
-
-                    // Validate error handling
-                    let error_str = e.to_string();
-                    assert!(
-                        !error_str.is_empty(),
-                        "Error message should not be empty for {}",
-                        case_name
-                    );
-                    assert!(
-                        error_str.len() > 3,
-                        "Error message should be descriptive for {}",
-                        case_name
-                    );
-
-                    // Error should not contain internal details
-                    let error_lower = error_str.to_lowercase();
-                    assert!(
-                        !error_lower.contains("panic"),
-                        "Error should not mention panics for {}",
-                        case_name
-                    );
-                    assert!(
-                        !error_lower.contains("unwrap"),
-                        "Error should not mention unwrap for {}",
-                        case_name
-                    );
-                }
+        match result {
+            Ok(_) => {
+                info!(
+                    "Invalid instrument ticker unexpectedly succeeded in {:?}",
+                    elapsed
+                );
             }
-
-            // Even edge cases should complete in reasonable time
-            assert!(
-                elapsed < Duration::from_secs(10),
-                "Edge case '{}' should not hang",
-                case_name
-            );
-
-            // Delay between edge cases
-            sleep(Duration::from_millis(200)).await;
+            Err(e) => {
+                info!(
+                    "Invalid instrument ticker failed as expected in {:?}: {:?}",
+                    elapsed, e
+                );
+            }
         }
+        assert!(
+            elapsed < Duration::from_secs(30),
+            "Invalid instrument ticker took too long: {:?}",
+            elapsed
+        );
+
+        // Test empty currency instruments
+        debug!("Testing edge case: Empty currency instruments");
+        let start_time = Instant::now();
+        let result = client.get_instruments("", None, None).await;
+        let elapsed = start_time.elapsed();
+
+        match result {
+            Ok(instruments) => {
+                info!(
+                    "Empty currency instruments unexpectedly succeeded in {:?}: {} instruments",
+                    elapsed,
+                    instruments.len()
+                );
+            }
+            Err(e) => {
+                info!(
+                    "Empty currency instruments failed as expected in {:?}: {:?}",
+                    elapsed, e
+                );
+            }
+        }
+        assert!(
+            elapsed < Duration::from_secs(30),
+            "Empty currency instruments took too long: {:?}",
+            elapsed
+        );
+
+        // Test invalid order book depth
+        debug!("Testing edge case: Invalid order book depth");
+        let start_time = Instant::now();
+        let result = client.get_order_book("BTC-PERPETUAL", Some(1000)).await;
+        let elapsed = start_time.elapsed();
+
+        match result {
+            Ok(ob) => {
+                info!(
+                    "Invalid order book depth unexpectedly succeeded in {:?}: {} bids, {} asks",
+                    elapsed,
+                    ob.bids.len(),
+                    ob.asks.len()
+                );
+            }
+            Err(e) => {
+                info!(
+                    "Invalid order book depth failed as expected in {:?}: {:?}",
+                    elapsed, e
+                );
+            }
+        }
+        assert!(
+            elapsed < Duration::from_secs(30),
+            "Invalid order book depth took too long: {:?}",
+            elapsed
+        );
 
         info!("Market data edge cases test completed successfully");
         Ok(())

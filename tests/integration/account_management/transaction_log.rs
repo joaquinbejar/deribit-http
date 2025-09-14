@@ -36,28 +36,6 @@ mod transaction_log_tests {
         Ok(())
     }
 
-    /// Authenticate client using available credentials
-    async fn authenticate_client(
-        _client: &DeribitHttpClient,
-    ) -> Result<(), Box<dyn std::error::Error>> {
-        if let (Ok(_client_id), Ok(_client_secret)) = (
-            std::env::var("DERIBIT_CLIENT_ID"),
-            std::env::var("DERIBIT_CLIENT_SECRET"),
-        ) {
-            // Authentication is now automatic - no need to call authenticate_oauth2
-            info!("Using automatic authentication with OAuth2 credentials");
-        } else if let (Ok(_api_key), Ok(_api_secret)) = (
-            std::env::var("DERIBIT_API_KEY"),
-            std::env::var("DERIBIT_API_SECRET"),
-        ) {
-            // Authentication is now automatic - no need to call authenticate_api_key
-            info!("Using automatic authentication with API key credentials");
-        } else {
-            return Err("No valid authentication credentials found".into());
-        }
-        Ok(())
-    }
-
     #[tokio::test]
     #[serial_test::serial]
     async fn test_get_transaction_log_btc() -> Result<(), Box<dyn std::error::Error>> {
@@ -341,7 +319,6 @@ mod transaction_log_tests {
             );
 
             // Validate transaction type values
-            let valid_types = ["trade", "settlement"];
             debug!("Transaction type: {:?}", log_entry.transaction_type);
 
             // Validate currency values

@@ -8,15 +8,17 @@
 //! 5. Transfer error handling
 #[cfg(test)]
 mod withdrawal_tests {
-    use tracing::{debug, info, warn};
     use deribit_http::DeribitHttpClient;
     use std::path::Path;
+    use tracing::{debug, info, warn};
 
     /// Check if .env file exists and contains required variables
     #[allow(dead_code)]
     fn check_env_file() -> Result<(), Box<dyn std::error::Error>> {
         if !Path::new(".env").exists() {
-            return Err("Missing .env file. Please create one with authentication credentials".into());
+            return Err(
+                "Missing .env file. Please create one with authentication credentials".into(),
+            );
         }
 
         dotenv::dotenv().ok();
