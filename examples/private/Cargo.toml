@@ -9,6 +9,5 @@ deribit-http = { workspace = true }
 deribit-base = { workspace = true }
 tracing = { workspace = true }
 tokio = { workspace = true }
-tracing-subscriber = { workspace = true }
 dotenv = { workspace = true }
 chrono = { workspace = true }

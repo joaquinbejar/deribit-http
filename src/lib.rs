@@ -10,7 +10,7 @@
 //!
 //! ## Key features
 //! - Pure async HTTP (reqwest + tokio).
-//! - Simple Testnet/Mainnet setup: `DeribitHttpClient::new(testnet)` or `with_config`.
+//! - Simple Testnet/Mainnet setup: `DeribitHttpClient::new()` or `default`.
 //! - Built-in OAuth2 (Client Credentials); utilities for `exchange_token` and `fork_token`.
 //! - Category-based rate limiting (trading, market, account, auth, general) with a token-bucket approach.
 //! - Strongly-typed data models (Serde) and JSON-RPC responses mapped to `ApiResponse`/`ApiError`.
@@ -24,7 +24,7 @@
 //! #[tokio::main]
 //! async fn main() -> Result<(), Box<dyn std::error::Error>> {
 //!     // true = testnet, false = mainnet
-//!     let client = DeribitHttpClient::new(true);
+//!     let client = DeribitHttpClient::new();
 //!
 //!     // Public calls (no authentication required)
 //!     let currencies = client.get_currencies().await?;

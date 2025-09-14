@@ -26,26 +26,26 @@ impl DeribitHttpClient {
     /// Create a new HTTP client
     pub fn new() -> Self {
         let config = HttpConfig::default();
-        Self::with_config(config).expect("Failed to create client with default config")
-    }
-
-    /// Create a new HTTP client with custom configuration
-    pub fn with_config(config: HttpConfig) -> Result<Self, HttpError> {
-        // Build reqwest client
-        let client = Client::builder()
+        let opt_client = Client::builder()
             .timeout(config.timeout)
             .user_agent(&config.user_agent)
             .build()
-            .map_err(|e| HttpError::NetworkError(e.to_string()))?;
+            .map_err(|e| HttpError::NetworkError(e.to_string())).ok();
+        
+        let client = if let Some(opt_client) = &opt_client {
+            opt_client.clone()
+        } else {
+            panic!("Failed to create HTTP client");
+        };
 
         let auth_manager = AuthManager::new(client.clone(), config.clone());
 
-        Ok(Self {
+        Self {
             client,
             config: Arc::new(config),
             rate_limiter: RateLimiter::new(),
             auth_manager: Arc::new(Mutex::new(auth_manager)),
-        })
+        }
     }
 
     /// Get the configuration

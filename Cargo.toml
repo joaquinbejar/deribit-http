@@ -18,18 +18,6 @@ members = [
     "tests/integration",
 ]
 
-include = [
-    "benches/**/*",
-    "src/**/*",
-    "Cargo.toml",
-    "README.md",
-    "LICENSE",
-    "examples/**/*.rs",
-    "tests/**/*.rs",
-    "Makefile",
-    "rust-toolchain.toml",
-]
-
 [dependencies]
 deribit-base = { workspace = true }
 serde = { workspace = true }
@@ -56,7 +44,6 @@ deribit-base = "0.2.6"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 tracing = "0.1"
-tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 rand = "0.9"
 base64 = "0.22"
 reqwest = { version = "0.12", features = ["json", "rustls-tls"] }
