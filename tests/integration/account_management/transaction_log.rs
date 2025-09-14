@@ -1,15 +1,15 @@
 //! Transaction Log Integration Tests
 //!
 //! This test covers transaction log functionality:
-//! 1. Get transaction log for different currencies
-//! 2. Test transaction log pagination
-//! 3. Test transaction log filtering by time range
-//! 4. Validate transaction log data structure
+//! 1. Transaction history retrieval
+//! 2. Transaction filtering and pagination
+//! 3. Transaction type validation
+//! 4. Date range filtering
+//! 5. Currency-specific transaction logs
 
 use std::path::Path;
 use std::time::{SystemTime, UNIX_EPOCH};
 use tracing::{debug, info};
-
 use deribit_http::DeribitHttpClient;
 
 /// Check if .env file exists and contains required variables
@@ -33,19 +33,21 @@ fn check_env_file() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 /// Authenticate client using available credentials
-async fn authenticate_client(client: &DeribitHttpClient) -> Result<(), Box<dyn std::error::Error>> {
-    if let (Ok(client_id), Ok(client_secret)) = (
+async fn authenticate_client(
+    _client: &DeribitHttpClient,
+) -> Result<(), Box<dyn std::error::Error>> {
+    if let (Ok(_client_id), Ok(_client_secret)) = (
         std::env::var("DERIBIT_CLIENT_ID"),
         std::env::var("DERIBIT_CLIENT_SECRET"),
     ) {
-        client
-            .authenticate_oauth2(&client_id, &client_secret)
-            .await?;
-    } else if let (Ok(api_key), Ok(api_secret)) = (
+        // Authentication is now automatic - no need to call authenticate_oauth2
+        info!("Using automatic authentication with OAuth2 credentials");
+    } else if let (Ok(_api_key), Ok(_api_secret)) = (
         std::env::var("DERIBIT_API_KEY"),
         std::env::var("DERIBIT_API_SECRET"),
     ) {
-        client.authenticate_api_key(&api_key, &api_secret).await?;
+        // Authentication is now automatic - no need to call authenticate_api_key
+        info!("Using automatic authentication with API key credentials");
     } else {
         return Err("No valid authentication credentials found".into());
     }
@@ -57,14 +59,9 @@ async fn authenticate_client(client: &DeribitHttpClient) -> Result<(), Box<dyn s
 async fn test_get_transaction_log_btc() -> Result<(), Box<dyn std::error::Error>> {
     check_env_file()?;
 
-    let _ = tracing_subscriber::fmt()
-        .with_env_filter("debug")
-        .try_init();
-
     info!("Starting BTC transaction log test");
 
-    let client = DeribitHttpClient::new(true);
-    authenticate_client(&client).await?;
+    let client = DeribitHttpClient::new();
 
     debug!("Getting BTC transaction log");
     let transaction_log = client
@@ -117,14 +114,9 @@ async fn test_get_transaction_log_btc() -> Result<(), Box<dyn std::error::Error>
 async fn test_get_transaction_log_eth() -> Result<(), Box<dyn std::error::Error>> {
     check_env_file()?;
 
-    let _ = tracing_subscriber::fmt()
-        .with_env_filter("debug")
-        .try_init();
-
     info!("Starting ETH transaction log test");
 
-    let client = DeribitHttpClient::new(true);
-    authenticate_client(&client).await?;
+    let client = DeribitHttpClient::new();
 
     debug!("Getting ETH transaction log");
     let transaction_log = client
@@ -154,14 +146,9 @@ async fn test_get_transaction_log_eth() -> Result<(), Box<dyn std::error::Error>
 async fn test_get_transaction_log_with_count() -> Result<(), Box<dyn std::error::Error>> {
     check_env_file()?;
 
-    let _ = tracing_subscriber::fmt()
-        .with_env_filter("debug")
-        .try_init();
-
     info!("Starting transaction log with count test");
 
-    let client = DeribitHttpClient::new(true);
-    authenticate_client(&client).await?;
+    let client = DeribitHttpClient::new();
 
     let requested_count = 5;
     debug!("Getting transaction log with count: {}", requested_count);
@@ -192,14 +179,9 @@ async fn test_get_transaction_log_with_count() -> Result<(), Box<dyn std::error:
 async fn test_get_transaction_log_with_time_range() -> Result<(), Box<dyn std::error::Error>> {
     check_env_file()?;
 
-    let _ = tracing_subscriber::fmt()
-        .with_env_filter("debug")
-        .try_init();
-
     info!("Starting transaction log with time range test");
 
-    let client = DeribitHttpClient::new(true);
-    authenticate_client(&client).await?;
+    let client = DeribitHttpClient::new();
 
     // Get current timestamp and calculate a range (last 30 days)
     let now = SystemTime::now().duration_since(UNIX_EPOCH)?.as_millis() as u64;
@@ -244,14 +226,9 @@ async fn test_get_transaction_log_with_time_range() -> Result<(), Box<dyn std::e
 async fn test_get_transaction_log_pagination() -> Result<(), Box<dyn std::error::Error>> {
     check_env_file()?;
 
-    let _ = tracing_subscriber::fmt()
-        .with_env_filter("debug")
-        .try_init();
-
     info!("Starting transaction log pagination test");
 
-    let client = DeribitHttpClient::new(true);
-    authenticate_client(&client).await?;
+    let client = DeribitHttpClient::new();
 
     // Get first page
     debug!("Getting first page of transaction log");
@@ -313,14 +290,9 @@ async fn test_get_transaction_log_pagination() -> Result<(), Box<dyn std::error:
 async fn test_transaction_log_data_validation() -> Result<(), Box<dyn std::error::Error>> {
     check_env_file()?;
 
-    let _ = tracing_subscriber::fmt()
-        .with_env_filter("debug")
-        .try_init();
-
     info!("Starting transaction log data validation test");
 
-    let client = DeribitHttpClient::new(true);
-    authenticate_client(&client).await?;
+    let client = DeribitHttpClient::new();
 
     debug!("Getting transaction log for data validation");
     let transaction_log = client
@@ -399,14 +371,9 @@ async fn test_transaction_log_data_validation() -> Result<(), Box<dyn std::error
 async fn test_transaction_log_multiple_currencies() -> Result<(), Box<dyn std::error::Error>> {
     check_env_file()?;
 
-    let _ = tracing_subscriber::fmt()
-        .with_env_filter("debug")
-        .try_init();
-
     info!("Starting transaction log multiple currencies test");
 
-    let client = DeribitHttpClient::new(true);
-    authenticate_client(&client).await?;
+    let client = DeribitHttpClient::new();
 
     let currencies = ["BTC", "ETH", "USDC"];
 

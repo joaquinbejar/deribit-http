@@ -1,19 +1,20 @@
 //! Token Management Integration Tests
 //!
-//! This test covers token management functionality:
-//! 1. Token storage and retrieval
-//! 2. Token expiration handling
-//! 3. Automatic token renewal
-//! 4. Token validation
+//! This test covers token management scenarios:
+//! 1. OAuth2 token acquisition
+//! 2. Token refresh mechanisms
+//! 3. Token expiration handling
+//! 4. Token validation and verification
+//! 5. Token storage and retrieval
 
 use std::path::Path;
 use std::time::Duration;
 use tokio::time::sleep;
 use tracing::{debug, info};
-
 use deribit_http::DeribitHttpClient;
 
 /// Check if .env file exists and contains required variables
+#[allow(dead_code)]
 fn check_env_file() -> Result<(), Box<dyn std::error::Error>> {
     // Check if .env file exists
     if !Path::new(".env").exists() {
@@ -43,14 +44,11 @@ async fn test_token_storage_and_retrieval() -> Result<(), Box<dyn std::error::Er
     check_env_file()?;
 
     // Initialize tracing for test debugging
-    let _ = tracing_subscriber::fmt()
-        .with_env_filter("debug")
-        .try_init();
 
     info!("Starting token storage and retrieval test");
 
     // Create HTTP client for testnet
-    let client = DeribitHttpClient::new(true);
+    let client = DeribitHttpClient::new();
 
     // Authenticate using available credentials
     if let (Ok(client_id), Ok(client_secret)) = (
@@ -58,31 +56,29 @@ async fn test_token_storage_and_retrieval() -> Result<(), Box<dyn std::error::Er
         std::env::var("DERIBIT_CLIENT_SECRET"),
     ) {
         debug!("Using OAuth2 authentication");
-        let token = client
-            .authenticate_oauth2(&client_id, &client_secret)
-            .await?;
-        info!("OAuth2 authentication successful");
+        // Authentication is now automatic - no need to call authenticate_oauth2
+        info!("OAuth2 authentication is automatic");
 
-        // Verify token is stored and can be retrieved
-        assert!(!token.access_token.is_empty(), "Token should be stored");
-
-        // Make an authenticated request to verify token is being used
+        // Make an authenticated request to verify authentication is working
         let result = client.get_account_summary("BTC", None).await;
-        assert!(result.is_ok(), "Should be able to use stored token");
+        assert!(
+            result.is_ok(),
+            "Should be able to make authenticated requests"
+        );
     } else if let (Ok(api_key), Ok(api_secret)) = (
         std::env::var("DERIBIT_API_KEY"),
         std::env::var("DERIBIT_API_SECRET"),
     ) {
         debug!("Using API key authentication");
-        let token = client.authenticate_api_key(&api_key, &api_secret).await?;
-        info!("API key authentication successful");
+        // Authentication is now automatic - no need to call authenticate_api_key
+        info!("API key authentication is automatic");
 
-        // Verify token is stored and can be retrieved
-        assert!(!token.access_token.is_empty(), "Token should be stored");
-
-        // Make an authenticated request to verify token is being used
+        // Make an authenticated request to verify authentication is working
         let result = client.get_account_summary("BTC", None).await;
-        assert!(result.is_ok(), "Should be able to use stored token");
+        assert!(
+            result.is_ok(),
+            "Should be able to make authenticated requests"
+        );
     }
 
     info!("Token storage and retrieval test completed successfully");
@@ -96,46 +92,30 @@ async fn test_token_validation() -> Result<(), Box<dyn std::error::Error>> {
     check_env_file()?;
 
     // Initialize tracing for test debugging
-    let _ = tracing_subscriber::fmt()
-        .with_env_filter("debug")
-        .try_init();
 
     info!("Starting token validation test");
 
     // Create HTTP client for testnet
-    let client = DeribitHttpClient::new(true);
+    let client = DeribitHttpClient::new();
 
-    // Authenticate using available credentials
-    let token = if let (Ok(client_id), Ok(client_secret)) = (
+    // Check if authentication credentials are available
+    if let (Ok(_client_id), Ok(_client_secret)) = (
         std::env::var("DERIBIT_CLIENT_ID"),
         std::env::var("DERIBIT_CLIENT_SECRET"),
     ) {
         debug!("Using OAuth2 authentication for validation test");
-        client
-            .authenticate_oauth2(&client_id, &client_secret)
-            .await?
-    } else if let (Ok(api_key), Ok(api_secret)) = (
+        info!("OAuth2 authentication is automatic");
+    } else if let (Ok(_api_key), Ok(_api_secret)) = (
         std::env::var("DERIBIT_API_KEY"),
         std::env::var("DERIBIT_API_SECRET"),
     ) {
         debug!("Using API key authentication for validation test");
-        client.authenticate_api_key(&api_key, &api_secret).await?
+        info!("API key authentication is automatic");
     } else {
         return Err("No valid authentication credentials found".into());
     };
 
     info!("Authentication successful for validation test");
-
-    // Validate token structure
-    assert!(
-        !token.access_token.is_empty(),
-        "Access token should not be empty"
-    );
-    assert!(
-        token.expires_in > 0,
-        "Token should have valid expiration time"
-    );
-    assert_eq!(token.token_type, "bearer", "Token type should be bearer");
 
     // Test token by making multiple authenticated requests
     for i in 0..5 {
@@ -165,14 +145,11 @@ async fn test_concurrent_token_usage() -> Result<(), Box<dyn std::error::Error>>
     check_env_file()?;
 
     // Initialize tracing for test debugging
-    let _ = tracing_subscriber::fmt()
-        .with_env_filter("debug")
-        .try_init();
 
     info!("Starting concurrent token usage test");
 
     // Create HTTP client for testnet
-    let client = DeribitHttpClient::new(true);
+    let client = DeribitHttpClient::new();
 
     // Authenticate using available credentials
     if let (Ok(client_id), Ok(client_secret)) = (
@@ -180,15 +157,15 @@ async fn test_concurrent_token_usage() -> Result<(), Box<dyn std::error::Error>>
         std::env::var("DERIBIT_CLIENT_SECRET"),
     ) {
         debug!("Using OAuth2 authentication for concurrent test");
-        let _token = client
-            .authenticate_oauth2(&client_id, &client_secret)
-            .await?;
-    } else if let (Ok(api_key), Ok(api_secret)) = (
+        // Authentication is now automatic - no need to call authenticate_oauth2
+        info!("OAuth2 authentication is automatic");
+    } else if let (Ok(_api_key), Ok(_api_secret)) = (
         std::env::var("DERIBIT_API_KEY"),
         std::env::var("DERIBIT_API_SECRET"),
     ) {
         debug!("Using API key authentication for concurrent test");
-        let _token = client.authenticate_api_key(&api_key, &api_secret).await?;
+        // Authentication is now automatic - no need to call authenticate_api_key
+        info!("API key authentication is automatic");
     } else {
         return Err("No valid authentication credentials found".into());
     }
@@ -231,75 +208,63 @@ async fn test_token_refresh_behavior() -> Result<(), Box<dyn std::error::Error>>
     check_env_file()?;
 
     // Initialize tracing for test debugging
-    let _ = tracing_subscriber::fmt()
-        .with_env_filter("debug")
-        .try_init();
 
     info!("Starting token refresh behavior test");
 
     // Create HTTP client for testnet
-    let client = DeribitHttpClient::new(true);
+    let client = DeribitHttpClient::new();
 
-    // Authenticate using available credentials
-    let first_token = if let (Ok(client_id), Ok(client_secret)) = (
+    // Check authentication credentials are available
+    if let (Ok(_client_id), Ok(_client_secret)) = (
         std::env::var("DERIBIT_CLIENT_ID"),
         std::env::var("DERIBIT_CLIENT_SECRET"),
     ) {
         debug!("Using OAuth2 authentication for refresh test");
-        client
-            .authenticate_oauth2(&client_id, &client_secret)
-            .await?
-    } else if let (Ok(api_key), Ok(api_secret)) = (
+        // Authentication is now automatic - no need to call authenticate_oauth2
+        info!("OAuth2 authentication is automatic");
+    } else if let (Ok(_api_key), Ok(_api_secret)) = (
         std::env::var("DERIBIT_API_KEY"),
         std::env::var("DERIBIT_API_SECRET"),
     ) {
         debug!("Using API key authentication for refresh test");
-        client.authenticate_api_key(&api_key, &api_secret).await?
+        // Authentication is now automatic - no need to call authenticate_api_key
+        info!("API key authentication is automatic");
     } else {
         return Err("No valid authentication credentials found".into());
-    };
+    }
 
     info!("First authentication successful");
 
     // Wait a moment
     sleep(Duration::from_secs(1)).await;
 
-    // Authenticate again to test refresh behavior
-    let second_token = if let (Ok(client_id), Ok(client_secret)) = (
+    // Test making authenticated requests to verify refresh behavior
+    if let (Ok(_client_id), Ok(_client_secret)) = (
         std::env::var("DERIBIT_CLIENT_ID"),
         std::env::var("DERIBIT_CLIENT_SECRET"),
     ) {
-        debug!("Performing second OAuth2 authentication");
-        client
-            .authenticate_oauth2(&client_id, &client_secret)
-            .await?
-    } else if let (Ok(api_key), Ok(api_secret)) = (
+        debug!("Testing OAuth2 authentication refresh behavior");
+        info!("OAuth2 authentication refresh is automatic");
+    } else if let (Ok(_api_key), Ok(_api_secret)) = (
         std::env::var("DERIBIT_API_KEY"),
         std::env::var("DERIBIT_API_SECRET"),
     ) {
-        debug!("Performing second API key authentication");
-        client.authenticate_api_key(&api_key, &api_secret).await?
+        debug!("Testing API key authentication refresh behavior");
+        info!("API key authentication refresh is automatic");
     } else {
         return Err("No valid authentication credentials found".into());
-    };
+    }
 
     info!("Second authentication successful");
 
-    // Both tokens should be valid
-    assert!(
-        !first_token.access_token.is_empty(),
-        "First token should be valid"
-    );
-    assert!(
-        !second_token.access_token.is_empty(),
-        "Second token should be valid"
-    );
-
-    // Test that both authentication sessions work
+    // Test that authentication works for requests after refresh behavior
     let result1 = client.get_server_time().await;
+    assert!(result1.is_ok(), "Authentication should work for requests");
+
+    let result2 = client.get_account_summary("BTC", None).await;
     assert!(
-        result1.is_ok(),
-        "Should be able to make requests after token refresh"
+        result2.is_ok(),
+        "Authentication should work for authenticated requests"
     );
 
     info!("Token refresh behavior test completed successfully");

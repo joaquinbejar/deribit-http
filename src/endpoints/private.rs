@@ -24,7 +24,7 @@ impl DeribitHttpClient {
     /// ```rust
     /// use deribit_http::DeribitHttpClient;
     ///
-    /// let client = DeribitHttpClient::new(true);
+    /// let client = DeribitHttpClient::new();
     /// // let subaccounts = client.get_subaccounts(Some(true)).await?;
     /// // tracing::info!("Found {} subaccounts", subaccounts.len());
     /// ```
@@ -102,7 +102,7 @@ impl DeribitHttpClient {
     /// ```rust
     /// use deribit_http::DeribitHttpClient;
     ///
-    /// let client = DeribitHttpClient::new(true);
+    /// let client = DeribitHttpClient::new();
     /// // let log = client.get_transaction_log("BTC", None, None, Some(20), None).await?;
     /// // tracing::info!("Found {} transaction log entries", log.logs.len());
     /// ```
@@ -189,7 +189,7 @@ impl DeribitHttpClient {
     /// ```rust
     /// use deribit_http::DeribitHttpClient;
     ///
-    /// let client = DeribitHttpClient::new(true);
+    /// let client = DeribitHttpClient::new();
     /// // let deposits = client.get_deposits("BTC", Some(20), Some(0)).await?;
     /// // tracing::info!("Found {} deposits", deposits.data.len());
     /// ```
@@ -262,7 +262,7 @@ impl DeribitHttpClient {
     /// ```rust
     /// use deribit_http::DeribitHttpClient;
     ///
-    /// let client = DeribitHttpClient::new(true);
+    /// let client = DeribitHttpClient::new();
     /// // let withdrawals = client.get_withdrawals("BTC", Some(20), Some(0)).await?;
     /// // tracing::info!("Found {} withdrawals", withdrawals.data.len());
     /// ```
@@ -339,7 +339,7 @@ impl DeribitHttpClient {
     /// ```rust
     /// use deribit_http::DeribitHttpClient;
     ///
-    /// let client = DeribitHttpClient::new(true);
+    /// let client = DeribitHttpClient::new();
     /// // let transfer = client.submit_transfer_to_subaccount("BTC", 0.001, 123).await?;
     /// // tracing::info!("Transfer ID: {}", transfer.id);
     /// ```
@@ -412,7 +412,7 @@ impl DeribitHttpClient {
     /// ```rust
     /// use deribit_http::DeribitHttpClient;
     ///
-    /// let client = DeribitHttpClient::new(true);
+    /// let client = DeribitHttpClient::new();
     /// // let transfer = client.submit_transfer_to_user("ETH", 0.1, "0x1234...").await?;
     /// // tracing::info!("Transfer ID: {}", transfer.id);
     /// ```
@@ -1011,7 +1011,7 @@ impl DeribitHttpClient {
     /// ```rust
     /// use deribit_http::DeribitHttpClient;
     ///
-    /// let client = DeribitHttpClient::new(true);
+    /// let client = DeribitHttpClient::new();
     /// // let summary = client.get_account_summary("BTC", Some(true)).await?;
     /// // println!("Balance: {}", summary.balance);
     /// ```
@@ -1083,7 +1083,7 @@ impl DeribitHttpClient {
     /// ```rust
     /// use deribit_http::DeribitHttpClient;
     ///
-    /// let client = DeribitHttpClient::new(true);
+    /// let client = DeribitHttpClient::new();
     /// // let positions = client.get_positions(Some("BTC"), Some("future"), None).await?;
     /// // println!("Found {} positions", positions.len());
     /// ```

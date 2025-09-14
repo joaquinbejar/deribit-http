@@ -2,13 +2,9 @@
 //!
 //! This test covers user trades functionality:
 //! 1. Get user trades by instrument
-//! 2. Test trade filtering and pagination
-//! 3. Test trade sequence filtering
-//! 4. Validate user trade data structure
 
 use std::path::Path;
 use tracing::{debug, info};
-
 use deribit_http::DeribitHttpClient;
 
 /// Check if .env file exists and contains required variables
@@ -32,19 +28,21 @@ fn check_env_file() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 /// Authenticate client using available credentials
-async fn authenticate_client(client: &DeribitHttpClient) -> Result<(), Box<dyn std::error::Error>> {
-    if let (Ok(client_id), Ok(client_secret)) = (
+async fn authenticate_client(
+    _client: &DeribitHttpClient,
+) -> Result<(), Box<dyn std::error::Error>> {
+    if let (Ok(_client_id), Ok(_client_secret)) = (
         std::env::var("DERIBIT_CLIENT_ID"),
         std::env::var("DERIBIT_CLIENT_SECRET"),
     ) {
-        client
-            .authenticate_oauth2(&client_id, &client_secret)
-            .await?;
-    } else if let (Ok(api_key), Ok(api_secret)) = (
+        // Authentication is now automatic - no need to call authenticate_oauth2
+        info!("Using automatic authentication with OAuth2 credentials");
+    } else if let (Ok(_api_key), Ok(_api_secret)) = (
         std::env::var("DERIBIT_API_KEY"),
         std::env::var("DERIBIT_API_SECRET"),
     ) {
-        client.authenticate_api_key(&api_key, &api_secret).await?;
+        // Authentication is now automatic - no need to call authenticate_api_key
+        info!("Using automatic authentication with API key credentials");
     } else {
         return Err("No valid authentication credentials found".into());
     }
@@ -56,14 +54,9 @@ async fn authenticate_client(client: &DeribitHttpClient) -> Result<(), Box<dyn s
 async fn test_get_user_trades_btc_perpetual() -> Result<(), Box<dyn std::error::Error>> {
     check_env_file()?;
 
-    let _ = tracing_subscriber::fmt()
-        .with_env_filter("debug")
-        .try_init();
-
     info!("Starting BTC-PERPETUAL user trades test");
 
-    let client = DeribitHttpClient::new(true);
-    authenticate_client(&client).await?;
+    let client = DeribitHttpClient::new();
 
     debug!("Getting user trades for BTC-PERPETUAL");
     let user_trades = client
@@ -136,14 +129,9 @@ async fn test_get_user_trades_btc_perpetual() -> Result<(), Box<dyn std::error::
 async fn test_get_user_trades_eth_perpetual() -> Result<(), Box<dyn std::error::Error>> {
     check_env_file()?;
 
-    let _ = tracing_subscriber::fmt()
-        .with_env_filter("debug")
-        .try_init();
-
     info!("Starting ETH-PERPETUAL user trades test");
 
-    let client = DeribitHttpClient::new(true);
-    authenticate_client(&client).await?;
+    let client = DeribitHttpClient::new();
 
     debug!("Getting user trades for ETH-PERPETUAL");
     let user_trades = client
@@ -173,14 +161,9 @@ async fn test_get_user_trades_eth_perpetual() -> Result<(), Box<dyn std::error::
 async fn test_get_user_trades_with_count() -> Result<(), Box<dyn std::error::Error>> {
     check_env_file()?;
 
-    let _ = tracing_subscriber::fmt()
-        .with_env_filter("debug")
-        .try_init();
-
     info!("Starting user trades with count test");
 
-    let client = DeribitHttpClient::new(true);
-    authenticate_client(&client).await?;
+    let client = DeribitHttpClient::new();
 
     let requested_count = 5;
     debug!("Getting user trades with count: {}", requested_count);
@@ -218,14 +201,9 @@ async fn test_get_user_trades_with_count() -> Result<(), Box<dyn std::error::Err
 async fn test_get_user_trades_with_sequence_range() -> Result<(), Box<dyn std::error::Error>> {
     check_env_file()?;
 
-    let _ = tracing_subscriber::fmt()
-        .with_env_filter("debug")
-        .try_init();
-
     info!("Starting user trades with sequence range test");
 
-    let client = DeribitHttpClient::new(true);
-    authenticate_client(&client).await?;
+    let client = DeribitHttpClient::new();
 
     // First, get some trades to find sequence numbers
     debug!("Getting initial trades to find sequence range");
@@ -284,14 +262,9 @@ async fn test_get_user_trades_with_sequence_range() -> Result<(), Box<dyn std::e
 async fn test_get_user_trades_include_old() -> Result<(), Box<dyn std::error::Error>> {
     check_env_file()?;
 
-    let _ = tracing_subscriber::fmt()
-        .with_env_filter("debug")
-        .try_init();
-
     info!("Starting user trades include old test");
 
-    let client = DeribitHttpClient::new(true);
-    authenticate_client(&client).await?;
+    let client = DeribitHttpClient::new();
 
     // Get trades without including old
     debug!("Getting trades without including old");
@@ -328,14 +301,9 @@ async fn test_get_user_trades_include_old() -> Result<(), Box<dyn std::error::Er
 async fn test_get_user_trades_sorting() -> Result<(), Box<dyn std::error::Error>> {
     check_env_file()?;
 
-    let _ = tracing_subscriber::fmt()
-        .with_env_filter("debug")
-        .try_init();
-
     info!("Starting user trades sorting test");
 
-    let client = DeribitHttpClient::new(true);
-    authenticate_client(&client).await?;
+    let client = DeribitHttpClient::new();
 
     // Get trades with ascending sorting
     debug!("Getting trades with ascending sorting");
@@ -388,14 +356,9 @@ async fn test_get_user_trades_sorting() -> Result<(), Box<dyn std::error::Error>
 async fn test_user_trades_data_validation() -> Result<(), Box<dyn std::error::Error>> {
     check_env_file()?;
 
-    let _ = tracing_subscriber::fmt()
-        .with_env_filter("debug")
-        .try_init();
-
     info!("Starting user trades data validation test");
 
-    let client = DeribitHttpClient::new(true);
-    authenticate_client(&client).await?;
+    let client = DeribitHttpClient::new();
 
     debug!("Getting user trades for data validation");
     let user_trades = client
@@ -511,14 +474,9 @@ async fn test_user_trades_data_validation() -> Result<(), Box<dyn std::error::Er
 async fn test_user_trades_multiple_instruments() -> Result<(), Box<dyn std::error::Error>> {
     check_env_file()?;
 
-    let _ = tracing_subscriber::fmt()
-        .with_env_filter("debug")
-        .try_init();
-
     info!("Starting user trades multiple instruments test");
 
-    let client = DeribitHttpClient::new(true);
-    authenticate_client(&client).await?;
+    let client = DeribitHttpClient::new();
 
     let instruments = ["BTC-PERPETUAL", "ETH-PERPETUAL"];
 

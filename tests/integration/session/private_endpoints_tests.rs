@@ -1,24 +1,23 @@
 //! Integration tests for private endpoints
 
-use deribit_base::prelude::{BuyOrderRequest, EditOrderRequest, SellOrderRequest};
-use deribit_http::DeribitHttpClient;
-use mockito::Server;
-
 #[cfg(test)]
 mod private_endpoints_tests {
-    use super::*;
+    use deribit_base::prelude::{BuyOrderRequest, EditOrderRequest, SellOrderRequest};
+    use deribit_http::DeribitHttpClient;
+    use mockito::Server;
+    use std::time::Duration;
 
     async fn create_mock_client() -> (mockito::ServerGuard, DeribitHttpClient) {
         let server = Server::new_async().await;
-        let config = deribit_http::config::HttpConfig {
+        let _config = deribit_http::config::HttpConfig {
             base_url: url::Url::parse(&server.url()).unwrap(),
-            timeout: std::time::Duration::from_secs(30),
+            timeout: Duration::from_secs(30),
             user_agent: "test-agent".to_string(),
             max_retries: 3,
             testnet: false,
             credentials: None,
         };
-        let client = DeribitHttpClient::with_config(config).unwrap();
+        let client = DeribitHttpClient::default();
         (server, client)
     }
 

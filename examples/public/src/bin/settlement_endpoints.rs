@@ -6,42 +6,21 @@
 //!
 //! Usage: cargo run --bin settlement_endpoints
 
+use deribit_base::prelude::setup_logger;
 use deribit_http::DeribitHttpClient;
-use std::env;
 use tracing::{info, warn};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Initialize logging
-    tracing_subscriber::fmt()
-        .with_target(false)
-        .with_thread_ids(false)
-        .with_file(false)
-        .with_line_number(false)
-        .init();
+    setup_logger();
 
     info!("🚀 Deribit HTTP Client - Settlement Endpoints Example");
     info!("====================================================");
     println!();
 
-    // Determine if we should use testnet or production
-    let use_testnet = env::var("DERIBIT_TESTNET")
-        .map(|val| val.to_lowercase() == "true")
-        .unwrap_or(true); // Default to testnet for safety
-
-    info!(
-        "🌐 Environment: {}",
-        if use_testnet { "Testnet" } else { "Production" }
-    );
-
     // Create HTTP client
-    let client = DeribitHttpClient::new(use_testnet);
-    info!(
-        "✅ HTTP client created for {}: {}",
-        if use_testnet { "testnet" } else { "production" },
-        client.base_url()
-    );
-    println!();
+    let client = DeribitHttpClient::new();
 
     // =================================================================
     // 1. GET LAST SETTLEMENTS BY CURRENCY (/public/get_last_settlements_by_currency)

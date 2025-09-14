@@ -36,7 +36,7 @@ async fn main() -> Result<(), HttpError> {
     // Get credentials from environment variables
     let client_id = env::var("DERIBIT_CLIENT_ID")
         .map_err(|_| HttpError::ConfigError("DERIBIT_CLIENT_ID not set".to_string()))?;
-    let client_secret = env::var("DERIBIT_CLIENT_SECRET")
+    let _client_secret = env::var("DERIBIT_CLIENT_SECRET")
         .map_err(|_| HttpError::ConfigError("DERIBIT_CLIENT_SECRET not set".to_string()))?;
     let testnet = env::var("DERIBIT_TESTNET")
         .unwrap_or_else(|_| "true".to_string())

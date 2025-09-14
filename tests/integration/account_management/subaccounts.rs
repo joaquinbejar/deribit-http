@@ -2,16 +2,13 @@
 //!
 //! This test covers subaccounts functionality:
 //! 1. Get subaccounts list
-//! 2. Test subaccounts with portfolio information
-//! 3. Validate subaccount data structure
-//! 4. Test subaccount filtering and options
 
 use std::path::Path;
 use tracing::{debug, info, warn};
-
 use deribit_http::DeribitHttpClient;
 
 /// Check if .env file exists and contains required variables
+#[allow(dead_code)]
 fn check_env_file() -> Result<(), Box<dyn std::error::Error>> {
     if !Path::new(".env").exists() {
         return Err("Missing .env file. Please create one with authentication credentials".into());
@@ -32,19 +29,22 @@ fn check_env_file() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 /// Authenticate client using available credentials
-async fn authenticate_client(client: &DeribitHttpClient) -> Result<(), Box<dyn std::error::Error>> {
-    if let (Ok(client_id), Ok(client_secret)) = (
+#[allow(dead_code)]
+async fn authenticate_client(
+    _client: &DeribitHttpClient,
+) -> Result<(), Box<dyn std::error::Error>> {
+    if let (Ok(_client_id), Ok(_client_secret)) = (
         std::env::var("DERIBIT_CLIENT_ID"),
         std::env::var("DERIBIT_CLIENT_SECRET"),
     ) {
-        client
-            .authenticate_oauth2(&client_id, &client_secret)
-            .await?;
-    } else if let (Ok(api_key), Ok(api_secret)) = (
+        // Authentication is now automatic - no need to call authenticate_oauth2
+        info!("Using automatic authentication with OAuth2 credentials");
+    } else if let (Ok(_api_key), Ok(_api_secret)) = (
         std::env::var("DERIBIT_API_KEY"),
         std::env::var("DERIBIT_API_SECRET"),
     ) {
-        client.authenticate_api_key(&api_key, &api_secret).await?;
+        // Authentication is now automatic - no need to call authenticate_api_key
+        info!("Using automatic authentication with API key credentials");
     } else {
         return Err("No valid authentication credentials found".into());
     }
@@ -56,14 +56,9 @@ async fn authenticate_client(client: &DeribitHttpClient) -> Result<(), Box<dyn s
 async fn test_get_subaccounts_basic() -> Result<(), Box<dyn std::error::Error>> {
     check_env_file()?;
 
-    let _ = tracing_subscriber::fmt()
-        .with_env_filter("debug")
-        .try_init();
-
     info!("Starting basic subaccounts test");
 
-    let client = DeribitHttpClient::new(true);
-    authenticate_client(&client).await?;
+    let client = DeribitHttpClient::new();
 
     debug!("Getting subaccounts without portfolio");
     let subaccounts = client.get_subaccounts(None).await?;
@@ -127,14 +122,9 @@ async fn test_get_subaccounts_basic() -> Result<(), Box<dyn std::error::Error>> 
 async fn test_get_subaccounts_with_portfolio() -> Result<(), Box<dyn std::error::Error>> {
     check_env_file()?;
 
-    let _ = tracing_subscriber::fmt()
-        .with_env_filter("debug")
-        .try_init();
-
     info!("Starting subaccounts with portfolio test");
 
-    let client = DeribitHttpClient::new(true);
-    authenticate_client(&client).await?;
+    let client = DeribitHttpClient::new();
 
     debug!("Getting subaccounts with portfolio information");
     let subaccounts = client.get_subaccounts(Some(true)).await?;
@@ -263,14 +253,9 @@ async fn test_get_subaccounts_with_portfolio() -> Result<(), Box<dyn std::error:
 async fn test_subaccounts_data_validation() -> Result<(), Box<dyn std::error::Error>> {
     check_env_file()?;
 
-    let _ = tracing_subscriber::fmt()
-        .with_env_filter("debug")
-        .try_init();
-
     info!("Starting subaccounts data validation test");
 
-    let client = DeribitHttpClient::new(true);
-    authenticate_client(&client).await?;
+    let client = DeribitHttpClient::new();
 
     debug!("Getting subaccounts for data validation");
     let subaccounts = client.get_subaccounts(Some(true)).await?;
@@ -341,14 +326,9 @@ async fn test_subaccounts_data_validation() -> Result<(), Box<dyn std::error::Er
 async fn test_subaccounts_consistency() -> Result<(), Box<dyn std::error::Error>> {
     check_env_file()?;
 
-    let _ = tracing_subscriber::fmt()
-        .with_env_filter("debug")
-        .try_init();
-
     info!("Starting subaccounts consistency test");
 
-    let client = DeribitHttpClient::new(true);
-    authenticate_client(&client).await?;
+    let client = DeribitHttpClient::new();
 
     // Get subaccounts multiple times to check consistency
     debug!("Getting first set of subaccounts");
@@ -416,14 +396,9 @@ async fn test_subaccounts_consistency() -> Result<(), Box<dyn std::error::Error>
 async fn test_subaccounts_portfolio_comparison() -> Result<(), Box<dyn std::error::Error>> {
     check_env_file()?;
 
-    let _ = tracing_subscriber::fmt()
-        .with_env_filter("debug")
-        .try_init();
-
     info!("Starting subaccounts portfolio comparison test");
 
-    let client = DeribitHttpClient::new(true);
-    authenticate_client(&client).await?;
+    let client = DeribitHttpClient::new();
 
     // Get subaccounts without portfolio
     debug!("Getting subaccounts without portfolio");

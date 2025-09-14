@@ -12,15 +12,15 @@
 //!
 //! Then run: cargo run --bin accounting_endpoints
 
-use deribit_http::{DeribitHttpClient, HttpError};
 use deribit_base::prelude::setup_logger;
+use deribit_http::{DeribitHttpClient, HttpError};
 use tracing::{error, info, warn};
 
 #[tokio::main]
 async fn main() -> Result<(), HttpError> {
     // Initialize logging
     setup_logger();
-    
+
     // Create HTTP client
     let client = DeribitHttpClient::new();
 
@@ -34,9 +34,11 @@ async fn main() -> Result<(), HttpError> {
         Ok(positions) => {
             info!("✅ Retrieved all positions successfully");
             info!("📈 Total positions found: {}", positions.len());
-            
+
             if positions.is_empty() {
-                warn!("⚠️  No positions found. You may need to have some open positions to see results.");
+                warn!(
+                    "⚠️  No positions found. You may need to have some open positions to see results."
+                );
                 return Ok(());
             }
 
@@ -44,9 +46,15 @@ async fn main() -> Result<(), HttpError> {
             for (i, position) in positions.iter().enumerate() {
                 info!("📋 Position {}: {}", i + 1, position.instrument_name);
                 info!("   💰 Size: {:.6}", position.size);
-                info!("   💵 Mark Price: ${:.2}", position.mark_price.unwrap_or(0.0));
+                info!(
+                    "   💵 Mark Price: ${:.2}",
+                    position.mark_price.unwrap_or(0.0)
+                );
                 info!("   📊 Direction: {:?}", position.direction);
-                info!("   💸 Unrealized PnL: ${:.2}", position.unrealized_profit_loss.unwrap_or(0.0));
+                info!(
+                    "   💸 Unrealized PnL: ${:.2}",
+                    position.unrealized_profit_loss.unwrap_or(0.0)
+                );
                 info!("   📈 Average Price: ${:.2}", position.average_price);
                 println!();
             }
@@ -55,7 +63,7 @@ async fn main() -> Result<(), HttpError> {
         }
         Err(e) => {
             error!("❌ Failed to get positions: {}", e);
-            return Err(e.into());
+            return Err(e);
         }
     };
 
@@ -69,13 +77,19 @@ async fn main() -> Result<(), HttpError> {
         Ok(positions) => {
             info!("✅ Retrieved BTC positions successfully");
             info!("₿ BTC positions found: {}", positions.len());
-            
+
             for position in &positions {
                 info!("📋 BTC Position: {}", position.instrument_name);
                 info!("   💰 Size: {:.6} BTC", position.size);
-                info!("   💵 Mark Price: ${:.2}", position.mark_price.unwrap_or(0.0));
+                info!(
+                    "   💵 Mark Price: ${:.2}",
+                    position.mark_price.unwrap_or(0.0)
+                );
                 info!("   📊 Direction: {:?}", position.direction);
-                info!("   💸 Unrealized PnL: ${:.2}", position.unrealized_profit_loss.unwrap_or(0.0));
+                info!(
+                    "   💸 Unrealized PnL: ${:.2}",
+                    position.unrealized_profit_loss.unwrap_or(0.0)
+                );
                 println!();
             }
 
@@ -97,13 +111,19 @@ async fn main() -> Result<(), HttpError> {
         Ok(positions) => {
             info!("✅ Retrieved future positions successfully");
             info!("🔮 Future positions found: {}", positions.len());
-            
+
             for position in &positions {
                 info!("📋 Future Position: {}", position.instrument_name);
                 info!("   💰 Size: {:.6}", position.size);
-                info!("   💵 Mark Price: ${:.2}", position.mark_price.unwrap_or(0.0));
+                info!(
+                    "   💵 Mark Price: ${:.2}",
+                    position.mark_price.unwrap_or(0.0)
+                );
                 info!("   📊 Direction: {:?}", position.direction);
-                info!("   💸 Unrealized PnL: ${:.2}", position.unrealized_profit_loss.unwrap_or(0.0));
+                info!(
+                    "   💸 Unrealized PnL: ${:.2}",
+                    position.unrealized_profit_loss.unwrap_or(0.0)
+                );
                 println!();
             }
 
@@ -125,7 +145,7 @@ async fn main() -> Result<(), HttpError> {
     if let Some(first_position) = all_positions.first() {
         let instrument_name = &first_position.instrument_name;
         info!("🎯 Analyzing position for: {}", instrument_name);
-        
+
         // Since there's no single get_position endpoint in the current implementation,
         // we'll filter from the positions we already have
         let specific_position = all_positions
@@ -138,16 +158,22 @@ async fn main() -> Result<(), HttpError> {
         info!("🏷️  Instrument: {}", specific_position.instrument_name);
         info!("💰 Position Size: {:.6}", specific_position.size);
         info!("📈 Direction: {:?}", specific_position.direction);
-        info!("💵 Mark Price: ${:.2}", specific_position.mark_price.unwrap_or(0.0));
-        
+        info!(
+            "💵 Mark Price: ${:.2}",
+            specific_position.mark_price.unwrap_or(0.0)
+        );
+
         let avg_price = specific_position.average_price;
         info!("📊 Average Price: ${:.2}", avg_price);
         if let Some(mark_price) = specific_position.mark_price {
             let price_diff = mark_price - avg_price;
             let price_diff_pct = (price_diff / avg_price) * 100.0;
-            info!("📈 Price Difference: ${:.2} ({:.2}%)", price_diff, price_diff_pct);
+            info!(
+                "📈 Price Difference: ${:.2} ({:.2}%)",
+                price_diff, price_diff_pct
+            );
         }
-        
+
         if let Some(unrealized_pnl) = specific_position.unrealized_profit_loss {
             info!("💸 Unrealized PnL: ${:.2}", unrealized_pnl);
             if unrealized_pnl > 0.0 {
@@ -211,7 +237,10 @@ async fn main() -> Result<(), HttpError> {
     info!("❌ Losing Positions: {}", losing_positions);
     info!("💸 Total Unrealized PnL: ${:.2}", total_unrealized_pnl);
     info!("💰 Total Realized PnL: ${:.2}", total_realized_pnl);
-    info!("🎯 Combined PnL: ${:.2}", total_unrealized_pnl + total_realized_pnl);
+    info!(
+        "🎯 Combined PnL: ${:.2}",
+        total_unrealized_pnl + total_realized_pnl
+    );
 
     // Group positions by currency
     let mut btc_count = 0;

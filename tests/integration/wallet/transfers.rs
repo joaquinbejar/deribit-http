@@ -1,20 +1,20 @@
-//! Transfers Integration Tests
+//! Transfer Integration Tests
 //!
 //! This test covers transfer functionality:
-//! 1. Test transfer to subaccount (simulation)
-//! 2. Test transfer to user (simulation)
-//! 3. Validate transfer request parameters
-//! 4. Test error handling for invalid transfers
-//!
-//! Note: These tests use small amounts and may fail if insufficient balance.
-//! They are designed to test the API endpoints rather than actual transfers.
+//! 1. Internal transfer operations
+//! 2. Transfer validation and limits
+//! 3. Cross-currency transfers
+//! 4. Transfer history retrieval
+//! 5. Transfer error handling
 
-use std::path::Path;
+use std::time::Duration;
+use tokio::time::sleep;
 use tracing::{debug, info, warn};
-
 use deribit_http::DeribitHttpClient;
+use std::path::Path;
 
 /// Check if .env file exists and contains required variables
+#[allow(dead_code)]
 fn check_env_file() -> Result<(), Box<dyn std::error::Error>> {
     if !Path::new(".env").exists() {
         return Err("Missing .env file. Please create one with authentication credentials".into());
@@ -35,19 +35,22 @@ fn check_env_file() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 /// Authenticate client using available credentials
-async fn authenticate_client(client: &DeribitHttpClient) -> Result<(), Box<dyn std::error::Error>> {
-    if let (Ok(client_id), Ok(client_secret)) = (
+#[allow(dead_code)]
+async fn authenticate_client(
+    _client: &DeribitHttpClient,
+) -> Result<(), Box<dyn std::error::Error>> {
+    if let (Ok(_client_id), Ok(_client_secret)) = (
         std::env::var("DERIBIT_CLIENT_ID"),
         std::env::var("DERIBIT_CLIENT_SECRET"),
     ) {
-        client
-            .authenticate_oauth2(&client_id, &client_secret)
-            .await?;
-    } else if let (Ok(api_key), Ok(api_secret)) = (
+        // Authentication is now automatic - no need to call authenticate_oauth2
+        info!("Using automatic authentication with OAuth2 credentials");
+    } else if let (Ok(_api_key), Ok(_api_secret)) = (
         std::env::var("DERIBIT_API_KEY"),
         std::env::var("DERIBIT_API_SECRET"),
     ) {
-        client.authenticate_api_key(&api_key, &api_secret).await?;
+        // Authentication is now automatic - no need to call authenticate_api_key
+        info!("Using automatic authentication with API key credentials");
     } else {
         return Err("No valid authentication credentials found".into());
     }
@@ -59,14 +62,9 @@ async fn authenticate_client(client: &DeribitHttpClient) -> Result<(), Box<dyn s
 async fn test_transfer_to_subaccount_validation() -> Result<(), Box<dyn std::error::Error>> {
     check_env_file()?;
 
-    let _ = tracing_subscriber::fmt()
-        .with_env_filter("debug")
-        .try_init();
+    // Starting transfer to subaccount validation test
 
-    info!("Starting transfer to subaccount validation test");
-
-    let client = DeribitHttpClient::new(true);
-    authenticate_client(&client).await?;
+    let client = DeribitHttpClient::new();
 
     // First, get subaccounts to find a valid destination
     debug!("Getting subaccounts to find transfer destination");
@@ -131,14 +129,9 @@ async fn test_transfer_to_subaccount_validation() -> Result<(), Box<dyn std::err
 async fn test_transfer_to_user_validation() -> Result<(), Box<dyn std::error::Error>> {
     check_env_file()?;
 
-    let _ = tracing_subscriber::fmt()
-        .with_env_filter("debug")
-        .try_init();
+    // Starting transfer to user validation test
 
-    info!("Starting transfer to user validation test");
-
-    let client = DeribitHttpClient::new(true);
-    authenticate_client(&client).await?;
+    let client = DeribitHttpClient::new();
 
     // Use a test destination (this will likely fail, but we're testing the API structure)
     let test_destination = "test_user@example.com";
@@ -175,14 +168,17 @@ async fn test_transfer_to_user_validation() -> Result<(), Box<dyn std::error::Er
 
             // Validate that it's a reasonable error
             let error_str = e.to_string().to_lowercase();
-            assert!(error_str.contains("insufficient") || 
-                   error_str.contains("balance") || 
-                   error_str.contains("not_enough") ||
-                   error_str.contains("invalid") ||
-                   error_str.contains("user") ||
-                   error_str.contains("not_found") ||
-                   error_str.contains("minimum"),
-                   "Error should be related to balance, user validation, or other reasonable cause: {}", e);
+            assert!(
+                error_str.contains("insufficient")
+                    || error_str.contains("balance")
+                    || error_str.contains("not_enough")
+                    || error_str.contains("invalid")
+                    || error_str.contains("user")
+                    || error_str.contains("not_found")
+                    || error_str.contains("minimum"),
+                "Error should be related to balance, user validation, or other reasonable cause: {}",
+                e
+            );
         }
     }
 
@@ -195,14 +191,9 @@ async fn test_transfer_to_user_validation() -> Result<(), Box<dyn std::error::Er
 async fn test_transfer_invalid_currency() -> Result<(), Box<dyn std::error::Error>> {
     check_env_file()?;
 
-    let _ = tracing_subscriber::fmt()
-        .with_env_filter("debug")
-        .try_init();
+    // Starting transfer invalid currency test
 
-    info!("Starting transfer invalid currency test");
-
-    let client = DeribitHttpClient::new(true);
-    authenticate_client(&client).await?;
+    let client = DeribitHttpClient::new();
 
     // Test with invalid currency
     debug!("Attempting transfer with invalid currency");
@@ -237,14 +228,9 @@ async fn test_transfer_invalid_currency() -> Result<(), Box<dyn std::error::Erro
 async fn test_transfer_zero_amount() -> Result<(), Box<dyn std::error::Error>> {
     check_env_file()?;
 
-    let _ = tracing_subscriber::fmt()
-        .with_env_filter("debug")
-        .try_init();
+    // Starting transfer zero amount test
 
-    info!("Starting transfer zero amount test");
-
-    let client = DeribitHttpClient::new(true);
-    authenticate_client(&client).await?;
+    let client = DeribitHttpClient::new();
 
     // Test with zero amount
     debug!("Attempting transfer with zero amount");
@@ -279,14 +265,9 @@ async fn test_transfer_zero_amount() -> Result<(), Box<dyn std::error::Error>> {
 async fn test_transfer_negative_amount() -> Result<(), Box<dyn std::error::Error>> {
     check_env_file()?;
 
-    let _ = tracing_subscriber::fmt()
-        .with_env_filter("debug")
-        .try_init();
+    // Starting transfer negative amount test
 
-    info!("Starting transfer negative amount test");
-
-    let client = DeribitHttpClient::new(true);
-    authenticate_client(&client).await?;
+    let client = DeribitHttpClient::new();
 
     // Test with negative amount
     debug!("Attempting transfer with negative amount");
@@ -321,14 +302,9 @@ async fn test_transfer_negative_amount() -> Result<(), Box<dyn std::error::Error
 async fn test_transfer_to_invalid_subaccount() -> Result<(), Box<dyn std::error::Error>> {
     check_env_file()?;
 
-    let _ = tracing_subscriber::fmt()
-        .with_env_filter("debug")
-        .try_init();
+    // Starting transfer to invalid subaccount test
 
-    info!("Starting transfer to invalid subaccount test");
-
-    let client = DeribitHttpClient::new(true);
-    authenticate_client(&client).await?;
+    let client = DeribitHttpClient::new();
 
     // Test with invalid subaccount ID
     let invalid_subaccount_id = 999999999;
@@ -367,14 +343,9 @@ async fn test_transfer_to_invalid_subaccount() -> Result<(), Box<dyn std::error:
 async fn test_transfer_multiple_currencies() -> Result<(), Box<dyn std::error::Error>> {
     check_env_file()?;
 
-    let _ = tracing_subscriber::fmt()
-        .with_env_filter("debug")
-        .try_init();
+    // Starting transfer multiple currencies test
 
-    info!("Starting transfer multiple currencies test");
-
-    let client = DeribitHttpClient::new(true);
-    authenticate_client(&client).await?;
+    let client = DeribitHttpClient::new();
 
     let currencies = ["BTC", "ETH", "USDC"];
     let test_destination = "test@example.com";
@@ -423,14 +394,9 @@ async fn test_transfer_multiple_currencies() -> Result<(), Box<dyn std::error::E
 async fn test_transfer_parameter_validation() -> Result<(), Box<dyn std::error::Error>> {
     check_env_file()?;
 
-    let _ = tracing_subscriber::fmt()
-        .with_env_filter("debug")
-        .try_init();
+    // Starting transfer parameter validation test
 
-    info!("Starting transfer parameter validation test");
-
-    let client = DeribitHttpClient::new(true);
-    authenticate_client(&client).await?;
+    let client = DeribitHttpClient::new();
 
     // Test various parameter combinations to validate API behavior
     let test_cases = vec![

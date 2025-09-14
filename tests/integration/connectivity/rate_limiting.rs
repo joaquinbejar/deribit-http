@@ -2,20 +2,20 @@
 //!
 //! This test covers rate limiting scenarios:
 //! 1. Rate limit detection and handling
-//! 2. Automatic backoff and retry
-//! 3. Rate limit recovery
+//! 2. Backoff strategies and retry logic
+//! 3. Rate limit header parsing
 //! 4. Burst request handling
-//! 5. Rate limit compliance verification
+//! 5. Rate limit recovery testing
+
 
 use std::path::Path;
-use std::time::{Duration, Instant};
-use tokio::time::sleep;
+use std::time::Duration;
+use tokio::time::{sleep, Instant};
 use tracing::{debug, info, warn};
-
-use deribit_http::*;
-use deribit_http::{DeribitHttpClient, HttpConfig};
+use deribit_http::DeribitHttpClient;
 
 /// Check if .env file exists and contains required variables
+#[allow(dead_code)]
 fn check_env_file() -> Result<(), Box<dyn std::error::Error>> {
     if !Path::new(".env").exists() {
         return Err("Missing .env file. Please create one with authentication credentials".into());
@@ -36,19 +36,22 @@ fn check_env_file() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 /// Authenticate client using available credentials
-async fn authenticate_client(client: &DeribitHttpClient) -> Result<(), Box<dyn std::error::Error>> {
-    if let (Ok(client_id), Ok(client_secret)) = (
+#[allow(dead_code)]
+async fn authenticate_client(
+    _client: &DeribitHttpClient,
+) -> Result<(), Box<dyn std::error::Error>> {
+    if let (Ok(_client_id), Ok(_client_secret)) = (
         std::env::var("DERIBIT_CLIENT_ID"),
         std::env::var("DERIBIT_CLIENT_SECRET"),
     ) {
-        client
-            .authenticate_oauth2(&client_id, &client_secret)
-            .await?;
-    } else if let (Ok(api_key), Ok(api_secret)) = (
+        // Authentication is now automatic - no need to call authenticate_oauth2
+        info!("Using automatic authentication with OAuth2 credentials");
+    } else if let (Ok(_api_key), Ok(_api_secret)) = (
         std::env::var("DERIBIT_API_KEY"),
         std::env::var("DERIBIT_API_SECRET"),
     ) {
-        client.authenticate_api_key(&api_key, &api_secret).await?;
+        // Authentication is now automatic - no need to call authenticate_api_key
+        info!("Using automatic authentication with API key credentials");
     } else {
         return Err("No valid authentication credentials found".into());
     }
@@ -58,13 +61,9 @@ async fn authenticate_client(client: &DeribitHttpClient) -> Result<(), Box<dyn s
 #[tokio::test]
 #[serial_test::serial]
 async fn test_rate_limit_compliance() -> Result<(), Box<dyn std::error::Error>> {
-    let _ = tracing_subscriber::fmt()
-        .with_env_filter("debug")
-        .try_init();
+    // Starting rate limit compliance test
 
-    info!("Starting rate limit compliance test");
-
-    let client = DeribitHttpClient::new(true);
+    let client = DeribitHttpClient::new();
 
     // Test sequential requests with proper spacing
     let num_requests = 10;
@@ -157,13 +156,9 @@ async fn test_rate_limit_compliance() -> Result<(), Box<dyn std::error::Error>> 
 #[tokio::test]
 #[serial_test::serial]
 async fn test_burst_request_handling() -> Result<(), Box<dyn std::error::Error>> {
-    let _ = tracing_subscriber::fmt()
-        .with_env_filter("debug")
-        .try_init();
+    // Starting burst request handling test
 
-    info!("Starting burst request handling test");
-
-    let client = DeribitHttpClient::new(true);
+    let client = DeribitHttpClient::new();
 
     // Test burst of requests without spacing
     let burst_size = 5;
@@ -259,13 +254,9 @@ async fn test_burst_request_handling() -> Result<(), Box<dyn std::error::Error>>
 #[tokio::test]
 #[serial_test::serial]
 async fn test_rate_limit_backoff_strategy() -> Result<(), Box<dyn std::error::Error>> {
-    let _ = tracing_subscriber::fmt()
-        .with_env_filter("debug")
-        .try_init();
+    // Starting rate limit backoff strategy test
 
-    info!("Starting rate limit backoff strategy test");
-
-    let client = DeribitHttpClient::new(true);
+    let client = DeribitHttpClient::new();
 
     // Test exponential backoff pattern
     let backoff_intervals = vec![
@@ -332,13 +323,9 @@ async fn test_rate_limit_backoff_strategy() -> Result<(), Box<dyn std::error::Er
 async fn test_rate_limit_with_different_endpoints() -> Result<(), Box<dyn std::error::Error>> {
     check_env_file()?;
 
-    let _ = tracing_subscriber::fmt()
-        .with_env_filter("debug")
-        .try_init();
+    // Starting rate limit with different endpoints test
 
-    info!("Starting rate limit with different endpoints test");
-
-    let client = DeribitHttpClient::new(true);
+    let client = DeribitHttpClient::new();
 
     // Try to authenticate (may fail, but we'll test what we can)
     let auth_result = authenticate_client(&client).await;
@@ -347,7 +334,7 @@ async fn test_rate_limit_with_different_endpoints() -> Result<(), Box<dyn std::e
     let endpoint_tests = vec!["Public - Server Time", "Public - Instruments"];
 
     // Add authenticated endpoints if auth succeeded
-    let mut all_tests = endpoint_tests;
+    let all_tests = endpoint_tests;
     if auth_result.is_ok() {
         info!("Authentication successful, testing authenticated endpoints");
         // Note: These closures would need to be properly constructed for authenticated endpoints
@@ -423,13 +410,9 @@ async fn test_rate_limit_with_different_endpoints() -> Result<(), Box<dyn std::e
 #[tokio::test]
 #[serial_test::serial]
 async fn test_rate_limit_recovery_time() -> Result<(), Box<dyn std::error::Error>> {
-    let _ = tracing_subscriber::fmt()
-        .with_env_filter("debug")
-        .try_init();
+    // Starting rate limit recovery time test
 
-    info!("Starting rate limit recovery time test");
-
-    let client = DeribitHttpClient::new(true);
+    let client = DeribitHttpClient::new();
 
     // First, try to trigger rate limiting with rapid requests
     debug!("Attempting to trigger rate limiting");
@@ -472,7 +455,7 @@ async fn test_rate_limit_recovery_time() -> Result<(), Box<dyn std::error::Error
             Duration::from_secs(5),
         ];
 
-        for (attempt, wait_duration) in recovery_intervals.into_iter().enumerate() {
+        for wait_duration in recovery_intervals.into_iter() {
             debug!("Testing recovery after waiting {:?}", wait_duration);
             sleep(wait_duration).await;
 
@@ -555,13 +538,9 @@ async fn test_rate_limit_recovery_time() -> Result<(), Box<dyn std::error::Error
 #[tokio::test]
 #[serial_test::serial]
 async fn test_rate_limit_error_handling() -> Result<(), Box<dyn std::error::Error>> {
-    let _ = tracing_subscriber::fmt()
-        .with_env_filter("debug")
-        .try_init();
+    // Starting rate limit error handling test
 
-    info!("Starting rate limit error handling test");
-
-    let client = DeribitHttpClient::new(true);
+    let client = DeribitHttpClient::new();
 
     // Test how the client handles various error scenarios
     let mut error_types = std::collections::HashMap::new();

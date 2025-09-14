@@ -6,10 +6,9 @@
 //! 3. Test extended account information
 //! 4. Test error handling for invalid currencies
 
+use deribit_http::DeribitHttpClient;
 use std::path::Path;
 use tracing::{debug, info, warn};
-
-use deribit_http::DeribitHttpClient;
 
 /// Check if .env file exists and contains required variables
 fn check_env_file() -> Result<(), Box<dyn std::error::Error>> {
@@ -31,20 +30,22 @@ fn check_env_file() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
-/// Authenticate client using available credentials
-async fn authenticate_client(client: &DeribitHttpClient) -> Result<(), Box<dyn std::error::Error>> {
-    if let (Ok(client_id), Ok(client_secret)) = (
+/// Authenticate client using environment variables
+async fn authenticate_client(
+    _client: &DeribitHttpClient,
+) -> Result<(), Box<dyn std::error::Error>> {
+    if let (Ok(_client_id), Ok(_client_secret)) = (
         std::env::var("DERIBIT_CLIENT_ID"),
         std::env::var("DERIBIT_CLIENT_SECRET"),
     ) {
-        client
-            .authenticate_oauth2(&client_id, &client_secret)
-            .await?;
-    } else if let (Ok(api_key), Ok(api_secret)) = (
+        // Authentication is now automatic - no need to call authenticate_oauth2
+        info!("Using automatic authentication with OAuth2 credentials");
+    } else if let (Ok(_api_key), Ok(_api_secret)) = (
         std::env::var("DERIBIT_API_KEY"),
         std::env::var("DERIBIT_API_SECRET"),
     ) {
-        client.authenticate_api_key(&api_key, &api_secret).await?;
+        // Authentication is now automatic - no need to call authenticate_api_key
+        info!("Using automatic authentication with API key credentials");
     } else {
         return Err("No valid authentication credentials found".into());
     }
@@ -56,14 +57,9 @@ async fn authenticate_client(client: &DeribitHttpClient) -> Result<(), Box<dyn s
 async fn test_get_account_summary_btc() -> Result<(), Box<dyn std::error::Error>> {
     check_env_file()?;
 
-    let _ = tracing_subscriber::fmt()
-        .with_env_filter("debug")
-        .try_init();
-
     info!("Starting BTC account summary test");
 
-    let client = DeribitHttpClient::new(true);
-    authenticate_client(&client).await?;
+    let client = DeribitHttpClient::new();
 
     debug!("Getting BTC account summary");
     let account_summary = client.get_account_summary("BTC", None).await?;
@@ -106,14 +102,9 @@ async fn test_get_account_summary_btc() -> Result<(), Box<dyn std::error::Error>
 async fn test_get_account_summary_eth() -> Result<(), Box<dyn std::error::Error>> {
     check_env_file()?;
 
-    let _ = tracing_subscriber::fmt()
-        .with_env_filter("debug")
-        .try_init();
-
     info!("Starting ETH account summary test");
 
-    let client = DeribitHttpClient::new(true);
-    authenticate_client(&client).await?;
+    let client = DeribitHttpClient::new();
 
     debug!("Getting ETH account summary");
     let account_summary = client.get_account_summary("ETH", None).await?;
@@ -156,14 +147,9 @@ async fn test_get_account_summary_eth() -> Result<(), Box<dyn std::error::Error>
 async fn test_get_account_summary_extended() -> Result<(), Box<dyn std::error::Error>> {
     check_env_file()?;
 
-    let _ = tracing_subscriber::fmt()
-        .with_env_filter("debug")
-        .try_init();
-
     info!("Starting extended account summary test");
 
-    let client = DeribitHttpClient::new(true);
-    authenticate_client(&client).await?;
+    let client = DeribitHttpClient::new();
 
     debug!("Getting extended BTC account summary");
     let account_summary = client.get_account_summary("BTC", Some(true)).await?;
@@ -206,14 +192,9 @@ async fn test_get_account_summary_extended() -> Result<(), Box<dyn std::error::E
 async fn test_get_account_summary_invalid_currency() -> Result<(), Box<dyn std::error::Error>> {
     check_env_file()?;
 
-    let _ = tracing_subscriber::fmt()
-        .with_env_filter("debug")
-        .try_init();
-
     info!("Starting invalid currency account summary test");
 
-    let client = DeribitHttpClient::new(true);
-    authenticate_client(&client).await?;
+    let client = DeribitHttpClient::new();
 
     debug!("Attempting to get account summary for invalid currency");
     let result = client.get_account_summary("INVALID", None).await;
@@ -242,14 +223,9 @@ async fn test_get_account_summary_invalid_currency() -> Result<(), Box<dyn std::
 async fn test_account_summary_multiple_currencies() -> Result<(), Box<dyn std::error::Error>> {
     check_env_file()?;
 
-    let _ = tracing_subscriber::fmt()
-        .with_env_filter("debug")
-        .try_init();
-
     info!("Starting multiple currencies account summary test");
 
-    let client = DeribitHttpClient::new(true);
-    authenticate_client(&client).await?;
+    let client = DeribitHttpClient::new();
 
     let currencies = ["BTC", "ETH", "USDC"];
 
@@ -306,14 +282,9 @@ async fn test_account_summary_multiple_currencies() -> Result<(), Box<dyn std::e
 async fn test_account_summary_consistency() -> Result<(), Box<dyn std::error::Error>> {
     check_env_file()?;
 
-    let _ = tracing_subscriber::fmt()
-        .with_env_filter("debug")
-        .try_init();
-
     info!("Starting account summary consistency test");
 
-    let client = DeribitHttpClient::new(true);
-    authenticate_client(&client).await?;
+    let client = DeribitHttpClient::new();
 
     // Get account summary multiple times to check consistency
     debug!("Getting first BTC account summary");

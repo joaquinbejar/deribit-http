@@ -30,8 +30,9 @@ impl DeribitHttpClient {
             .timeout(config.timeout)
             .user_agent(&config.user_agent)
             .build()
-            .map_err(|e| HttpError::NetworkError(e.to_string())).ok();
-        
+            .map_err(|e| HttpError::NetworkError(e.to_string()))
+            .ok();
+
         let client = if let Some(opt_client) = &opt_client {
             opt_client.clone()
         } else {

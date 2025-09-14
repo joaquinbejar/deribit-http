@@ -6,42 +6,20 @@
 //!
 //! Usage: cargo run --bin order_book_endpoints
 
+use deribit_base::prelude::setup_logger;
 use deribit_http::DeribitHttpClient;
-use std::env;
 use tracing::{info, warn};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Initialize logging
-    tracing_subscriber::fmt()
-        .with_target(false)
-        .with_thread_ids(false)
-        .with_file(false)
-        .with_line_number(false)
-        .init();
-
+    setup_logger();
     info!("🚀 Deribit HTTP Client - Order Book Endpoints Example");
     info!("=====================================================");
     println!();
 
-    // Determine if we should use testnet or production
-    let use_testnet = env::var("DERIBIT_TESTNET")
-        .map(|val| val.to_lowercase() == "true")
-        .unwrap_or(true); // Default to testnet for safety
-
-    info!(
-        "🌐 Environment: {}",
-        if use_testnet { "Testnet" } else { "Production" }
-    );
-
     // Create HTTP client
-    let client = DeribitHttpClient::new(use_testnet);
-    info!(
-        "✅ HTTP client created for {}: {}",
-        if use_testnet { "testnet" } else { "production" },
-        client.base_url()
-    );
-    println!();
+    let client = DeribitHttpClient::new();
 
     // =================================================================
     // 1. GET ORDER BOOK BY INSTRUMENT NAME (/public/get_order_book)
@@ -221,7 +199,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 for instrument in instruments.iter().take(10) {
                     // Check first 10 instruments
                     if let Some(id) = instrument.instrument_id {
-                        valid_ids.push(id as u32);
+                        valid_ids.push(id);
                         if valid_ids.len() >= 5 {
                             break; // We only need a few for testing
                         }
@@ -327,8 +305,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             // Find the first instrument with an ID
             if let Some(instrument) = instruments.iter().find(|inst| inst.instrument_id.is_some()) {
                 if let Some(test_id) = instrument.instrument_id {
-                    let test_id = test_id as u32;
-
                     // Test with custom depth
                     match client
                         .get_order_book_by_instrument_id(test_id, Some(15))
@@ -346,7 +322,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                                 order_book.asks.len()
                             );
 
-                            if order_book.bids.len() > 10 && order_book.asks.len() > 0 {
+                            if order_book.bids.len() > 10 && !order_book.asks.is_empty() {
                                 info!("📈 Deep market analysis:");
                                 let mid_market =
                                     (order_book.bids[0].price + order_book.asks[0].price) / 2.0;

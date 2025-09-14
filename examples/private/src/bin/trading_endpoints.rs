@@ -14,88 +14,23 @@
 //!
 //! Then run: cargo run --bin trading_endpoints
 
+use deribit_base::prelude::setup_logger;
 use deribit_http::{
     BuyOrderRequest, DeribitHttpClient, EditOrderRequest, HttpError, OrderType, SellOrderRequest,
     TimeInForce,
 };
-use std::env;
-use std::path::Path;
 use tracing::{error, info, warn};
 
 #[tokio::main]
 async fn main() -> Result<(), HttpError> {
     // Initialize logging
-    tracing_subscriber::fmt().with_env_filter("debug").init();
-
-    // Check if .env file exists
-    if !Path::new("../../.env").exists() {
-        return Err(HttpError::ConfigError(
-            "Missing .env file. Please create one with DERIBIT_CLIENT_ID and DERIBIT_CLIENT_SECRET"
-                .to_string(),
-        ));
-    }
-
-    // Load environment variables
-    dotenv::dotenv().ok();
-
+    setup_logger();
     info!("🚀 Deribit HTTP Client - Trading Endpoints Example");
     info!("==================================================");
     println!();
 
-    // Get authentication credentials from environment
-    // Check environment variables
-    let client_id = env::var("DERIBIT_CLIENT_ID").map_err(|_| {
-        HttpError::ConfigError("DERIBIT_CLIENT_ID not found in environment variables".to_string())
-    })?;
-    let client_secret = env::var("DERIBIT_CLIENT_SECRET").map_err(|_| {
-        HttpError::ConfigError(
-            "DERIBIT_CLIENT_SECRET not found in environment variables".to_string(),
-        )
-    })?;
-
-    // Determine if we should use testnet or production
-    let use_testnet = env::var("DERIBIT_TESTNET")
-        .map(|val| val.to_lowercase() == "true")
-        .unwrap_or(true); // Default to testnet for safety
-
-    info!(
-        "🌐 Environment: {}",
-        if use_testnet { "Testnet" } else { "Production" }
-    );
-
     // Create HTTP client
-    let client = DeribitHttpClient::new(use_testnet);
-    info!(
-        "✅ HTTP client created for {}: {}",
-        if use_testnet { "testnet" } else { "production" },
-        client.base_url()
-    );
-    println!();
-
-    // =================================================================
-    // AUTHENTICATION
-    // =================================================================
-    info!("🔐 AUTHENTICATING WITH OAUTH2");
-    info!("------------------------------");
-
-    match client.authenticate_oauth2(&client_id, &client_secret).await {
-        Ok(auth_token) => {
-            info!("✅ Authentication successful");
-            info!(
-                "🎫 Access token expires in: {} seconds",
-                auth_token.expires_in
-            );
-            info!(
-                "🔄 Refresh token available: {}",
-                auth_token.refresh_token.is_some()
-            );
-        }
-        Err(e) => {
-            error!("❌ Authentication failed: {}", e);
-            return Err(e.into());
-        }
-    }
-    println!();
+    let client = DeribitHttpClient::new();
 
     // =================================================================
     // 1. PLACE BUY ORDER (/private/buy)
@@ -126,7 +61,7 @@ async fn main() -> Result<(), HttpError> {
         }
         Err(e) => {
             error!("❌ Failed to place buy order: {}", e);
-            return Err(e.into());
+            return Err(e);
         }
     };
     println!();
@@ -160,7 +95,7 @@ async fn main() -> Result<(), HttpError> {
         }
         Err(e) => {
             error!("❌ Failed to place sell order: {}", e);
-            return Err(e.into());
+            return Err(e);
         }
     };
     println!();

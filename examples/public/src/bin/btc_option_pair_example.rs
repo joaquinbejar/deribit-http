@@ -11,7 +11,6 @@
 
 use deribit_base::prelude::*;
 use deribit_http::DeribitHttpClient;
-use std::env;
 use tracing::{info, warn};
 
 #[tokio::main]
@@ -23,24 +22,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     info!("📅 Target Expiry: 10SEP25");
     println!();
 
-    // Determine if we should use testnet or production
-    let use_testnet = env::var("DERIBIT_TESTNET")
-        .map(|val| val.to_lowercase() == "true")
-        .unwrap_or(true); // Default to testnet for safety
-
-    info!(
-        "🌐 Environment: {}",
-        if use_testnet { "Testnet" } else { "Production" }
-    );
-
     // Create HTTP client
-    let client = DeribitHttpClient::new(use_testnet);
-    info!(
-        "✅ HTTP client created for {}: {}",
-        if use_testnet { "testnet" } else { "production" },
-        client.base_url()
-    );
-    println!();
+    let client = DeribitHttpClient::new();
 
     // Target expiry date
     let target_expiry = "10SEP25";
@@ -51,7 +34,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     info!("📋 1. FETCHING BTC OPTION PAIRS FOR {}", target_expiry);
     info!("-----------------------------------------------");
     // Fetch option pairs for the target expiry
-    let option_pairs = client.get_options_pair("BTC", &target_expiry).await?;
+    let option_pairs = client.get_options_pair("BTC", target_expiry).await?;
     info!(
         "✅ Successfully fetched {} option pairs",
         option_pairs.len()
@@ -306,15 +289,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     info!("📅 Expiry Date: {} (2025-09-10)", target_expiry);
 
     // Get underlying price from any available ticker
-    if let Some(pair) = option_pairs.values().next() {
-        if let Some(underlying_price) = pair
+    if let Some(pair) = option_pairs.values().next()
+        && let Some(underlying_price) = pair
             .call
             .as_ref()
             .and_then(|c| c.ticker.underlying_price)
             .or_else(|| pair.put.as_ref().and_then(|p| p.ticker.underlying_price))
-        {
-            info!("💰 Underlying BTC Price: ${:.2}", underlying_price);
-        }
+    {
+        info!("💰 Underlying BTC Price: ${:.2}", underlying_price);
     }
 
     println!();

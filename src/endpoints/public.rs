@@ -28,7 +28,7 @@ impl DeribitHttpClient {
     /// # use deribit_http::DeribitHttpClient;
     /// # #[tokio::main]
     /// # async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    /// let client = DeribitHttpClient::new(true); // testnet
+    /// let client = DeribitHttpClient::new(); // testnet
     /// let currencies = client.get_currencies().await?;
     /// for currency in currencies {
     ///     println!("Currency: {} ({})", currency.currency, currency.currency_long);
@@ -136,7 +136,7 @@ impl DeribitHttpClient {
     /// # use deribit_http::DeribitHttpClient;
     /// # #[tokio::main]
     /// # async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    /// let client = DeribitHttpClient::new(true); // testnet
+    /// let client = DeribitHttpClient::new(); // testnet
     /// let index_price = client.get_index_price("btc_usd").await?;
     /// println!("Index price: {}", index_price.index_price);
     /// # Ok(())
@@ -195,7 +195,7 @@ impl DeribitHttpClient {
     /// # use deribit_http::DeribitHttpClient;
     /// # #[tokio::main]
     /// # async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    /// let client = DeribitHttpClient::new(true); // testnet
+    /// let client = DeribitHttpClient::new(); // testnet
     /// let index_names = client.get_index_price_names().await?;
     /// for name in index_names {
     ///     println!("Index: {}", name);
@@ -258,7 +258,7 @@ impl DeribitHttpClient {
     /// # use deribit_http::DeribitHttpClient;
     /// # #[tokio::main]
     /// # async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    /// let client = DeribitHttpClient::new(true); // testnet
+    /// let client = DeribitHttpClient::new(); // testnet
     /// let summaries = client.get_book_summary_by_currency("BTC", Some("future")).await?;
     /// for summary in summaries {
     ///     println!("Instrument: {} - Volume: {}", summary.instrument_name, summary.volume);
@@ -331,7 +331,7 @@ impl DeribitHttpClient {
     /// # use deribit_http::DeribitHttpClient;
     /// # #[tokio::main]
     /// # async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    /// let client = DeribitHttpClient::new(true); // testnet
+    /// let client = DeribitHttpClient::new(); // testnet
     /// let instrument = client.get_instrument("BTC-PERPETUAL").await?;
     /// println!("Contract size: {:?}", instrument.contract_size);
     /// # Ok(())
@@ -455,7 +455,7 @@ impl DeribitHttpClient {
     /// # use deribit_http::DeribitHttpClient;
     /// # #[tokio::main]
     /// # async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    /// let client = DeribitHttpClient::new(true); // testnet
+    /// let client = DeribitHttpClient::new(); // testnet
     /// let contract_size = client.get_contract_size("BTC-PERPETUAL").await?;
     /// println!("Contract size: {}", contract_size);
     /// # Ok(())
@@ -517,7 +517,7 @@ impl DeribitHttpClient {
     /// # use deribit_http::DeribitHttpClient;
     /// # #[tokio::main]
     /// # async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    /// let client = DeribitHttpClient::new(true); // testnet
+    /// let client = DeribitHttpClient::new(); // testnet
     /// let server_time = client.get_server_time().await?;
     /// println!("Server time: {}", server_time);
     /// # Ok(())
@@ -742,7 +742,7 @@ impl DeribitHttpClient {
     /// # use deribit_http::DeribitHttpClient;
     /// # #[tokio::main]
     /// # async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    /// let client = DeribitHttpClient::new(true);
+    /// let client = DeribitHttpClient::new();
     /// let ticker = client.get_ticker("BTC-PERPETUAL").await?;
     /// println!("Last price: {:?}", ticker.last_price);
     /// # Ok(())
@@ -938,7 +938,7 @@ impl DeribitHttpClient {
     /// # use deribit_http::DeribitHttpClient;
     /// # #[tokio::main]
     /// # async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    /// let client = DeribitHttpClient::new(true);
+    /// let client = DeribitHttpClient::new();
     /// let pairs = client.get_options_pair("BTC", "10SEP25").await?;
     ///
     /// for (strike, pair) in pairs {
@@ -1164,7 +1164,7 @@ impl DeribitHttpClient {
     /// ```rust
     /// use deribit_http::DeribitHttpClient;
     ///
-    /// let client = DeribitHttpClient::new(true);
+    /// let client = DeribitHttpClient::new();
     /// // let volatility = client.get_historical_volatility("BTC").await?;
     /// // tracing::info!("Found {} volatility data points", volatility.len());
     /// ```
@@ -1227,7 +1227,7 @@ impl DeribitHttpClient {
     /// ```rust
     /// use deribit_http::DeribitHttpClient;
     ///
-    /// let client = DeribitHttpClient::new(true);
+    /// let client = DeribitHttpClient::new();
     /// // let funding_data = client.get_funding_chart_data("BTC-PERPETUAL", "8h").await?;
     /// // tracing::info!("Current interest: {}", funding_data.current_interest);
     /// ```
@@ -1294,7 +1294,7 @@ impl DeribitHttpClient {
     /// ```rust
     /// use deribit_http::DeribitHttpClient;
     ///
-    /// let client = DeribitHttpClient::new(true);
+    /// let client = DeribitHttpClient::new();
     /// // let chart_data = client.get_tradingview_chart_data("BTC-PERPETUAL", 1554373800000, 1554376800000, "30").await?;
     /// // tracing::info!("Chart status: {}", chart_data.status);
     /// ```
@@ -1366,7 +1366,7 @@ impl DeribitHttpClient {
     /// # use deribit_http::DeribitHttpClient;
     /// # #[tokio::main]
     /// # async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    /// let client = DeribitHttpClient::new(true); // testnet
+    /// let client = DeribitHttpClient::new(); // testnet
     /// let delivery_prices = client.get_delivery_prices("btc_usd", Some(5), Some(0)).await?;
     /// for price in delivery_prices.data {
     ///     println!("Date: {} - Price: {}", price.date, price.delivery_price);
@@ -1572,7 +1572,7 @@ impl DeribitHttpClient {
     /// # use deribit_http::DeribitHttpClient;
     /// # #[tokio::main]
     /// # async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    /// let client = DeribitHttpClient::new(true); // testnet
+    /// let client = DeribitHttpClient::new(); // testnet
     /// let funding_rate = client.get_funding_rate_value("BTC-PERPETUAL", 1569888000000, 1569974400000).await?;
     /// println!("Funding rate for period: {}", funding_rate);
     /// # Ok(())
@@ -1814,7 +1814,7 @@ impl DeribitHttpClient {
     /// # use deribit_http::DeribitHttpClient;
     /// # #[tokio::main]
     /// # async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    /// let client = DeribitHttpClient::new(true); // testnet
+    /// let client = DeribitHttpClient::new(); // testnet
     /// let trades = client.get_last_trades_by_currency("BTC", Some("future"), Some(10), Some(false), Some("desc")).await?;
     /// for trade in trades.trades {
     ///     println!("Trade: {} {} at {}", trade.amount, trade.instrument_name, trade.price);
@@ -1908,7 +1908,7 @@ impl DeribitHttpClient {
     /// # use deribit_http::DeribitHttpClient;
     /// # #[tokio::main]
     /// # async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    /// let client = DeribitHttpClient::new(true); // testnet
+    /// let client = DeribitHttpClient::new(); // testnet
     /// let trades = client.get_last_trades_by_currency_and_time("BTC", 1569888000000, 1569974400000, Some("future"), Some(10), Some(false), Some("desc")).await?;
     /// for trade in trades.trades {
     ///     println!("Trade: {} {} at {}", trade.amount, trade.instrument_name, trade.price);
@@ -2006,7 +2006,7 @@ impl DeribitHttpClient {
     /// # use deribit_http::DeribitHttpClient;
     /// # #[tokio::main]
     /// # async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    /// let client = DeribitHttpClient::new(true); // testnet
+    /// let client = DeribitHttpClient::new(); // testnet
     /// let trades = client.get_last_trades_by_instrument_and_time("BTC-PERPETUAL", 1569888000000, 1569974400000, Some(10), Some(false), Some("desc")).await?;
     /// for trade in trades.trades {
     ///     println!("Trade: {} at {} ({})", trade.amount, trade.price, trade.direction);
@@ -2094,7 +2094,7 @@ impl DeribitHttpClient {
     /// # use deribit_http::DeribitHttpClient;
     /// # #[tokio::main]
     /// # async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    /// let client = DeribitHttpClient::new(true); // testnet
+    /// let client = DeribitHttpClient::new(); // testnet
     /// let order_book = client.get_order_book_by_instrument_id(42, Some(5)).await?;
     /// println!("Order book for {}: {} bids, {} asks",
     ///          order_book.instrument_name,

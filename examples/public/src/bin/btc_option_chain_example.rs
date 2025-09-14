@@ -37,7 +37,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     );
 
     // Create HTTP client
-    let client = DeribitHttpClient::new(use_testnet);
+    let client = DeribitHttpClient::new();
     info!(
         "✅ HTTP client created for {}: {}",
         if use_testnet { "testnet" } else { "production" },
@@ -88,10 +88,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         // Show available expiry dates
         let mut expiry_dates: Vec<String> = Vec::new();
         for option in &all_btc_options {
-            if let Some(expiry) = extract_expiry_from_name(&option.instrument.instrument_name) {
-                if !expiry_dates.contains(&expiry) {
-                    expiry_dates.push(expiry);
-                }
+            if let Some(expiry) = extract_expiry_from_name(&option.instrument.instrument_name)
+                && !expiry_dates.contains(&expiry)
+            {
+                expiry_dates.push(expiry);
             }
         }
         expiry_dates.sort();
@@ -119,7 +119,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let mut parsed_options: Vec<ParsedOptionWithTicker> = option_chain
         .iter()
-        .filter_map(|option_instrument| parse_option_with_ticker(option_instrument))
+        .filter_map(parse_option_with_ticker)
         .collect();
 
     // Sort by strike price

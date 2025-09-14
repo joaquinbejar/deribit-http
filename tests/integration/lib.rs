@@ -18,15 +18,3 @@ pub mod order_management;
 pub mod position_management;
 pub mod session;
 pub mod wallet;
-
-// Re-export commonly used types and functions for tests
-pub use assert_json_diff;
-pub use deribit_base::error;
-pub use deribit_base::model;
-pub use deribit_http::client::DeribitHttpClient;
-pub use deribit_http::config::HttpConfig;
-pub use mockito;
-pub use pretty_assertions;
-pub use serde_json;
-pub use serial_test;
-pub use tokio;

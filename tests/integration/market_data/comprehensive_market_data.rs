@@ -7,50 +7,30 @@
 //! 4. Performance and response time testing
 //! 5. Cross-instrument data correlation
 
-use std::time::{Duration, Instant};
-use tokio::time::sleep;
-use tracing::{debug, info, warn};
 
+use tokio::time::{Duration, Instant, sleep};
+use tracing::{debug, info, warn};
 use deribit_http::DeribitHttpClient;
 
 #[tokio::test]
 #[serial_test::serial]
 async fn test_server_time_reliability() -> Result<(), Box<dyn std::error::Error>> {
-    let _ = tracing_subscriber::fmt()
-        .with_env_filter("debug")
-        .try_init();
-
-    info!("Starting server time reliability test");
-
-    let client = DeribitHttpClient::new(true);
+    let client = DeribitHttpClient::new();
 
     // Test multiple server time requests for consistency
     let num_requests = 10;
     let mut times = Vec::new();
     let mut request_durations = Vec::new();
 
-    debug!(
-        "Testing {} server time requests for reliability",
-        num_requests
-    );
-
     for i in 0..num_requests {
         let start_time = Instant::now();
         let result = client.get_server_time().await;
         let elapsed = start_time.elapsed();
-
         request_durations.push(elapsed);
 
         match result {
             Ok(time) => {
                 times.push(time);
-                debug!(
-                    "Server time request #{} succeeded in {:?}: {}",
-                    i + 1,
-                    elapsed,
-                    time
-                );
-
                 // Validate time is reasonable (not zero, not too far in future)
                 assert!(
                     time > 1_600_000_000_000,
@@ -162,13 +142,9 @@ async fn test_server_time_reliability() -> Result<(), Box<dyn std::error::Error>
 #[tokio::test]
 #[serial_test::serial]
 async fn test_instruments_data_validation() -> Result<(), Box<dyn std::error::Error>> {
-    let _ = tracing_subscriber::fmt()
-        .with_env_filter("debug")
-        .try_init();
+    // Starting instruments data validation test
 
-    info!("Starting instruments data validation test");
-
-    let client = DeribitHttpClient::new(true);
+    let client = DeribitHttpClient::new();
 
     // Test instruments for different currencies
     let currencies = vec!["BTC", "ETH", "USDC", "EURR"];
@@ -203,7 +179,7 @@ async fn test_instruments_data_validation() -> Result<(), Box<dyn std::error::Er
                         !instrument.instrument_name.is_empty(),
                         "Instrument name should not be empty"
                     );
-                    if let Some(ref base_currency) = instrument.currency {
+                    if let Some(base_currency) = &instrument.currency {
                         assert!(
                             !base_currency.is_empty(),
                             "Base currency should not be empty for {}",
@@ -289,13 +265,9 @@ async fn test_instruments_data_validation() -> Result<(), Box<dyn std::error::Er
 #[tokio::test]
 #[serial_test::serial]
 async fn test_ticker_data_consistency() -> Result<(), Box<dyn std::error::Error>> {
-    let _ = tracing_subscriber::fmt()
-        .with_env_filter("debug")
-        .try_init();
+    // Starting ticker data consistency test
 
-    info!("Starting ticker data consistency test");
-
-    let client = DeribitHttpClient::new(true);
+    let client = DeribitHttpClient::new();
 
     // Test ticker data for popular instruments
     let instruments = vec![
@@ -415,13 +387,9 @@ async fn test_ticker_data_consistency() -> Result<(), Box<dyn std::error::Error>
 #[tokio::test]
 #[serial_test::serial]
 async fn test_order_book_data_validation() -> Result<(), Box<dyn std::error::Error>> {
-    let _ = tracing_subscriber::fmt()
-        .with_env_filter("debug")
-        .try_init();
+    // Starting order book data validation test
 
-    info!("Starting order book data validation test");
-
-    let client = DeribitHttpClient::new(true);
+    let client = DeribitHttpClient::new();
 
     // Test order book for liquid instruments
     let instruments = vec!["BTC-PERPETUAL", "ETH-PERPETUAL"];
@@ -567,13 +535,9 @@ async fn test_order_book_data_validation() -> Result<(), Box<dyn std::error::Err
 #[tokio::test]
 #[serial_test::serial]
 async fn test_market_data_performance() -> Result<(), Box<dyn std::error::Error>> {
-    let _ = tracing_subscriber::fmt()
-        .with_env_filter("debug")
-        .try_init();
+    // Starting market data performance test
 
-    info!("Starting market data performance test");
-
-    let client = DeribitHttpClient::new(true);
+    let client = DeribitHttpClient::new();
 
     // Test performance of different market data endpoints
     let performance_tests: Vec<(
@@ -748,13 +712,9 @@ async fn test_market_data_performance() -> Result<(), Box<dyn std::error::Error>
 #[tokio::test]
 #[serial_test::serial]
 async fn test_market_data_edge_cases() -> Result<(), Box<dyn std::error::Error>> {
-    let _ = tracing_subscriber::fmt()
-        .with_env_filter("debug")
-        .try_init();
+    // Starting market data edge cases test
 
-    info!("Starting market data edge cases test");
-
-    let client = DeribitHttpClient::new(true);
+    let client = DeribitHttpClient::new();
 
     // Test edge cases and error scenarios
     let edge_cases: Vec<(

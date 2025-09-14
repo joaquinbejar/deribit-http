@@ -37,10 +37,10 @@ async fn main() -> Result<(), HttpError> {
     println!();
 
     // Get authentication credentials from environment
-    let client_id = env::var("DERIBIT_CLIENT_ID").map_err(|_| {
-        HttpError::ConfigError("DERIBIT_CLIENT_ID not found in environment variables".to_string())
+    let _client_id = env::var("DERIBIT_CLIENT_ID").map_err(|_| {
+        HttpError::ConfigError("Missing DERIBIT_CLIENT_ID environment variable".to_string())
     })?;
-    let client_secret = env::var("DERIBIT_CLIENT_SECRET").map_err(|_| {
+    let _client_secret = env::var("DERIBIT_CLIENT_SECRET").map_err(|_| {
         HttpError::ConfigError(
             "DERIBIT_CLIENT_SECRET not found in environment variables".to_string(),
         )

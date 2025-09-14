@@ -4,46 +4,24 @@
 //! - `/public/get_time` - Server time
 //! - `/public/status` - Platform status and locked currencies
 //! - `/public/test` - Connectivity test
-//! Note: `/public/hello` is WebSocket-only and not available in HTTP client
+//!   Note: `/public/hello` is WebSocket-only and not available in HTTP client
 //!
 //! Usage: cargo run --bin public_endpoints
 
+use deribit_base::prelude::setup_logger;
 use deribit_http::DeribitHttpClient;
-use std::env;
 use tracing::{error, info};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Initialize logging
-    tracing_subscriber::fmt()
-        .with_target(false)
-        .with_thread_ids(false)
-        .with_file(false)
-        .with_line_number(false)
-        .init();
-
+    setup_logger();
     info!("🚀 Deribit HTTP Client - Public Endpoints Example");
     info!("==================================================");
     println!();
 
-    // Determine if we should use testnet or production
-    let use_testnet = env::var("DERIBIT_TESTNET")
-        .map(|val| val.to_lowercase() == "true")
-        .unwrap_or(true); // Default to testnet for safety
-
-    info!(
-        "🌐 Environment: {}",
-        if use_testnet { "Testnet" } else { "Production" }
-    );
-
     // Create HTTP client
-    let client = DeribitHttpClient::new(use_testnet);
-    info!(
-        "✅ HTTP client created for {}: {}",
-        if use_testnet { "testnet" } else { "production" },
-        client.base_url()
-    );
-    println!();
+    let client = DeribitHttpClient::new();
 
     // =================================================================
     // 1. GET SERVER TIME (/public/get_time)

@@ -20,93 +20,25 @@
 //!
 //! Then run: cargo run --bin user_trades_endpoints
 
+use deribit_base::prelude::setup_logger;
 use deribit_http::{
     BuyOrderRequest, DeribitHttpClient, HttpError, OrderType, SellOrderRequest, TimeInForce,
 };
-use std::env;
-use std::path::Path;
 use std::time::{SystemTime, UNIX_EPOCH};
 use tokio::time::{Duration, sleep};
-use tracing::{error, info, warn};
+use tracing::{info, warn};
 
 #[tokio::main]
 async fn main() -> Result<(), HttpError> {
     // Initialize logging
-    tracing_subscriber::fmt()
-        .with_target(false)
-        .with_thread_ids(false)
-        .with_file(false)
-        .with_line_number(false)
-        .init();
-
-    // Check if .env file exists
-    if !Path::new(".env").exists() {
-        return Err(HttpError::ConfigError(
-            "Missing .env file. Please create one with DERIBIT_CLIENT_ID and DERIBIT_CLIENT_SECRET"
-                .to_string(),
-        ));
-    }
-
-    // Load environment variables
-    dotenv::dotenv().ok();
+    setup_logger();
 
     info!("🚀 Deribit HTTP Client - User Trades Endpoints Example");
     info!("======================================================");
     println!();
 
-    // Get authentication credentials from environment
-    let client_id = env::var("DERIBIT_CLIENT_ID").map_err(|_| {
-        HttpError::ConfigError("DERIBIT_CLIENT_ID not found in environment variables".to_string())
-    })?;
-    let client_secret = env::var("DERIBIT_CLIENT_SECRET").map_err(|_| {
-        HttpError::ConfigError(
-            "DERIBIT_CLIENT_SECRET not found in environment variables".to_string(),
-        )
-    })?;
-
-    // Determine if we should use testnet or production
-    let use_testnet = env::var("DERIBIT_TESTNET")
-        .map(|val| val.to_lowercase() == "true")
-        .unwrap_or(true); // Default to testnet for safety
-
-    info!(
-        "🌐 Environment: {}",
-        if use_testnet { "Testnet" } else { "Production" }
-    );
-
     // Create HTTP client
-    let client = DeribitHttpClient::new(use_testnet);
-    info!(
-        "✅ HTTP client created for {}: {}",
-        if use_testnet { "testnet" } else { "production" },
-        client.base_url()
-    );
-    println!();
-
-    // =================================================================
-    // AUTHENTICATION
-    // =================================================================
-    info!("🔐 AUTHENTICATING WITH OAUTH2");
-    info!("------------------------------");
-
-    match client.authenticate_oauth2(&client_id, &client_secret).await {
-        Ok(auth_token) => {
-            info!("✅ Authentication successful");
-            info!(
-                "🎫 Access token expires in: {} seconds",
-                auth_token.expires_in
-            );
-            info!(
-                "🔄 Refresh token available: {}",
-                auth_token.refresh_token.is_some()
-            );
-        }
-        Err(e) => {
-            error!("❌ Authentication failed: {}", e);
-            return Err(e);
-        }
-    }
-    println!();
+    let client = DeribitHttpClient::new();
 
     // =================================================================
     // SETUP: GET CURRENT MARKET PRICES FOR REALISTIC ORDER PLACEMENT
@@ -199,7 +131,7 @@ async fn main() -> Result<(), HttpError> {
         if side == "buy" {
             let buy_request = BuyOrderRequest {
                 instrument_name: instrument.to_string(),
-                amount: amount,
+                amount,
                 type_: Some(OrderType::Limit),
                 price: Some(price),
                 label: Some(label.to_string()),
@@ -231,7 +163,7 @@ async fn main() -> Result<(), HttpError> {
         } else {
             let sell_request = SellOrderRequest {
                 instrument_name: instrument.to_string(),
-                amount: amount,
+                amount,
                 type_: Some(OrderType::Limit),
                 price: Some(price),
                 label: Some(label.to_string()),

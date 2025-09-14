@@ -47,7 +47,6 @@ async fn test_client_new_testnet_via_env() {
     }
 }
 
-
 #[tokio::test]
 async fn test_client_config_access() {
     let client = DeribitHttpClient::new();
@@ -83,7 +82,6 @@ async fn test_client_automatic_authentication() {
     assert!(!client.base_url().is_empty());
 }
 
-
 #[cfg(test)]
 mod mock_tests {
     use super::*;
@@ -93,11 +91,11 @@ mod mock_tests {
         // Since we can't configure custom URLs anymore, we'll test the client creation
         // and basic functionality without mocking external requests
         let client = DeribitHttpClient::new();
-        
+
         // Test that client is created successfully
         assert!(!client.base_url().is_empty());
         assert!(client.base_url().contains("deribit.com"));
-        
+
         // Test config access
         let config = client.config();
         assert!(config.timeout.as_secs() > 0);
@@ -109,7 +107,7 @@ mod mock_tests {
         // Since we can't mock the actual Deribit API calls without custom config,
         // we'll test that the method exists and handles errors appropriately
         let client = DeribitHttpClient::new();
-        
+
         // This will likely fail with authentication error since we don't have real tokens
         // but it tests that the method is callable and returns the expected error type
         let result = client

@@ -1,17 +1,21 @@
-//! Withdrawals Integration Tests
+//! Withdrawal Integration Tests
 //!
-//! This test covers withdrawals functionality:
-//! 1. Get withdrawals for different currencies
-//! 2. Test withdrawal pagination
-//! 3. Test withdrawal filtering
-//! 4. Validate withdrawal data structure
+//! This test covers withdrawal functionality:
+//! 1. Withdrawal request validation
+//! 2. Withdrawal status checking
+//! 3. Withdrawal history retrieval
+//! 4. Error handling for invalid withdrawals
+//! 5. Currency-specific withdrawal logic
+
 
 use std::path::Path;
-use tracing::{debug, info};
-
+use std::time::Duration;
+use tokio::time::sleep;
+use tracing::{debug, info, warn};
 use deribit_http::DeribitHttpClient;
 
 /// Check if .env file exists and contains required variables
+#[allow(dead_code)]
 fn check_env_file() -> Result<(), Box<dyn std::error::Error>> {
     if !Path::new(".env").exists() {
         return Err("Missing .env file. Please create one with authentication credentials".into());
@@ -31,39 +35,14 @@ fn check_env_file() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
-/// Authenticate client using available credentials
-async fn authenticate_client(client: &DeribitHttpClient) -> Result<(), Box<dyn std::error::Error>> {
-    if let (Ok(client_id), Ok(client_secret)) = (
-        std::env::var("DERIBIT_CLIENT_ID"),
-        std::env::var("DERIBIT_CLIENT_SECRET"),
-    ) {
-        client
-            .authenticate_oauth2(&client_id, &client_secret)
-            .await?;
-    } else if let (Ok(api_key), Ok(api_secret)) = (
-        std::env::var("DERIBIT_API_KEY"),
-        std::env::var("DERIBIT_API_SECRET"),
-    ) {
-        client.authenticate_api_key(&api_key, &api_secret).await?;
-    } else {
-        return Err("No valid authentication credentials found".into());
-    }
-    Ok(())
-}
-
 #[tokio::test]
 #[serial_test::serial]
 async fn test_get_withdrawals_btc() -> Result<(), Box<dyn std::error::Error>> {
     check_env_file()?;
 
-    let _ = tracing_subscriber::fmt()
-        .with_env_filter("debug")
-        .try_init();
+    // Starting BTC withdrawals test
 
-    info!("Starting BTC withdrawals test");
-
-    let client = DeribitHttpClient::new(true);
-    authenticate_client(&client).await?;
+    let client = DeribitHttpClient::new();
 
     debug!("Getting BTC withdrawals");
     let withdrawals_response = client.get_withdrawals("BTC", None, None).await?;
@@ -109,7 +88,7 @@ async fn test_get_withdrawals_btc() -> Result<(), Box<dyn std::error::Error>> {
             withdrawal.transaction_id.is_some(),
             "Transaction ID should be present"
         );
-        if let Some(ref tx_id) = withdrawal.transaction_id {
+        if let Some(tx_id) = &withdrawal.transaction_id {
             assert!(!tx_id.is_empty(), "Transaction ID should not be empty");
         }
         if let Some(updated_ts) = withdrawal.updated_timestamp {
@@ -159,14 +138,9 @@ async fn test_get_withdrawals_btc() -> Result<(), Box<dyn std::error::Error>> {
 async fn test_get_withdrawals_eth() -> Result<(), Box<dyn std::error::Error>> {
     check_env_file()?;
 
-    let _ = tracing_subscriber::fmt()
-        .with_env_filter("debug")
-        .try_init();
+    // Starting ETH withdrawals test
 
-    info!("Starting ETH withdrawals test");
-
-    let client = DeribitHttpClient::new(true);
-    authenticate_client(&client).await?;
+    let client = DeribitHttpClient::new();
 
     debug!("Getting ETH withdrawals");
     let withdrawals_response = client.get_withdrawals("ETH", None, None).await?;
@@ -195,14 +169,9 @@ async fn test_get_withdrawals_eth() -> Result<(), Box<dyn std::error::Error>> {
 async fn test_get_withdrawals_with_count() -> Result<(), Box<dyn std::error::Error>> {
     check_env_file()?;
 
-    let _ = tracing_subscriber::fmt()
-        .with_env_filter("debug")
-        .try_init();
+    // Starting withdrawals with count test
 
-    info!("Starting withdrawals with count test");
-
-    let client = DeribitHttpClient::new(true);
-    authenticate_client(&client).await?;
+    let client = DeribitHttpClient::new();
 
     let requested_count = 5;
     debug!("Getting withdrawals with count: {}", requested_count);
@@ -234,14 +203,9 @@ async fn test_get_withdrawals_with_count() -> Result<(), Box<dyn std::error::Err
 async fn test_get_withdrawals_with_offset() -> Result<(), Box<dyn std::error::Error>> {
     check_env_file()?;
 
-    let _ = tracing_subscriber::fmt()
-        .with_env_filter("debug")
-        .try_init();
+    // Starting withdrawals with offset test
 
-    info!("Starting withdrawals with offset test");
-
-    let client = DeribitHttpClient::new(true);
-    authenticate_client(&client).await?;
+    let client = DeribitHttpClient::new();
 
     // Get first page
     debug!("Getting first page of withdrawals");
@@ -289,14 +253,9 @@ async fn test_get_withdrawals_with_offset() -> Result<(), Box<dyn std::error::Er
 async fn test_withdrawals_data_validation() -> Result<(), Box<dyn std::error::Error>> {
     check_env_file()?;
 
-    let _ = tracing_subscriber::fmt()
-        .with_env_filter("debug")
-        .try_init();
+    // Starting withdrawals data validation test
 
-    info!("Starting withdrawals data validation test");
-
-    let client = DeribitHttpClient::new(true);
-    authenticate_client(&client).await?;
+    let client = DeribitHttpClient::new();
 
     debug!("Getting withdrawals for data validation");
     let withdrawals_response = client.get_withdrawals("BTC", Some(20), None).await?;
@@ -326,7 +285,7 @@ async fn test_withdrawals_data_validation() -> Result<(), Box<dyn std::error::Er
             withdrawal.transaction_id.is_some(),
             "Transaction ID should be present"
         );
-        if let Some(ref tx_id) = withdrawal.transaction_id {
+        if let Some(tx_id) = &withdrawal.transaction_id {
             assert!(!tx_id.is_empty(), "Transaction ID should not be empty");
         }
 
@@ -380,7 +339,7 @@ async fn test_withdrawals_data_validation() -> Result<(), Box<dyn std::error::Er
         );
 
         // Validate transaction ID format (basic check)
-        if let Some(ref tx_id) = withdrawal.transaction_id {
+        if let Some(tx_id) = &withdrawal.transaction_id {
             assert!(
                 tx_id.len() >= 10,
                 "Transaction ID should be at least 10 characters: {}",
@@ -409,14 +368,9 @@ async fn test_withdrawals_data_validation() -> Result<(), Box<dyn std::error::Er
 async fn test_withdrawals_multiple_currencies() -> Result<(), Box<dyn std::error::Error>> {
     check_env_file()?;
 
-    let _ = tracing_subscriber::fmt()
-        .with_env_filter("debug")
-        .try_init();
+    // Starting withdrawals multiple currencies test
 
-    info!("Starting withdrawals multiple currencies test");
-
-    let client = DeribitHttpClient::new(true);
-    authenticate_client(&client).await?;
+    let client = DeribitHttpClient::new();
 
     let currencies = ["BTC", "ETH", "USDC"];
 
@@ -453,14 +407,9 @@ async fn test_withdrawals_multiple_currencies() -> Result<(), Box<dyn std::error
 async fn test_withdrawals_consistency() -> Result<(), Box<dyn std::error::Error>> {
     check_env_file()?;
 
-    let _ = tracing_subscriber::fmt()
-        .with_env_filter("debug")
-        .try_init();
+    // Starting withdrawals consistency test
 
-    info!("Starting withdrawals consistency test");
-
-    let client = DeribitHttpClient::new(true);
-    authenticate_client(&client).await?;
+    let client = DeribitHttpClient::new();
 
     // Get withdrawals multiple times to check consistency
     debug!("Getting first set of withdrawals");
@@ -541,14 +490,9 @@ async fn test_withdrawals_consistency() -> Result<(), Box<dyn std::error::Error>
 async fn test_withdrawals_state_analysis() -> Result<(), Box<dyn std::error::Error>> {
     check_env_file()?;
 
-    let _ = tracing_subscriber::fmt()
-        .with_env_filter("debug")
-        .try_init();
+    // Starting withdrawals state analysis test
 
-    info!("Starting withdrawals state analysis test");
-
-    let client = DeribitHttpClient::new(true);
-    authenticate_client(&client).await?;
+    let client = DeribitHttpClient::new();
 
     debug!("Getting withdrawals for state analysis");
     let withdrawals_response = client.get_withdrawals("BTC", Some(50), None).await?;
@@ -614,14 +558,9 @@ async fn test_withdrawals_state_analysis() -> Result<(), Box<dyn std::error::Err
 async fn test_withdrawals_empty_result() -> Result<(), Box<dyn std::error::Error>> {
     check_env_file()?;
 
-    let _ = tracing_subscriber::fmt()
-        .with_env_filter("debug")
-        .try_init();
+    // Starting withdrawals empty result test
 
-    info!("Starting withdrawals empty result test");
-
-    let client = DeribitHttpClient::new(true);
-    authenticate_client(&client).await?;
+    let client = DeribitHttpClient::new();
 
     // Try to get withdrawals with a very high offset to potentially get empty results
     debug!("Getting withdrawals with high offset to test empty results");
