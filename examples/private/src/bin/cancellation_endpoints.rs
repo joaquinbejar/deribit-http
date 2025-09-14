@@ -52,18 +52,7 @@ async fn main() -> Result<(), HttpError> {
     println!();
 
     // Create HTTP client
-    let client = DeribitHttpClient::new(testnet);
-
-    // Authenticate
-    info!("🔐 Authenticating with OAuth2...");
-    match client.authenticate_oauth2(&client_id, &client_secret).await {
-        Ok(_) => info!("✅ Authentication successful"),
-        Err(e) => {
-            error!("❌ Authentication failed: {}", e);
-            return Err(e);
-        }
-    }
-    println!();
+    let client = DeribitHttpClient::default();
 
     // =================================================================
     // 1. CREATE A TEST ORDER TO CANCEL

@@ -57,37 +57,12 @@ async fn main() -> Result<(), HttpError> {
     );
 
     // Create HTTP client
-    let client = DeribitHttpClient::new(use_testnet);
+    let client = DeribitHttpClient::default();
     info!(
         "✅ HTTP client created for {}: {}",
         if use_testnet { "testnet" } else { "production" },
         client.base_url()
     );
-    println!();
-
-    // =================================================================
-    // AUTHENTICATION
-    // =================================================================
-    info!("🔐 AUTHENTICATING WITH OAUTH2");
-    info!("------------------------------");
-
-    match client.authenticate_oauth2(&client_id, &client_secret).await {
-        Ok(auth_token) => {
-            info!("✅ Authentication successful");
-            info!(
-                "🎫 Access token expires in: {} seconds",
-                auth_token.expires_in
-            );
-            info!(
-                "🔄 Refresh token available: {}",
-                auth_token.refresh_token.is_some()
-            );
-        }
-        Err(e) => {
-            error!("❌ Authentication failed: {}", e);
-            return Err(e);
-        }
-    }
     println!();
 
     // =================================================================
