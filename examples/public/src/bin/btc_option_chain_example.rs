@@ -15,6 +15,7 @@ use deribit_http::DeribitHttpClient;
 use pretty_simple_display::{DebugPretty, DisplaySimple};
 use serde::Serialize;
 use tracing::{error, info, warn};
+use deribit_http::utils::get_tomorrow_deribit_format;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -22,9 +23,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     setup_logger();
     info!("🚀 Deribit HTTP Client - BTC Option Chain Example");
     info!("=================================================");
-    info!("📅 Target Expiry: 2025-09-15");
-    println!();
     
+    // Calculate tomorrow's date in Deribit format
+    let expiry = get_tomorrow_deribit_format();
+    let target_expiry = expiry.as_str();
+    info!("📅 Target Expiry: {}", target_expiry);
+    println!();
 
     // Create HTTP client
     let client = DeribitHttpClient::new();
@@ -36,7 +40,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     info!("📋 1. FETCHING ALL BTC OPTIONS WITH TICKER DATA");
     info!("-----------------------------------------------");
 
-    let all_btc_options = match client.get_options("BTC", "10SEP25").await {
+    let all_btc_options = match client.get_options("BTC", target_expiry).await {
         Ok(options) => {
             info!(
                 "✅ Successfully fetched {} BTC options with ticker data",
@@ -51,13 +55,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     };
 
     // =================================================================
-    // 2. FILTER BY EXPIRY DATE (2025-09-15)
+    // 2. FILTER BY EXPIRY DATE 
     // =================================================================
     info!("🔍 2. FILTERING BY EXPIRY DATE");
     info!("------------------------------");
 
-    // Convert target date to Deribit format (10SEP25)
-    let target_expiry = "15SEP25";
     info!("🎯 Looking for options with expiry: {}", target_expiry);
 
     let option_chain: Vec<OptionInstrument> = all_btc_options
@@ -234,11 +236,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         info!("🎯 Total Strikes: {}", strikes.len());
         info!("📞 Call Options: {}", calls.len());
         info!("📉 Put Options: {}", puts.len());
-        info!("📅 Expiry Date: {} (2025-09-10)", target_expiry);
-
-        // Calculate days to expiry (approximate)
-        let days_to_expiry = calculate_days_to_expiry("2025-09-10");
-        info!("⏰ Days to Expiry: ~{}", days_to_expiry);
+        info!("📅 Expiry Date: {}", target_expiry);
     }
 
     println!();
@@ -274,7 +272,6 @@ struct ParsedOptionWithTicker {
 fn parse_option_with_ticker(
     option_instrument: &OptionInstrument,
 ) -> Option<ParsedOptionWithTicker> {
-    // Parse instrument name format: BTC-10SEP25-60000-C
     let parts: Vec<&str> = option_instrument
         .instrument
         .instrument_name
@@ -310,9 +307,6 @@ fn extract_expiry_from_name(instrument_name: &str) -> Option<String> {
     }
 }
 
-fn calculate_days_to_expiry(_target_date: &str) -> i64 {
-    // Simple approximation - in a real implementation you'd use proper date parsing
-    // For 2025-09-10, assuming current date is around 2025-01-01
-    // This is just for demonstration
-    250 // Approximate days to September 2025
-}
+
+
+

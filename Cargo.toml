@@ -34,6 +34,7 @@ urlencoding = { workspace = true }
 url = { workspace = true }
 pretty-simple-display = { workspace = true }
 dotenv = { workspace = true }
+chrono = { workspace = true }
 
 [dev-dependencies]
 mockito = "1.7"

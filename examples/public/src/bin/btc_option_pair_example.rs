@@ -12,21 +12,22 @@
 use deribit_base::prelude::*;
 use deribit_http::DeribitHttpClient;
 use tracing::{info, warn};
+use deribit_http::utils::get_tomorrow_deribit_format;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Initialize logging
     setup_logger();
+    let expiry = get_tomorrow_deribit_format();
+    let target_expiry = expiry.as_str();
+    
     info!("🚀 Deribit HTTP Client - BTC Option Pair Example");
     info!("===============================================");
-    info!("📅 Target Expiry: 10SEP25");
+    info!("📅 Target Expiry: {target_expiry}");
     println!();
 
     // Create HTTP client
     let client = DeribitHttpClient::new();
-
-    // Target expiry date
-    let target_expiry = "10SEP25";
 
     // =================================================================
     // 1. FETCH BTC OPTION PAIRS BY STRIKE PRICE
