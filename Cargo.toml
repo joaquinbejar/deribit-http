@@ -1,6 +1,6 @@
 [package]
 name = "deribit-http"
-version = "0.2.1"
+version = "0.3.0"
 edition = "2024"
 authors = ["Joaquin Bejar <jb@taunais.com>"]
 description = "HTTP REST API client for Deribit trading platform"
@@ -45,6 +45,7 @@ sha2 = { workspace = true }
 urlencoding = { workspace = true }
 url = { workspace = true }
 pretty-simple-display = { workspace = true }
+dotenv = { workspace = true }
 
 [dev-dependencies]
 mockito = "1.7"
