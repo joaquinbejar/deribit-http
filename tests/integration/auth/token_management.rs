@@ -1,20 +1,20 @@
 //! Token Management Integration Tests
 //!
 //! This test covers token management scenarios:
-//! 1. OAuth2 token acquisition
+//! 1. Token lifecycle management
 //! 2. Token refresh mechanisms
 //! 3. Token expiration handling
-//! 4. Token validation and verification
+//! 4. Token validation and security
 //! 5. Token storage and retrieval
 
-use std::path::Path;
-use std::time::Duration;
-use tokio::time::sleep;
-use tracing::{debug, info};
-use deribit_http::DeribitHttpClient;
+#[cfg(test)]
+mod token_management_tests {
+    use deribit_http::DeribitHttpClient;
+    use tokio::time::{sleep, Duration};
+    use tracing::{info, debug};
+    use std::path::Path;
 
 /// Check if .env file exists and contains required variables
-#[allow(dead_code)]
 fn check_env_file() -> Result<(), Box<dyn std::error::Error>> {
     // Check if .env file exists
     if !Path::new(".env").exists() {
@@ -269,4 +269,6 @@ async fn test_token_refresh_behavior() -> Result<(), Box<dyn std::error::Error>>
 
     info!("Token refresh behavior test completed successfully");
     Ok(())
+}
+
 }

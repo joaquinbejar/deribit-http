@@ -7,12 +7,11 @@
 //! 4. Error handling for invalid withdrawals
 //! 5. Currency-specific withdrawal logic
 
-
-use std::path::Path;
-use std::time::Duration;
-use tokio::time::sleep;
-use tracing::{debug, info, warn};
-use deribit_http::DeribitHttpClient;
+#[cfg(test)]
+mod withdrawal_tests {
+    use deribit_http::DeribitHttpClient;
+    use tracing::{info, debug};
+    use std::path::Path;
 
 /// Check if .env file exists and contains required variables
 #[allow(dead_code)]
@@ -587,4 +586,6 @@ async fn test_withdrawals_empty_result() -> Result<(), Box<dyn std::error::Error
 
     info!("Withdrawals empty result test completed successfully");
     Ok(())
+}
+
 }

@@ -7,10 +7,12 @@
 //! 4. Rate limiting with API keys
 //! 5. API key rotation scenarios
 
-use std::path::Path;
-use std::time::Duration;
-use tracing::{debug, info, warn};
-use deribit_http::DeribitHttpClient;
+#[cfg(test)]
+mod api_key_authentication_tests {
+    use deribit_http::DeribitHttpClient;
+    use tokio::time::Duration;
+    use tracing::{info, warn, debug};
+    use std::path::Path;
 
 /// Check if .env file exists and contains required variables
 fn check_env_file() -> Result<(), Box<dyn std::error::Error>> {
@@ -219,4 +221,6 @@ async fn test_api_key_token_expiration() -> Result<(), Box<dyn std::error::Error
 
     info!("API key token expiration test completed successfully");
     Ok(())
+}
+
 }
