@@ -50,7 +50,7 @@
 //!
 //! #[tokio::main]
 //! async fn main() -> Result<(), Box<dyn std::error::Error>> {
-//!     let client = DeribitHttpClient::new(true);
+//!     let client = DeribitHttpClient::new();
 //!     // OAuth2 authentication
 //!     let _token = client
 //!         .authenticate_oauth2("<CLIENT_ID>", "<CLIENT_SECRET>")
@@ -66,7 +66,7 @@
 //! ```
 //!
 //! ## Configuration
-//! - Environment shortcut: `DeribitHttpClient::new(true)` for Testnet and `new(false)` for Production.
+//! - Environment shortcut: `DeribitHttpClient::new()` for Testnet and `new(false)` for Production.
 //! - Custom configuration: `DeribitHttpClient::with_config(HttpConfig)` lets you set `base_url`, `timeout`, `user_agent`, `testnet`, and optional credentials.
 //! - Validation: configuration is validated on client creation.
 //!
