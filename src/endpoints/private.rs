@@ -1699,6 +1699,7 @@ impl DeribitHttpClient {
         if let Some(offset) = offset {
             query_params.push(("offset".to_string(), offset.to_string()));
         }
+        
 
         let query_string = query_params
             .iter()
@@ -1711,13 +1712,7 @@ impl DeribitHttpClient {
             self.base_url(),
             query_string
         );
-
-        let response = self
-            .http_client()
-            .get(url)
-            .send()
-            .await
-            .map_err(|e| HttpError::NetworkError(e.to_string()))?;
+        let response = self.make_authenticated_request(&url).await?;
 
         if !response.status().is_success() {
             let error_text = response
@@ -1807,12 +1802,7 @@ impl DeribitHttpClient {
             query_string
         );
 
-        let response = self
-            .http_client()
-            .get(url)
-            .send()
-            .await
-            .map_err(|e| HttpError::NetworkError(e.to_string()))?;
+        let response = self.make_authenticated_request(&url).await?;
 
         if !response.status().is_success() {
             let error_text = response
@@ -1905,12 +1895,7 @@ impl DeribitHttpClient {
             query_string
         );
 
-        let response = self
-            .http_client()
-            .get(url)
-            .send()
-            .await
-            .map_err(|e| HttpError::NetworkError(e.to_string()))?;
+        let response = self.make_authenticated_request(&url).await?;
 
         if !response.status().is_success() {
             let error_text = response
@@ -1999,12 +1984,7 @@ impl DeribitHttpClient {
             query_string
         );
 
-        let response = self
-            .http_client()
-            .get(url)
-            .send()
-            .await
-            .map_err(|e| HttpError::NetworkError(e.to_string()))?;
+        let response = self.make_authenticated_request(&url).await?;
 
         if !response.status().is_success() {
             let error_text = response
@@ -2086,12 +2066,7 @@ impl DeribitHttpClient {
             query_string
         );
 
-        let response = self
-            .http_client()
-            .get(url)
-            .send()
-            .await
-            .map_err(|e| HttpError::NetworkError(e.to_string()))?;
+        let response = self.make_authenticated_request(&url).await?;
 
         if !response.status().is_success() {
             let error_text = response
@@ -2153,12 +2128,7 @@ impl DeribitHttpClient {
             query_string
         );
 
-        let response = self
-            .http_client()
-            .get(url)
-            .send()
-            .await
-            .map_err(|e| HttpError::NetworkError(e.to_string()))?;
+        let response = self.make_authenticated_request(&url).await?;
 
         if !response.status().is_success() {
             let error_text = response
