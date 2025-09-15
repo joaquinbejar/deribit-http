@@ -26,6 +26,11 @@ impl DeribitHttpClient {
     /// Create a new HTTP client
     pub fn new() -> Self {
         let config = HttpConfig::default();
+        Self::with_config(config)
+    }
+
+    /// Create a new HTTP client with custom configuration
+    pub fn with_config(config: HttpConfig) -> Self {
         let opt_client = Client::builder()
             .timeout(config.timeout)
             .user_agent(&config.user_agent)
