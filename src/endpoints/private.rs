@@ -1023,15 +1023,6 @@ impl DeribitHttpClient {
     /// * `currency` - Currency to get summary for (BTC, ETH, USDC, etc.)
     /// * `extended` - Whether to include extended information
     ///
-    /// # Examples
-    ///
-    /// ```rust
-    /// use deribit_http::DeribitHttpClient;
-    ///
-    /// let client = DeribitHttpClient::new();
-    /// // let summary = client.get_account_summary("BTC", Some(true)).await?;
-    /// // println!("Balance: {}", summary.balance);
-    /// ```
     pub async fn get_account_summary(
         &self,
         currency: &str,

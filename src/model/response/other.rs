@@ -3,14 +3,48 @@
    Email: jb@taunais.com
    Date: 15/9/25
 ******************************************************************************/
-use crate::model::currency::CurrencyExpirations;
-use crate::model::other::DeliveryPriceData;
-use crate::model::settlement::Settlement;
-use crate::model::trade::{LastTrade, UserTrade};
-use crate::model::transaction::TransactionLogEntry;
-use pretty_simple_display::{DebugPretty, DisplaySimple};
+use crate::prelude::*;
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
+use pretty_simple_display::{DebugPretty, DisplaySimple};
+
+
+
+/// Trading limit structure
+#[skip_serializing_none]
+#[derive(DebugPretty, DisplaySimple, Clone, Serialize, Deserialize)]
+pub struct TradingLimit {
+    pub total: RateLimit,
+}
+
+/// Account limits structure
+#[skip_serializing_none]
+#[derive(DebugPretty, DisplaySimple, Clone, Serialize, Deserialize)]
+pub struct AccountLimits {
+    pub limits_per_currency: bool,
+    pub non_matching_engine: RateLimit,
+    pub matching_engine: MatchingEngineLimit,
+}
+
+/// Rate limit structure
+#[skip_serializing_none]
+#[derive(DebugPretty, DisplaySimple, Clone, Serialize, Deserialize)]
+pub struct RateLimit {
+    pub burst: u32,
+    pub rate: u32,
+}
+
+/// Matching engine limits
+#[skip_serializing_none]
+#[derive(DebugPretty, DisplaySimple, Clone, Serialize, Deserialize)]
+pub struct MatchingEngineLimit {
+    pub trading: TradingLimit,
+    pub spot: RateLimit,
+    pub quotes: RateLimit,
+    pub max_quotes: RateLimit,
+    pub guaranteed_quotes: RateLimit,
+    pub cancel_all: RateLimit,
+}
 
 /// Response type for user trades, containing a vector of user trade data
 pub type UserTradeResponse = Vec<UserTrade>;
@@ -159,147 +193,145 @@ pub struct TransferResultResponse {
     pub status: String,
 }
 
-/// Account summary information
 #[skip_serializing_none]
 #[derive(DebugPretty, DisplaySimple, Clone, Serialize, Deserialize)]
 pub struct AccountSummaryResponse {
-    /// Account currency (kept as Currencies enum for compatibility)
+    /// Account id
+    pub id: u64,
+    /// User email
+    pub email: String,
+    /// System generated user nickname
+    pub system_name: String,
+    /// Account name (given by user)
+    pub username: String,
+    /// When Block RFQ Self Match Prevention is enabled
+    pub block_rfq_self_match_prevention: bool,
+    /// Time at which the account was created (milliseconds since the Unix epoch)
+    pub creation_timestamp: u64,
+    /// Account type
+    #[serde(rename = "type")]
+    pub account_type: String,
+    /// Optional identifier of the referrer
+    pub referrer_id: Option<String>,
+    /// Whether account is loginable using email and password
+    pub login_enabled: bool,
+    /// Whether Security Key authentication is enabled
+    pub security_keys_enabled: bool,
+    /// Whether MMP is enabled
+    pub mmp_enabled: bool,
+    /// true when the inter-user transfers are enabled for user
+    pub interuser_transfers_enabled: bool,
+    /// Self trading rejection behavior - reject_taker or cancel_maker
+    pub self_trading_reject_mode: String,
+    /// true if self trading rejection behavior is applied to trades between subaccounts
+    pub self_trading_extended_to_subaccounts: bool,
+    /// Aggregated list of per-currency account summaries
+    pub summaries: Vec<AccountSummaryResponse>,
+}
+
+/// Account summary information
+#[skip_serializing_none]
+#[derive(DebugPretty, DisplaySimple, Clone, Serialize, Deserialize)]
+pub struct AccountResult {
+    /// Currency of the summary
     pub currency: String,
-    /// Total balance
+    /// The account's balance
     pub balance: f64,
-    /// Account equity
+    /// The account's current equity
     pub equity: f64,
-    /// Available funds for trading
+    /// The account's available funds
     pub available_funds: f64,
-    /// Margin balance
+    /// The account's margin balance
     pub margin_balance: f64,
-    /// Unrealized profit and loss (optional)
-    pub unrealized_pnl: Option<f64>,
-    /// Realized profit and loss (optional)
-    pub realized_pnl: Option<f64>,
-    /// Total profit and loss (optional)
+    /// Profit and loss
     pub total_pl: Option<f64>,
-    /// Session funding (optional)
-    pub session_funding: Option<f64>,
-    /// Session realized P&L (optional)
+    /// Session realized profit and loss
     pub session_rpl: Option<f64>,
-    /// Session unrealized P&L (optional)
+    /// Session unrealized profit and loss
     pub session_upl: Option<f64>,
-    /// Maintenance margin requirement
+    /// The maintenance margin
     pub maintenance_margin: f64,
-    /// Initial margin requirement
+    /// The account's initial margin
     pub initial_margin: f64,
-    /// Available withdrawal funds
+    /// The account's available to withdrawal funds
     pub available_withdrawal_funds: Option<f64>,
-    /// Cross collateral enabled
+    /// When true cross collateral is enabled for user
     pub cross_collateral_enabled: Option<bool>,
-    /// Delta total
+    /// The sum of position deltas
     pub delta_total: Option<f64>,
-    /// Futures profit and loss
+    /// Futures profit and Loss
     pub futures_pl: Option<f64>,
-    /// Futures session realized profit and loss
+    /// Futures session realized profit and Loss
     pub futures_session_rpl: Option<f64>,
-    /// Futures session unrealized profit and loss
+    /// Futures session unrealized profit and Loss
     pub futures_session_upl: Option<f64>,
-    /// Options delta
+    /// Options summary delta
     pub options_delta: Option<f64>,
-    /// Options gamma
+    /// Options summary gamma
     pub options_gamma: Option<f64>,
-    /// Options profit and loss
+    /// Options profit and Loss
     pub options_pl: Option<f64>,
-    /// Options session realized profit and loss
+    /// Options session realized profit and Loss
     pub options_session_rpl: Option<f64>,
-    /// Options session unrealized profit and loss
+    /// Options session unrealized profit and Loss
     pub options_session_upl: Option<f64>,
-    /// Options theta
+    /// Options summary theta
     pub options_theta: Option<f64>,
-    /// Options vega
+    /// Options summary vega
     pub options_vega: Option<f64>,
-    /// Portfolio margin enabled
+    /// true when portfolio margining is enabled for user
     pub portfolio_margining_enabled: Option<bool>,
-    /// Projected delta total
+    /// The sum of position deltas without positions that will expire during closest expiration
     pub projected_delta_total: Option<f64>,
     /// Projected initial margin
     pub projected_initial_margin: Option<f64>,
     /// Projected maintenance margin
     pub projected_maintenance_margin: Option<f64>,
-    /// System name
-    pub system_name: Option<String>,
-    /// Type of account (optional)
-    #[serde(rename = "type")]
-    pub account_type: Option<String>,
-    // Additional fields from deribit-http types.rs
     /// Delta total map (currency -> delta)
-    pub delta_total_map: std::collections::HashMap<String, f64>,
-    /// Deposit address (optional)
+    pub delta_total_map: Option<std::collections::HashMap<String, f64>>,
+    /// The deposit address for the account (if available)
     pub deposit_address: Option<String>,
-    /// Fees structure (optional)
-    pub fees: Option<Vec<std::collections::HashMap<String, f64>>>,
-    /// Account limits - complex structure with nested limits
-    pub limits: serde_json::Value,
-    /// Locked balance
-    pub locked_balance: Option<f64>,
-    /// Margin model (e.g., "segregated_sm")
+    /// List of fee objects for all currency pairs and instrument types
+    pub fees: Option<Vec<FeeStructure>>,
+    /// Account limits structure
+    pub limits: Option<AccountLimits>,
+    /// Name of user's currently enabled margin model
     pub margin_model: Option<String>,
-    /// Options gamma map (currency -> gamma)
+    /// Map of options' gammas per index
     pub options_gamma_map: Option<std::collections::HashMap<String, f64>>,
-    /// Options theta map (currency -> theta)
+    /// Map of options' thetas per index
     pub options_theta_map: Option<std::collections::HashMap<String, f64>>,
-    /// Options vega map (currency -> vega)
+    /// Map of options' vegas per index
     pub options_vega_map: Option<std::collections::HashMap<String, f64>>,
     /// Options value
     pub options_value: Option<f64>,
-    /// Spot reserve
+    /// The account's balance reserved in active spot orders
     pub spot_reserve: Option<f64>,
-    /// Whether this is testnet
-    pub testnet: Option<bool>,
-    /// US time difference
-    #[serde(rename = "usDiff")]
-    pub us_diff: Option<i64>,
-    /// US time in
-    #[serde(rename = "usIn")]
-    pub us_in: Option<u64>,
-    /// US time out
-    #[serde(rename = "usOut")]
-    pub us_out: Option<u64>,
-    /// Estimated liquidation ratio
+    /// Estimated Liquidation Ratio
     pub estimated_liquidation_ratio: Option<f64>,
     /// Estimated liquidation ratio map
     pub estimated_liquidation_ratio_map: Option<std::collections::HashMap<String, f64>>,
-    /// Fee balance
+    /// The account's fee balance (it can be used to pay for fees)
     pub fee_balance: Option<f64>,
+    /// The account's balance reserved in other orders
+    pub additional_reserve: Option<f64>,
+
+    // Additional fields for cross-collateral users
+    /// Optional field returned with value true when user has non block chain equity
+    pub has_non_block_chain_equity: Option<bool>,
+    /// The account's total margin balance in all cross collateral currencies, expressed in USD
+    pub total_margin_balance_usd: Option<f64>,
+    /// The account's total delta total in all cross collateral currencies, expressed in USD
+    pub total_delta_total_usd: Option<f64>,
+    /// The account's total initial margin in all cross collateral currencies, expressed in USD
+    pub total_initial_margin_usd: Option<f64>,
+    /// The account's total maintenance margin in all cross collateral currencies, expressed in USD
+    pub total_maintenance_margin_usd: Option<f64>,
+    /// The account's total equity in all cross collateral currencies, expressed in USD
+    pub total_equity_usd: Option<f64>,
+    /// System name for the account
+    pub system_name: Option<String>,
+    /// Account type
+    pub account_type: Option<String>,
 }
 
-impl AccountSummaryResponse {
-    /// Calculate margin utilization as percentage
-    pub fn margin_utilization(&self) -> f64 {
-        if self.equity != 0.0 {
-            (self.initial_margin / self.equity) * 100.0
-        } else {
-            0.0
-        }
-    }
-
-    /// Calculate available margin
-    pub fn available_margin(&self) -> f64 {
-        self.equity - self.initial_margin
-    }
-
-    /// Check if account is at risk (high margin utilization)
-    pub fn is_at_risk(&self, threshold: f64) -> bool {
-        self.margin_utilization() > threshold
-    }
-
-    /// Calculate return on equity
-    pub fn return_on_equity(&self) -> f64 {
-        if self.equity != 0.0 {
-            if let Some(total_pl) = self.total_pl {
-                (total_pl / self.equity) * 100.0
-            } else {
-                0.0
-            }
-        } else {
-            0.0
-        }
-    }
-}
