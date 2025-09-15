@@ -8,11 +8,6 @@ use chrono::{Duration, Local}; // Add chrono import
 /// - MMM: Three-letter month (uppercase)
 /// - YY: Two-digit year
 ///
-/// # Example
-/// ```
-/// let tomorrow = get_tomorrow_deribit_format();
-/// // Returns something like "15SEP25" for September 15, 2025
-/// ```
 pub fn get_tomorrow_deribit_format() -> String {
     let today = Local::now();
     let tomorrow = today + Duration::days(1);

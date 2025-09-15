@@ -139,7 +139,7 @@ mod comprehensive_market_data_tests {
         info!("Server time reliability test completed successfully");
         Ok(())
     }
-    
+
     #[tokio::test]
     #[serial_test::serial]
     async fn test_ticker_data_consistency() -> Result<(), Box<dyn std::error::Error>> {

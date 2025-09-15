@@ -14,20 +14,48 @@ pub const TESTNET_BASE_URL: &str = "https://test.deribit.com/api/v2";
 
 /// API endpoints
 pub mod endpoints {
+    // Authentication endpoints
     /// Public authentication endpoint
     pub const AUTH: &str = "/public/auth";
 
-    // Market data endpoints
+    // Public market data endpoints
     /// Get ticker information for an instrument
     pub const GET_TICKER: &str = "/public/ticker";
-    /// Get order book for an instrument
-    pub const GET_ORDERBOOK: &str = "/public/get_order_book";
-    /// Get recent trades for an instrument
-    pub const GET_TRADES: &str = "/public/get_last_trades_by_instrument";
-    /// Get available trading instruments
+    pub const GET_INSTRUMENT: &str = "/public/get_instrument";
     pub const GET_INSTRUMENTS: &str = "/public/get_instruments";
+    pub const GET_ORDER_BOOK: &str = "/public/get_order_book";
+    pub const GET_BOOK_SUMMARY_BY_CURRENCY: &str = "/public/get_book_summary_by_currency";
+    pub const GET_BOOK_SUMMARY_BY_INSTRUMENT: &str = "/public/get_book_summary_by_instrument";
+    pub const GET_CONTRACT_SIZE: &str = "/public/get_contract_size";
+    pub const GET_CURRENCIES: &str = "/public/get_currencies";
+    pub const GET_INDEX: &str = "/public/get_index";
+    pub const GET_INDEX_PRICE: &str = "/public/get_index_price";
+    pub const GET_INDEX_PRICE_NAMES: &str = "/public/get_index_price_names";
+    pub const GET_SERVER_TIME: &str = "/public/get_time";
+    pub const TEST_CONNECTION: &str = "/public/test";
+    pub const GET_STATUS: &str = "/public/status";
+    pub const GET_APR_HISTORY: &str = "/public/get_apr_history";
+    pub const GET_OPTIONS: &str = "/public/get_options";
+    pub const GET_OPTIONS_PAIR: &str = "/public/get_options_pair";
+    pub const GET_LAST_TRADES_BY_INSTRUMENT: &str = "/public/get_last_trades_by_instrument";
+    pub const GET_HISTORICAL_VOLATILITY: &str = "/public/get_historical_volatility";
+    pub const GET_FUNDING_CHART_DATA: &str = "/public/get_funding_chart_data";
+    pub const GET_TRADINGVIEW_CHART_DATA: &str = "/public/get_tradingview_chart_data";
+    pub const GET_DELIVERY_PRICES: &str = "/public/get_delivery_prices";
+    pub const GET_EXPIRATIONS: &str = "/public/get_expirations";
+    pub const GET_FUNDING_RATE_HISTORY: &str = "/public/get_funding_rate_history";
+    pub const GET_FUNDING_RATE_VALUE: &str = "/public/get_funding_rate_value";
+    pub const GET_LAST_SETTLEMENTS_BY_CURRENCY: &str = "/public/get_last_settlements_by_currency";
+    pub const GET_LAST_SETTLEMENTS_BY_INSTRUMENT: &str =
+        "/public/get_last_settlements_by_instrument";
+    pub const GET_LAST_TRADES_BY_CURRENCY: &str = "/public/get_last_trades_by_currency";
+    pub const GET_LAST_TRADES_BY_CURRENCY_AND_TIME: &str =
+        "/public/get_last_trades_by_currency_and_time";
+    pub const GET_LAST_TRADES_BY_INSTRUMENT_AND_TIME: &str =
+        "/public/get_last_trades_by_instrument_and_time";
+    pub const GET_ORDER_BOOK_BY_INSTRUMENT_ID: &str = "/public/get_order_book_by_instrument_id";
 
-    // Trading endpoints
+    // Private trading endpoints
     /// Place a buy order
     pub const BUY: &str = "/private/buy";
     /// Place a sell order
@@ -36,16 +64,68 @@ pub mod endpoints {
     pub const CANCEL: &str = "/private/cancel";
     /// Cancel all orders
     pub const CANCEL_ALL: &str = "/private/cancel_all";
-    /// Get all open orders
-    pub const GET_OPEN_ORDERS: &str = "/private/get_open_orders";
+    /// Cancel all orders by currency
+    pub const CANCEL_ALL_BY_CURRENCY: &str = "/private/cancel_all_by_currency";
+    /// Cancel all orders by currency pair
+    pub const CANCEL_ALL_BY_CURRENCY_PAIR: &str = "/private/cancel_all_by_currency_pair";
+    /// Cancel all orders by instrument
+    pub const CANCEL_ALL_BY_INSTRUMENT: &str = "/private/cancel_all_by_instrument";
+    /// Cancel all orders by kind or type
+    pub const CANCEL_ALL_BY_KIND_OR_TYPE: &str = "/private/cancel_all_by_kind_or_type";
+    /// Cancel orders by label
+    pub const CANCEL_BY_LABEL: &str = "/private/cancel_by_label";
+    /// Edit order
+    pub const EDIT: &str = "/private/edit";
+    /// Cancel quotes
+    pub const CANCEL_QUOTES: &str = "/private/cancel_quotes";
 
-    // Account endpoints
+    // Private account endpoints
     /// Get account summary information
     pub const GET_ACCOUNT_SUMMARY: &str = "/private/get_account_summary";
     /// Get current positions
     pub const GET_POSITIONS: &str = "/private/get_positions";
     /// Get subaccount information
     pub const GET_SUBACCOUNTS: &str = "/private/get_subaccounts";
+    /// Get transaction log
+    pub const GET_TRANSACTION_LOG: &str = "/private/get_transaction_log";
+    /// Get deposits
+    pub const GET_DEPOSITS: &str = "/private/get_deposits";
+    /// Get withdrawals
+    pub const GET_WITHDRAWALS: &str = "/private/get_withdrawals";
+    /// Submit transfer to subaccount
+    pub const SUBMIT_TRANSFER_TO_SUBACCOUNT: &str = "/private/submit_transfer_to_subaccount";
+    /// Submit transfer to user
+    pub const SUBMIT_TRANSFER_TO_USER: &str = "/private/submit_transfer_to_user";
+
+    // Private order endpoints
+    /// Get all open orders
+    pub const GET_OPEN_ORDERS: &str = "/private/get_open_orders";
+    /// Get open orders by label
+    pub const GET_OPEN_ORDERS_BY_LABEL: &str = "/private/get_open_orders_by_label";
+    /// Get order state
+    pub const GET_ORDER_STATE: &str = "/private/get_order_state";
+    /// Get open orders by currency
+    pub const GET_OPEN_ORDERS_BY_CURRENCY: &str = "/private/get_open_orders_by_currency";
+    /// Get open orders by instrument
+    pub const GET_OPEN_ORDERS_BY_INSTRUMENT: &str = "/private/get_open_orders_by_instrument";
+    /// Get order history by currency
+    pub const GET_ORDER_HISTORY_BY_CURRENCY: &str = "/private/get_order_history_by_currency";
+    /// Get order history by instrument
+    pub const GET_ORDER_HISTORY_BY_INSTRUMENT: &str = "/private/get_order_history_by_instrument";
+
+    // Private trade endpoints
+    /// Get user trades by instrument
+    pub const GET_USER_TRADES_BY_INSTRUMENT: &str = "/private/get_user_trades_by_instrument";
+    /// Get user trades by currency
+    pub const GET_USER_TRADES_BY_CURRENCY: &str = "/private/get_user_trades_by_currency";
+    /// Get user trades by currency and time
+    pub const GET_USER_TRADES_BY_CURRENCY_AND_TIME: &str =
+        "/private/get_user_trades_by_currency_and_time";
+    /// Get user trades by instrument and time
+    pub const GET_USER_TRADES_BY_INSTRUMENT_AND_TIME: &str =
+        "/private/get_user_trades_by_instrument_and_time";
+    /// Get user trades by order
+    pub const GET_USER_TRADES_BY_ORDER: &str = "/private/get_user_trades_by_order";
 }
 
 /// HTTP headers

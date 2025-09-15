@@ -109,7 +109,7 @@ mod network_resilience_tests {
         info!("Connection timeout handling test completed successfully");
         Ok(())
     }
-    
+
     #[tokio::test]
     #[serial_test::serial]
     async fn test_ssl_certificate_validation() -> Result<(), Box<dyn std::error::Error>> {

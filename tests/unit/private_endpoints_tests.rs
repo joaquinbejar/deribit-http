@@ -1,17 +1,10 @@
 //! Unit tests for private endpoints
 
-use std::env;
-use mockito::{Mock, Server};
-use serde_json::json;
 use deribit_http::DeribitHttpClient;
 use deribit_http::config::HttpConfig;
-use deribit_http::model::response::other::TransferResultResponse;
-use deribit_http::model::request::order::{OrderRequest, AdvancedOrderType};
-use deribit_http::model::order::OrderType;
-use deribit_http::model::types::TimeInForce;
-use deribit_http::model::response::order::OrderResponse;
-use deribit_http::model::response::api_response::ApiResponse;
 use deribit_http::model::transaction::TransactionLogRequest;
+use serde_json::json;
+use std::env;
 use url::Url;
 
 // Helper function to create a test client
@@ -22,10 +15,11 @@ fn create_test_client(server: &mockito::ServerGuard) -> DeribitHttpClient {
         env::set_var("DERIBIT_TESTNET", "true");
     }
     
-    let mut config = HttpConfig::default();
-    // Set the mock server URL as base_url
-    config.base_url = Url::parse(&format!("{}/api/v2", server.url())).unwrap();
-    
+    let config = HttpConfig {
+        base_url: Url::parse(&format!("{}/api/v2", server.url())).unwrap(),
+        ..Default::default()
+    };
+
     DeribitHttpClient::with_config(config)
 }
 
@@ -63,7 +57,8 @@ async fn test_get_subaccounts_success() {
         .mock("GET", "/api/v2/private/get_subaccounts?with_portfolio=true")
         .with_status(200)
         .with_header("content-type", "application/json")
-        .with_body(r#"{
+        .with_body(
+            r#"{
             "jsonrpc": "2.0",
             "id": 1,
             "result": [
@@ -80,7 +75,8 @@ async fn test_get_subaccounts_success() {
                     "username": "test_user"
                 }
             ]
-        }"#)
+        }"#,
+        )
         .create_async()
         .await;
 
@@ -105,14 +101,16 @@ async fn test_get_subaccounts_error() {
         .mock("GET", "/api/v2/private/get_subaccounts")
         .with_status(400)
         .with_header("content-type", "application/json")
-        .with_body(r#"{
+        .with_body(
+            r#"{
             "jsonrpc": "2.0",
             "id": 1,
             "error": {
                 "code": -32602,
                 "message": "Invalid params"
             }
-        }"#)
+        }"#,
+        )
         .create_async()
         .await;
 
@@ -129,7 +127,7 @@ async fn test_get_transaction_log_success() {
 
     // Mock the OAuth2 authentication endpoint
     let _auth_mock = create_auth_mock(&mut server).await;
-    
+
     let mock_response = json!({
         "jsonrpc": "2.0",
         "result": {
@@ -172,7 +170,7 @@ async fn test_get_transaction_log_success() {
         continuation: None,
     };
     let result = client.get_transaction_log(request).await;
-    
+
     mock.assert_async().await;
     if let Err(e) = &result {
         println!("Error in test_get_transaction_log_success: {:?}", e);
@@ -216,7 +214,7 @@ async fn test_get_transaction_log_error() {
         continuation: None,
     };
     let result = client.get_transaction_log(request).await;
-    
+
     mock.assert_async().await;
     assert!(result.is_err());
 }
@@ -228,7 +226,7 @@ async fn test_get_deposits_success() {
 
     // Mock the OAuth2 authentication endpoint
     let _auth_mock = create_auth_mock(&mut server).await;
-    
+
     let mock_response = json!({
         "jsonrpc": "2.0",
         "result": {
@@ -257,7 +255,7 @@ async fn test_get_deposits_success() {
         .await;
 
     let result = client.get_deposits("BTC", None, None).await;
-    
+
     mock.assert_async().await;
     assert!(result.is_ok());
 }
@@ -269,7 +267,7 @@ async fn test_get_withdrawals_success() {
 
     // Mock the OAuth2 authentication endpoint
     let _auth_mock = create_auth_mock(&mut server).await;
-    
+
     let mock_response = json!({
         "jsonrpc": "2.0",
         "result": {
@@ -299,7 +297,7 @@ async fn test_get_withdrawals_success() {
         .await;
 
     let result = client.get_withdrawals("BTC", None, None).await;
-    
+
     mock.assert_async().await;
     if let Err(e) = &result {
         println!("Error in test_get_withdrawals_success: {:?}", e);
@@ -314,7 +312,7 @@ async fn test_submit_transfer_to_subaccount_success() {
 
     // Mock the OAuth2 authentication endpoint
     let _auth_mock = create_auth_mock(&mut server).await;
-    
+
     let mock_response = json!({
         "jsonrpc": "2.0",
         "result": {
@@ -332,11 +330,16 @@ async fn test_submit_transfer_to_subaccount_success() {
         .create_async()
         .await;
 
-    let result = client.submit_transfer_to_subaccount("BTC", 0.001, 123).await;
-    
+    let result = client
+        .submit_transfer_to_subaccount("BTC", 0.001, 123)
+        .await;
+
     mock.assert_async().await;
     if let Err(e) = &result {
-        println!("Error in test_submit_transfer_to_subaccount_success: {:?}", e);
+        println!(
+            "Error in test_submit_transfer_to_subaccount_success: {:?}",
+            e
+        );
     }
     assert!(result.is_ok());
 }
@@ -348,7 +351,7 @@ async fn test_submit_transfer_to_user_success() {
 
     // Mock the OAuth2 authentication endpoint
     let _auth_mock = create_auth_mock(&mut server).await;
-    
+
     let mock_response = json!({
         "jsonrpc": "2.0",
         "result": {
@@ -366,8 +369,10 @@ async fn test_submit_transfer_to_user_success() {
         .create_async()
         .await;
 
-    let result = client.submit_transfer_to_user("BTC", 0.001, "test_user").await;
-    
+    let result = client
+        .submit_transfer_to_user("BTC", 0.001, "test_user")
+        .await;
+
     mock.assert_async().await;
     if let Err(e) = &result {
         println!("Error in test_submit_transfer_to_user_success: {:?}", e);

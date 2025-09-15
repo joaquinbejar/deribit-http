@@ -137,8 +137,6 @@ pub enum UserRole {
     Taker,
 }
 
-
-
 #[skip_serializing_none]
 #[derive(DebugPretty, DisplaySimple, Clone, Serialize, Deserialize, Default)]
 pub struct TransactionLogRequest {

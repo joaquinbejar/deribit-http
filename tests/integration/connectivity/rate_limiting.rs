@@ -44,13 +44,11 @@ mod rate_limiting_tests {
             std::env::var("DERIBIT_CLIENT_ID"),
             std::env::var("DERIBIT_CLIENT_SECRET"),
         ) {
-            // Authentication is now automatic - no need to call authenticate_oauth2
             info!("Using automatic authentication with OAuth2 credentials");
         } else if let (Ok(_api_key), Ok(_api_secret)) = (
             std::env::var("DERIBIT_API_KEY"),
             std::env::var("DERIBIT_API_SECRET"),
         ) {
-            // Authentication is now automatic - no need to call authenticate_api_key
             info!("Using automatic authentication with API key credentials");
         } else {
             return Err("No valid authentication credentials found".into());

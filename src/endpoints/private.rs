@@ -1,6 +1,7 @@
 //! Private endpoints for authenticated API calls
 
 use crate::DeribitHttpClient;
+use crate::constants::endpoints::*;
 use crate::error::HttpError;
 use crate::model::account::Subaccount;
 use crate::model::position::Position;
@@ -15,7 +16,9 @@ use crate::model::response::other::{
     AccountSummaryResponse, TransactionLogResponse, TransferResultResponse,
 };
 use crate::model::response::withdrawal::WithdrawalsResponse;
-use crate::model::{TransactionLogRequest, UserTradeResponseByOrder, UserTradeWithPaginationResponse};
+use crate::model::{
+    TransactionLogRequest, UserTradeResponseByOrder, UserTradeWithPaginationResponse,
+};
 use crate::prelude::Trigger;
 
 /// Private endpoints implementation
@@ -58,11 +61,7 @@ impl DeribitHttpClient {
                     .join("&")
         };
 
-        let url = format!(
-            "{}/private/get_subaccounts{}",
-            self.base_url(),
-            query_string
-        );
+        let url = format!("{}{}{}", self.base_url(), GET_SUBACCOUNTS, query_string);
 
         let response = self.make_authenticated_request(&url).await?;
 
@@ -78,13 +77,19 @@ impl DeribitHttpClient {
         }
 
         // Debug: Get raw response text first
-        let response_text = response.text().await
-            .map_err(|e| HttpError::InvalidResponse(format!("Failed to read response text: {}", e)))?;
-        
+        let response_text = response.text().await.map_err(|e| {
+            HttpError::InvalidResponse(format!("Failed to read response text: {}", e))
+        })?;
+
         tracing::debug!("Raw API response: {}", response_text);
-        
+
         let api_response: ApiResponse<Vec<Subaccount>> = serde_json::from_str(&response_text)
-            .map_err(|e| HttpError::InvalidResponse(format!("Failed to parse JSON: {} - Raw response: {}", e, response_text)))?;
+            .map_err(|e| {
+                HttpError::InvalidResponse(format!(
+                    "Failed to parse JSON: {} - Raw response: {}",
+                    e, response_text
+                ))
+            })?;
 
         if let Some(error) = api_response.error {
             return Err(HttpError::RequestFailed(format!(
@@ -125,8 +130,14 @@ impl DeribitHttpClient {
     ) -> Result<TransactionLogResponse, HttpError> {
         let mut query_params = vec![("currency".to_string(), request.currency.to_string())];
 
-        query_params.push(("start_timestamp".to_string(), request.start_timestamp.to_string()));
-        query_params.push(("end_timestamp".to_string(), request.end_timestamp.to_string()));
+        query_params.push((
+            "start_timestamp".to_string(),
+            request.start_timestamp.to_string(),
+        ));
+        query_params.push((
+            "end_timestamp".to_string(),
+            request.end_timestamp.to_string(),
+        ));
 
         if let Some(query) = request.query {
             query_params.push(("query".to_string(), query));
@@ -139,7 +150,7 @@ impl DeribitHttpClient {
         if let Some(subaccount_id) = request.subaccount_id {
             query_params.push(("subaccount_id".to_string(), subaccount_id.to_string()));
         }
-        
+
         if let Some(continuation) = request.continuation {
             query_params.push(("continuation".to_string(), continuation.to_string()));
         }
@@ -151,8 +162,9 @@ impl DeribitHttpClient {
             .join("&");
 
         let url = format!(
-            "{}/private/get_transaction_log?{}",
+            "{}{}?{}",
             self.base_url(),
+            GET_TRANSACTION_LOG,
             query_string
         );
 
@@ -227,7 +239,7 @@ impl DeribitHttpClient {
             .collect::<Vec<_>>()
             .join("&");
 
-        let url = format!("{}/private/get_deposits?{}", self.base_url(), query_string);
+        let url = format!("{}{}?{}", self.base_url(), GET_DEPOSITS, query_string);
 
         let response = self.make_authenticated_request(&url).await?;
 
@@ -300,11 +312,7 @@ impl DeribitHttpClient {
             .collect::<Vec<_>>()
             .join("&");
 
-        let url = format!(
-            "{}/private/get_withdrawals?{}",
-            self.base_url(),
-            query_string
-        );
+        let url = format!("{}{}?{}", self.base_url(), GET_WITHDRAWALS, query_string);
 
         let response = self.make_authenticated_request(&url).await?;
 
@@ -374,8 +382,9 @@ impl DeribitHttpClient {
             .join("&");
 
         let url = format!(
-            "{}/private/submit_transfer_to_subaccount?{}",
+            "{}{}?{}",
             self.base_url(),
+            SUBMIT_TRANSFER_TO_SUBACCOUNT,
             query_string
         );
 
@@ -447,8 +456,9 @@ impl DeribitHttpClient {
             .join("&");
 
         let url = format!(
-            "{}/private/submit_transfer_to_user?{}",
+            "{}{}?{}",
             self.base_url(),
+            SUBMIT_TRANSFER_TO_USER,
             query_string
         );
 
@@ -551,7 +561,7 @@ impl DeribitHttpClient {
             .collect::<Vec<_>>()
             .join("&");
 
-        let url = format!("{}/private/buy?{}", self.base_url(), query_string);
+        let url = format!("{}{}?{}", self.base_url(), BUY, query_string);
 
         let response = self.make_authenticated_request(&url).await?;
 
@@ -657,7 +667,7 @@ impl DeribitHttpClient {
             .collect::<Vec<_>>()
             .join("&");
 
-        let url = format!("{}/private/sell?{}", self.base_url(), query_string);
+        let url = format!("{}{}?{}", self.base_url(), SELL, query_string);
 
         let response = self.make_authenticated_request(&url).await?;
 
@@ -699,8 +709,9 @@ impl DeribitHttpClient {
     ///
     pub async fn cancel_order(&self, order_id: &str) -> Result<OrderInfoResponse, HttpError> {
         let url = format!(
-            "{}/private/cancel?order_id={}",
+            "{}{}?order_id={}",
             self.base_url(),
+            CANCEL,
             urlencoding::encode(order_id)
         );
 
@@ -742,7 +753,7 @@ impl DeribitHttpClient {
     ///
     /// Returns the number of cancelled orders.
     pub async fn cancel_all(&self) -> Result<u32, HttpError> {
-        let url = format!("{}/private/cancel_all", self.base_url());
+        let url = format!("{}{}", self.base_url(), CANCEL_ALL);
 
         let response = self.make_authenticated_request(&url).await?;
 
@@ -787,8 +798,9 @@ impl DeribitHttpClient {
     /// Returns the number of cancelled orders.
     pub async fn cancel_all_by_currency(&self, currency: &str) -> Result<u32, HttpError> {
         let url = format!(
-            "{}/private/cancel_all_by_currency?currency={}",
+            "{}{}?currency={}",
             self.base_url(),
+            CANCEL_ALL_BY_CURRENCY,
             urlencoding::encode(currency)
         );
 
@@ -835,8 +847,9 @@ impl DeribitHttpClient {
     /// Returns the number of cancelled orders.
     pub async fn cancel_all_by_currency_pair(&self, currency_pair: &str) -> Result<u32, HttpError> {
         let url = format!(
-            "{}/private/cancel_all_by_currency_pair?currency_pair={}",
+            "{}{}?currency_pair={}",
             self.base_url(),
+            CANCEL_ALL_BY_CURRENCY_PAIR,
             urlencoding::encode(currency_pair)
         );
 
@@ -883,8 +896,9 @@ impl DeribitHttpClient {
     /// Returns the number of cancelled orders.
     pub async fn cancel_all_by_instrument(&self, instrument_name: &str) -> Result<u32, HttpError> {
         let url = format!(
-            "{}/private/cancel_all_by_instrument?instrument_name={}",
+            "{}{}?instrument_name={}",
             self.base_url(),
+            CANCEL_ALL_BY_INSTRUMENT,
             urlencoding::encode(instrument_name)
         );
 
@@ -957,8 +971,9 @@ impl DeribitHttpClient {
         };
 
         let url = format!(
-            "{}/private/cancel_all_by_kind_or_type{}",
+            "{}{}{}",
             self.base_url(),
+            CANCEL_ALL_BY_KIND_OR_TYPE,
             query_string
         );
 
@@ -1005,8 +1020,9 @@ impl DeribitHttpClient {
     /// Returns the number of cancelled orders.
     pub async fn cancel_by_label(&self, label: &str) -> Result<u32, HttpError> {
         let url = format!(
-            "{}/private/cancel_by_label?label={}",
+            "{}{}?label={}",
             self.base_url(),
+            CANCEL_BY_LABEL,
             urlencoding::encode(label)
         );
 
@@ -1067,8 +1083,9 @@ impl DeribitHttpClient {
             .join("&");
 
         let url = format!(
-            "{}/private/get_account_summary?{}",
+            "{}{}?{}",
             self.base_url(),
+            GET_ACCOUNT_SUMMARY,
             query_string
         );
 
@@ -1152,7 +1169,7 @@ impl DeribitHttpClient {
                     .join("&")
         };
 
-        let url = format!("{}/private/get_positions{}", self.base_url(), query_string);
+        let url = format!("{}{}{}", self.base_url(), GET_POSITIONS, query_string);
 
         let response = self.make_authenticated_request(&url).await?;
 
@@ -1228,7 +1245,7 @@ impl DeribitHttpClient {
             .collect::<Vec<_>>()
             .join("&");
 
-        let url = format!("{}/private/edit?{}", self.base_url(), query_string);
+        let url = format!("{}{}?{}", self.base_url(), EDIT, query_string);
 
         let response = self.make_authenticated_request(&url).await?;
 
@@ -1337,8 +1354,9 @@ impl DeribitHttpClient {
             .join("&");
 
         let url = format!(
-            "{}/private/get_user_trades_by_instrument?{}",
+            "{}{}?{}",
             self.base_url(),
+            GET_USER_TRADES_BY_INSTRUMENT,
             query_string
         );
 
@@ -1395,7 +1413,7 @@ impl DeribitHttpClient {
     /// * `cancel_type` - Type of cancellation ("all", "by_currency", "by_instrument", etc.)
     ///
     pub async fn cancel_quotes(&self, cancel_type: Option<&str>) -> Result<u32, HttpError> {
-        let mut url = format!("{}/private/cancel_quotes", self.base_url());
+        let mut url = format!("{}{}", self.base_url(), CANCEL_QUOTES);
 
         if let Some(cancel_type) = cancel_type {
             url.push_str(&format!(
@@ -1471,11 +1489,7 @@ impl DeribitHttpClient {
                     .join("&")
         };
 
-        let url = format!(
-            "{}/private/get_open_orders{}",
-            self.base_url(),
-            query_string
-        );
+        let url = format!("{}{}{}", self.base_url(), GET_OPEN_ORDERS, query_string);
 
         let response = self.make_authenticated_request(&url).await?;
 
@@ -1522,8 +1536,9 @@ impl DeribitHttpClient {
         currency: &str,
     ) -> Result<Vec<OrderInfoResponse>, HttpError> {
         let url = format!(
-            "{}/private/get_open_orders_by_label?label={}&currency={}",
+            "{}{}?label={}&currency={}",
             self.base_url(),
+            GET_OPEN_ORDERS_BY_LABEL,
             urlencoding::encode(label),
             urlencoding::encode(currency)
         );
@@ -1568,8 +1583,9 @@ impl DeribitHttpClient {
     ///
     pub async fn get_order_state(&self, order_id: &str) -> Result<OrderInfoResponse, HttpError> {
         let url = format!(
-            "{}/private/get_order_state?order_id={}",
+            "{}{}?order_id={}",
             self.base_url(),
+            GET_ORDER_STATE,
             urlencoding::encode(order_id)
         );
 
@@ -1636,8 +1652,9 @@ impl DeribitHttpClient {
             .join("&");
 
         let url = format!(
-            "{}/private/get_open_orders_by_currency?{}",
+            "{}{}?{}",
             self.base_url(),
+            GET_OPEN_ORDERS_BY_CURRENCY,
             query_string
         );
 
@@ -1698,8 +1715,9 @@ impl DeribitHttpClient {
             .join("&");
 
         let url = format!(
-            "{}/private/get_open_orders_by_instrument?{}",
+            "{}{}?{}",
             self.base_url(),
+            GET_OPEN_ORDERS_BY_INSTRUMENT,
             query_string
         );
 
@@ -1772,8 +1790,9 @@ impl DeribitHttpClient {
             .join("&");
 
         let url = format!(
-            "{}/private/get_order_history_by_currency?{}",
+            "{}{}?{}",
             self.base_url(),
+            GET_ORDER_HISTORY_BY_CURRENCY,
             query_string
         );
         let response = self.make_authenticated_request(&url).await?;
@@ -1861,8 +1880,9 @@ impl DeribitHttpClient {
             .join("&");
 
         let url = format!(
-            "{}/private/get_order_history_by_instrument?{}",
+            "{}{}?{}",
             self.base_url(),
+            GET_ORDER_HISTORY_BY_INSTRUMENT,
             query_string
         );
 
@@ -1944,8 +1964,9 @@ impl DeribitHttpClient {
             .join("&");
 
         let url = format!(
-            "{}/private/get_user_trades_by_currency?{}",
+            "{}{}?{}",
             self.base_url(),
+            GET_USER_TRADES_BY_CURRENCY,
             query_string
         );
 
@@ -2041,8 +2062,9 @@ impl DeribitHttpClient {
             .join("&");
 
         let url = format!(
-            "{}/private/get_user_trades_by_currency_and_time?{}",
+            "{}{}?{}",
             self.base_url(),
+            GET_USER_TRADES_BY_CURRENCY_AND_TIME,
             query_string
         );
 
@@ -2137,8 +2159,9 @@ impl DeribitHttpClient {
             .join("&");
 
         let url = format!(
-            "{}/private/get_user_trades_by_instrument_and_time?{}",
+            "{}{}?{}",
             self.base_url(),
+            GET_USER_TRADES_BY_INSTRUMENT_AND_TIME,
             query_string
         );
 
@@ -2217,8 +2240,9 @@ impl DeribitHttpClient {
             .join("&");
 
         let url = format!(
-            "{}/private/get_user_trades_by_order?{}",
+            "{}{}?{}",
             self.base_url(),
+            GET_USER_TRADES_BY_ORDER,
             query_string
         );
 

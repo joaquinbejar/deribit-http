@@ -4,6 +4,7 @@
 //! market data, trading, account management, and system endpoints.
 
 use crate::DeribitHttpClient;
+use crate::constants::endpoints::*;
 use crate::error::HttpError;
 use crate::model::LastTradesResponse;
 use crate::model::book::{BookSummary, OrderBook};
@@ -45,7 +46,7 @@ impl DeribitHttpClient {
     /// # }
     /// ```
     pub async fn get_currencies(&self) -> Result<Vec<CurrencyStruct>, HttpError> {
-        let url = format!("{}/public/get_currencies", self.base_url());
+        let url = format!("{}{}", self.base_url(), GET_CURRENCIES);
 
         let response = self
             .http_client()
@@ -92,7 +93,7 @@ impl DeribitHttpClient {
     /// * `currency` - The currency symbol (BTC, ETH, USDC, USDT, EURR)
     ///
     pub async fn get_index(&self, currency: &str) -> Result<IndexData, HttpError> {
-        let url = format!("{}/public/get_index?currency={}", self.base_url(), currency);
+        let url = format!("{}{}?currency={}", self.base_url(), GET_INDEX, currency);
 
         let response = self
             .http_client()
@@ -152,8 +153,9 @@ impl DeribitHttpClient {
     /// ```
     pub async fn get_index_price(&self, index_name: &str) -> Result<IndexPriceData, HttpError> {
         let url = format!(
-            "{}/public/get_index_price?index_name={}",
+            "{}{}?index_name={}",
             self.base_url(),
+            GET_INDEX_PRICE,
             index_name
         );
 
@@ -212,7 +214,7 @@ impl DeribitHttpClient {
     /// # }
     /// ```
     pub async fn get_index_price_names(&self) -> Result<Vec<String>, HttpError> {
-        let url = format!("{}/public/get_index_price_names", self.base_url());
+        let url = format!("{}{}", self.base_url(), GET_INDEX_PRICE_NAMES);
 
         let response = self
             .http_client()
@@ -280,8 +282,9 @@ impl DeribitHttpClient {
         kind: Option<&str>,
     ) -> Result<Vec<BookSummary>, HttpError> {
         let mut url = format!(
-            "{}/public/get_book_summary_by_currency?currency={}",
+            "{}{}?currency={}",
             self.base_url(),
+            GET_BOOK_SUMMARY_BY_CURRENCY,
             currency
         );
 
@@ -347,8 +350,9 @@ impl DeribitHttpClient {
     /// ```
     pub async fn get_instrument(&self, instrument_name: &str) -> Result<Instrument, HttpError> {
         let url = format!(
-            "{}/public/get_instrument?instrument_name={}",
+            "{}{}?instrument_name={}",
             self.base_url(),
+            GET_INSTRUMENT,
             instrument_name
         );
 
@@ -402,8 +406,9 @@ impl DeribitHttpClient {
         instrument_name: &str,
     ) -> Result<BookSummary, HttpError> {
         let url = format!(
-            "{}/public/get_book_summary_by_instrument?instrument_name={}",
+            "{}{}?instrument_name={}",
             self.base_url(),
+            GET_BOOK_SUMMARY_BY_INSTRUMENT,
             instrument_name
         );
 
@@ -471,8 +476,9 @@ impl DeribitHttpClient {
     /// ```
     pub async fn get_contract_size(&self, instrument_name: &str) -> Result<f64, HttpError> {
         let url = format!(
-            "{}/public/get_contract_size?instrument_name={}",
+            "{}{}?instrument_name={}",
             self.base_url(),
+            GET_CONTRACT_SIZE,
             instrument_name
         );
 
@@ -532,7 +538,7 @@ impl DeribitHttpClient {
     /// # }
     /// ```
     pub async fn get_server_time(&self) -> Result<u64, HttpError> {
-        let url = format!("{}/public/get_time", self.base_url());
+        let url = format!("{}{}", self.base_url(), GET_SERVER_TIME);
 
         let response = self
             .http_client()
@@ -574,7 +580,7 @@ impl DeribitHttpClient {
     /// Returns the API version to test connectivity.
     /// This is a public endpoint that doesn't require authentication.
     pub async fn test_connection(&self) -> Result<String, HttpError> {
-        let url = format!("{}/public/test", self.base_url());
+        let url = format!("{}{}", self.base_url(), TEST_CONNECTION);
 
         let response = self
             .http_client()
@@ -619,7 +625,7 @@ impl DeribitHttpClient {
     /// This is a public endpoint that doesn't require authentication.
     ///
     pub async fn get_status(&self) -> Result<StatusResponse, HttpError> {
-        let url = format!("{}/public/status", self.base_url());
+        let url = format!("{}{}", self.base_url(), GET_STATUS);
 
         let response = self
             .http_client()
@@ -688,8 +694,9 @@ impl DeribitHttpClient {
         before: Option<i32>,
     ) -> Result<AprHistoryResponse, HttpError> {
         let mut url = format!(
-            "{}/public/get_apr_history?currency={}",
+            "{}{}?currency={}",
             self.base_url(),
+            GET_APR_HISTORY,
             currency
         );
 
@@ -758,8 +765,9 @@ impl DeribitHttpClient {
     /// ```
     pub async fn get_ticker(&self, instrument_name: &str) -> Result<TickerData, HttpError> {
         let url = format!(
-            "{}/public/ticker?instrument_name={}",
+            "{}{}?instrument_name={}",
             self.base_url(),
+            GET_TICKER,
             instrument_name
         );
 
@@ -812,8 +820,9 @@ impl DeribitHttpClient {
         depth: Option<u32>,
     ) -> Result<OrderBook, HttpError> {
         let mut url = format!(
-            "{}/public/get_order_book?instrument_name={}",
+            "{}{}?instrument_name={}",
             self.base_url(),
+            GET_ORDER_BOOK,
             instrument_name
         );
 
@@ -1009,8 +1018,9 @@ impl DeribitHttpClient {
         expired: Option<bool>,
     ) -> Result<Vec<Instrument>, HttpError> {
         let mut url = format!(
-            "{}/public/get_instruments?currency={}",
+            "{}{}?currency={}",
             self.base_url(),
+            GET_INSTRUMENTS,
             currency
         );
 
@@ -1073,8 +1083,9 @@ impl DeribitHttpClient {
         include_old: Option<bool>,
     ) -> Result<Vec<Trade>, HttpError> {
         let mut url = format!(
-            "{}/public/get_last_trades_by_instrument?instrument_name={}",
+            "{}{}?instrument_name={}",
             self.base_url(),
+            GET_LAST_TRADES_BY_INSTRUMENT,
             urlencoding::encode(instrument_name)
         );
 
@@ -1181,8 +1192,9 @@ impl DeribitHttpClient {
         currency: &str,
     ) -> Result<Vec<[f64; 2]>, HttpError> {
         let url = format!(
-            "{}/public/get_historical_volatility?currency={}",
+            "{}{}?currency={}",
             self.base_url(),
+            GET_HISTORICAL_VOLATILITY,
             urlencoding::encode(currency)
         );
 
@@ -1245,8 +1257,9 @@ impl DeribitHttpClient {
         length: &str,
     ) -> Result<FundingChartData, HttpError> {
         let url = format!(
-            "{}/public/get_funding_chart_data?instrument_name={}&length={}",
+            "{}{}?instrument_name={}&length={}",
             self.base_url(),
+            GET_FUNDING_CHART_DATA,
             urlencoding::encode(instrument_name),
             urlencoding::encode(length)
         );
@@ -1314,8 +1327,9 @@ impl DeribitHttpClient {
         resolution: &str,
     ) -> Result<TradingViewChartData, HttpError> {
         let url = format!(
-            "{}/public/get_tradingview_chart_data?instrument_name={}&start_timestamp={}&end_timestamp={}&resolution={}",
+            "{}{}?instrument_name={}&start_timestamp={}&end_timestamp={}&resolution={}",
             self.base_url(),
+            GET_TRADINGVIEW_CHART_DATA,
             urlencoding::encode(instrument_name),
             start_timestamp,
             end_timestamp,
@@ -1389,8 +1403,9 @@ impl DeribitHttpClient {
         offset: Option<u32>,
     ) -> Result<DeliveryPricesResponse, HttpError> {
         let mut url = format!(
-            "{}/public/get_delivery_prices?index_name={}",
+            "{}{}?index_name={}",
             self.base_url(),
+            GET_DELIVERY_PRICES,
             urlencoding::encode(index_name)
         );
 
@@ -1455,8 +1470,9 @@ impl DeribitHttpClient {
         currency_pair: Option<&str>,
     ) -> Result<ExpirationsResponse, HttpError> {
         let mut url = format!(
-            "{}/public/get_expirations?currency={}&kind={}",
+            "{}{}?currency={}&kind={}",
             self.base_url(),
+            GET_EXPIRATIONS,
             urlencoding::encode(currency),
             urlencoding::encode(kind)
         );
@@ -1521,8 +1537,9 @@ impl DeribitHttpClient {
         end_timestamp: u64,
     ) -> Result<Vec<FundingRateData>, HttpError> {
         let url = format!(
-            "{}/public/get_funding_rate_history?instrument_name={}&start_timestamp={}&end_timestamp={}",
+            "{}{}?instrument_name={}&start_timestamp={}&end_timestamp={}",
             self.base_url(),
+            GET_FUNDING_RATE_HISTORY,
             urlencoding::encode(instrument_name),
             start_timestamp,
             end_timestamp
@@ -1593,8 +1610,9 @@ impl DeribitHttpClient {
         end_timestamp: u64,
     ) -> Result<f64, HttpError> {
         let url = format!(
-            "{}/public/get_funding_rate_value?instrument_name={}&start_timestamp={}&end_timestamp={}",
+            "{}{}?instrument_name={}&start_timestamp={}&end_timestamp={}",
             self.base_url(),
+            GET_FUNDING_RATE_VALUE,
             urlencoding::encode(instrument_name),
             start_timestamp,
             end_timestamp
@@ -1657,8 +1675,9 @@ impl DeribitHttpClient {
         search_start_timestamp: Option<u64>,
     ) -> Result<SettlementsResponse, HttpError> {
         let mut url = format!(
-            "{}/public/get_last_settlements_by_currency?currency={}",
+            "{}{}?currency={}",
             self.base_url(),
+            GET_LAST_SETTLEMENTS_BY_CURRENCY,
             urlencoding::encode(currency)
         );
 
@@ -1741,8 +1760,9 @@ impl DeribitHttpClient {
         search_start_timestamp: Option<u64>,
     ) -> Result<SettlementsResponse, HttpError> {
         let mut url = format!(
-            "{}/public/get_last_settlements_by_instrument?instrument_name={}",
+            "{}{}?instrument_name={}",
             self.base_url(),
+            GET_LAST_SETTLEMENTS_BY_INSTRUMENT,
             urlencoding::encode(instrument_name)
         );
 
@@ -1839,8 +1859,9 @@ impl DeribitHttpClient {
         sorting: Option<&str>,
     ) -> Result<LastTradesResponse, HttpError> {
         let mut url = format!(
-            "{}/public/get_last_trades_by_currency?currency={}",
+            "{}{}?currency={}",
             self.base_url(),
+            GET_LAST_TRADES_BY_CURRENCY,
             urlencoding::encode(currency)
         );
 
@@ -1936,8 +1957,9 @@ impl DeribitHttpClient {
         sorting: Option<&str>,
     ) -> Result<LastTradesResponse, HttpError> {
         let mut url = format!(
-            "{}/public/get_last_trades_by_currency_and_time?currency={}&start_timestamp={}&end_timestamp={}",
+            "{}{}?currency={}&start_timestamp={}&end_timestamp={}",
             self.base_url(),
+            GET_LAST_TRADES_BY_CURRENCY_AND_TIME,
             urlencoding::encode(currency),
             start_timestamp,
             end_timestamp
@@ -2032,8 +2054,9 @@ impl DeribitHttpClient {
         sorting: Option<&str>,
     ) -> Result<LastTradesResponse, HttpError> {
         let mut url = format!(
-            "{}/public/get_last_trades_by_instrument_and_time?instrument_name={}&start_timestamp={}&end_timestamp={}",
+            "{}{}?instrument_name={}&start_timestamp={}&end_timestamp={}",
             self.base_url(),
+            GET_LAST_TRADES_BY_INSTRUMENT_AND_TIME,
             urlencoding::encode(instrument_name),
             start_timestamp,
             end_timestamp
@@ -2117,8 +2140,9 @@ impl DeribitHttpClient {
         depth: Option<u32>,
     ) -> Result<OrderBook, HttpError> {
         let mut url = format!(
-            "{}/public/get_order_book_by_instrument_id?instrument_id={}",
+            "{}{}?instrument_id={}",
             self.base_url(),
+            GET_ORDER_BOOK_BY_INSTRUMENT_ID,
             instrument_id
         );
 

@@ -33,7 +33,7 @@ mod withdrawal_tests {
 
         Ok(())
     }
-    
+
     #[tokio::test]
     #[serial_test::serial]
     async fn test_transfer_to_user_validation() -> Result<(), Box<dyn std::error::Error>> {

@@ -12,7 +12,7 @@ mod robust_error_handling_tests {
     use deribit_http::DeribitHttpClient;
     use tokio::time::{Duration, Instant, sleep};
     use tracing::{debug, info, warn};
-    
+
     #[tokio::test]
     #[serial_test::serial]
     async fn test_network_error_handling() -> Result<(), Box<dyn std::error::Error>> {
@@ -102,7 +102,7 @@ mod robust_error_handling_tests {
         info!("Network error handling test completed successfully");
         Ok(())
     }
-    
+
     #[tokio::test]
     #[serial_test::serial]
     async fn test_error_recovery_patterns() -> Result<(), Box<dyn std::error::Error>> {

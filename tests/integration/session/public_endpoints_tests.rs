@@ -244,7 +244,9 @@ mod tests {
     async fn test_get_last_trades_by_currency() {
         let client = create_test_client().await;
 
-        let result = client.get_last_trades_by_currency("BTC", None, None, None, None).await;
+        let result = client
+            .get_last_trades_by_currency("BTC", None, None, None, None)
+            .await;
         match result {
             Ok(trades) => {
                 println!("Successfully got trades: {:?}", trades);

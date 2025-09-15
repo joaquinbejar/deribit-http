@@ -44,27 +44,6 @@
 //! - Session management: `exchange_token(refresh_token, subject_id, scope)` and `fork_token(refresh_token, session_name, scope)`.
 //! - API Key: the `authenticate_api_key` method exists but is currently not implemented and will return an error.
 //!
-//! Private example:
-//! ```rust,no_run
-//! use deribit_http::DeribitHttpClient;
-//!
-//! #[tokio::main]
-//! async fn main() -> Result<(), Box<dyn std::error::Error>> {
-//!     let client = DeribitHttpClient::new();
-//!     // OAuth2 authentication
-//!     let _token = client
-//!         .authenticate_oauth2("<CLIENT_ID>", "<CLIENT_SECRET>")
-//!         .await?;
-//!
-//!     // Now you can call private endpoints, e.g.:
-//!     let _subs = client.get_subaccounts(None).await?;
-//!     // or
-//!     // let summary = client.get_account_summary("BTC").await?; // as needed
-//!
-//!     Ok(())
-//! }
-//! ```
-//!
 //! ## Configuration
 //! - Environment shortcut: `DeribitHttpClient::new()` for Testnet and `new(false)` for Production.
 //! - Custom configuration: `DeribitHttpClient::with_config(HttpConfig)` lets you set `base_url`, `timeout`, `user_agent`, `testnet`, and optional credentials.

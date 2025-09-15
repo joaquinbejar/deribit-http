@@ -2,10 +2,10 @@
 
 #[cfg(test)]
 mod tests_private_endpoints {
-    use deribit_http::prelude::*;
-    use deribit_http::model::request::order::OrderRequest;
     use deribit_http::model::order::OrderType;
+    use deribit_http::model::request::order::OrderRequest;
     use deribit_http::model::types::TimeInForce;
+    use deribit_http::prelude::*;
 
     async fn create_test_client() -> DeribitHttpClient {
         // Create client with default configuration
@@ -46,7 +46,10 @@ mod tests_private_endpoints {
                 // Test passes if we can make the call
             }
             Err(e) => {
-                println!("get_subaccounts with portfolio failed (expected without auth): {:?}", e);
+                println!(
+                    "get_subaccounts with portfolio failed (expected without auth): {:?}",
+                    e
+                );
                 // Expected to fail without proper authentication
             }
         }
@@ -68,7 +71,10 @@ mod tests_private_endpoints {
                 // Test passes if we can make the call
             }
             Err(e) => {
-                println!("get_transaction_log failed (expected without auth): {:?}", e);
+                println!(
+                    "get_transaction_log failed (expected without auth): {:?}",
+                    e
+                );
                 // Expected to fail without proper authentication
             }
         }
@@ -121,7 +127,10 @@ mod tests_private_endpoints {
                 // Test passes if we can make the call
             }
             Err(e) => {
-                println!("submit_transfer_to_subaccount failed (expected without auth): {:?}", e);
+                println!(
+                    "submit_transfer_to_subaccount failed (expected without auth): {:?}",
+                    e
+                );
                 // Expected to fail without proper authentication
             }
         }
@@ -138,7 +147,10 @@ mod tests_private_endpoints {
                 // Test passes if we can make the call
             }
             Err(e) => {
-                println!("submit_transfer_to_user failed (expected without auth): {:?}", e);
+                println!(
+                    "submit_transfer_to_user failed (expected without auth): {:?}",
+                    e
+                );
                 // Expected to fail without proper authentication
             }
         }
@@ -157,9 +169,9 @@ mod tests_private_endpoints {
             amount: Some(10.0),
             contracts: None,
             type_: Some(OrderType::Limit),
-             label: Some("test_order".to_string()),
-             price: Some(50000.0),
-             time_in_force: Some(TimeInForce::GoodTilCancelled),
+            label: Some("test_order".to_string()),
+            price: Some(50000.0),
+            time_in_force: Some(TimeInForce::GoodTilCancelled),
             display_amount: None,
             post_only: None,
             reject_post_only: None,
@@ -172,12 +184,12 @@ mod tests_private_endpoints {
             valid_until: None,
             linked_order_type: None,
             trigger_fill_condition: None,
-            otoco_config: None
+            otoco_config: None,
         };
 
         // Print request details for debugging
         println!("About to call buy_order with request: {:#?}", request);
-        
+
         let result = client.buy_order(request).await;
         match result {
             Ok(response) => {
@@ -277,7 +289,10 @@ mod tests_private_endpoints {
                 // Test passes if we can make the call
             }
             Err(e) => {
-                println!("cancel_all_by_currency failed (expected without auth): {:?}", e);
+                println!(
+                    "cancel_all_by_currency failed (expected without auth): {:?}",
+                    e
+                );
                 // Expected to fail without proper authentication
             }
         }
@@ -294,7 +309,10 @@ mod tests_private_endpoints {
                 // Test passes if we can make the call
             }
             Err(e) => {
-                println!("cancel_all_by_instrument failed (expected without auth): {:?}", e);
+                println!(
+                    "cancel_all_by_instrument failed (expected without auth): {:?}",
+                    e
+                );
                 // Expected to fail without proper authentication
             }
         }
@@ -311,7 +329,10 @@ mod tests_private_endpoints {
                 // Test passes if we can make the call
             }
             Err(e) => {
-                println!("get_account_summary failed (expected without auth): {:?}", e);
+                println!(
+                    "get_account_summary failed (expected without auth): {:?}",
+                    e
+                );
                 // Expected to fail without proper authentication
             }
         }
@@ -403,7 +424,10 @@ mod tests_private_endpoints {
                 // Test passes if we can make the call
             }
             Err(e) => {
-                println!("get_open_orders_by_currency failed (expected without auth): {:?}", e);
+                println!(
+                    "get_open_orders_by_currency failed (expected without auth): {:?}",
+                    e
+                );
                 // Expected to fail without proper authentication
             }
         }
@@ -422,7 +446,10 @@ mod tests_private_endpoints {
                 // Test passes if we can make the call
             }
             Err(e) => {
-                println!("get_open_orders_by_instrument failed (expected without auth): {:?}", e);
+                println!(
+                    "get_open_orders_by_instrument failed (expected without auth): {:?}",
+                    e
+                );
                 // Expected to fail without proper authentication
             }
         }
@@ -458,7 +485,10 @@ mod tests_private_endpoints {
                 // Test passes if we can make the call
             }
             Err(e) => {
-                println!("get_user_trades_by_instrument failed (expected without auth): {:?}", e);
+                println!(
+                    "get_user_trades_by_instrument failed (expected without auth): {:?}",
+                    e
+                );
                 // Expected to fail without proper authentication
             }
         }

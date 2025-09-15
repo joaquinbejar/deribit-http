@@ -10,10 +10,10 @@
 #[cfg(test)]
 mod transaction_log_tests {
     use deribit_http::DeribitHttpClient;
+    use deribit_http::model::TransactionLogRequest;
     use std::path::Path;
     use std::time::{SystemTime, UNIX_EPOCH};
     use tracing::{debug, info};
-    use deribit_http::model::TransactionLogRequest;
 
     /// Check if .env file exists and contains required variables
     fn check_env_file() -> Result<(), Box<dyn std::error::Error>> {
@@ -89,7 +89,6 @@ mod transaction_log_tests {
                 log_entry.balance.is_finite(),
                 "Balance should be a finite number"
             );
-            
         }
 
         info!("BTC transaction log test completed successfully");
@@ -360,10 +359,7 @@ mod transaction_log_tests {
 
             // Validate numeric fields
             if let Some(amount) = log_entry.amount {
-                assert!(
-                    amount.is_finite(),
-                    "Amount should be a finite number"
-                );
+                assert!(amount.is_finite(), "Amount should be a finite number");
             }
             assert!(
                 log_entry.balance.is_finite(),

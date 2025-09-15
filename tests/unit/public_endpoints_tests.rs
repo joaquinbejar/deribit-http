@@ -22,7 +22,7 @@ fn create_test_client(server: &mockito::Server) -> DeribitHttpClient {
 async fn test_get_currencies_success() {
     let mut server = mockito::Server::new_async().await;
     let client = create_test_client(&server);
-    
+
     let mock_response = json!({
         "jsonrpc": "2.0",
         "result": [
@@ -55,12 +55,12 @@ async fn test_get_currencies_success() {
         .await;
 
     let result = client.get_currencies().await;
-    
+
     mock.assert_async().await;
-        if let Err(e) = &result {
-            println!("Error: {:?}", e);
-        }
-        assert!(result.is_ok());
+    if let Err(e) = &result {
+        println!("Error: {:?}", e);
+    }
+    assert!(result.is_ok());
     let currencies = result.unwrap();
     assert_eq!(currencies.len(), 1);
     assert_eq!(currencies[0].currency, "BTC");
@@ -76,19 +76,21 @@ async fn test_get_currencies_error() {
         .mock("GET", "//public/get_currencies")
         .with_status(400)
         .with_header("content-type", "application/json")
-        .with_body(r#"{
+        .with_body(
+            r#"{
             "jsonrpc": "2.0",
             "id": 1,
             "error": {
                 "code": -32602,
                 "message": "Invalid params"
             }
-        }"#)
+        }"#,
+        )
         .create_async()
         .await;
 
     let result = client.get_currencies().await;
-    
+
     mock.assert_async().await;
     assert!(result.is_err());
 }
@@ -97,7 +99,7 @@ async fn test_get_currencies_error() {
 async fn test_get_index_success() {
     let mut server = mockito::Server::new_async().await;
     let client = create_test_client(&server);
-    
+
     let mock_response = json!({
         "jsonrpc": "2.0",
         "result": {
@@ -116,7 +118,7 @@ async fn test_get_index_success() {
         .await;
 
     let result = client.get_index("BTC").await;
-    
+
     mock.assert_async().await;
     assert!(result.is_ok());
 }
@@ -125,7 +127,7 @@ async fn test_get_index_success() {
 async fn test_get_index_price_success() {
     let mut server = mockito::Server::new_async().await;
     let client = create_test_client(&server);
-    
+
     let mock_response = json!({
         "jsonrpc": "2.0",
         "result": {
@@ -144,7 +146,7 @@ async fn test_get_index_price_success() {
         .await;
 
     let result = client.get_index_price("btc_usd").await;
-    
+
     mock.assert_async().await;
     assert!(result.is_ok());
     let index_data = result.unwrap();
@@ -155,7 +157,7 @@ async fn test_get_index_price_success() {
 async fn test_get_index_price_names_success() {
     let mut server = mockito::Server::new_async().await;
     let client = create_test_client(&server);
-    
+
     let mock_response = json!({
         "jsonrpc": "2.0",
         "result": [
@@ -175,7 +177,7 @@ async fn test_get_index_price_names_success() {
         .await;
 
     let result = client.get_index_price_names().await;
-    
+
     mock.assert_async().await;
     assert!(result.is_ok());
     let names = result.unwrap();
@@ -187,14 +189,13 @@ async fn test_get_index_price_names_success() {
 async fn test_get_book_summary_by_currency_success() {
     let mut server = mockito::Server::new_async().await;
     let client = create_test_client(&server);
-    
-
 
     let mock = server
         .mock("GET", "//public/get_book_summary_by_currency?currency=BTC")
         .with_status(200)
         .with_header("content-type", "application/json")
-        .with_body(r#"{
+        .with_body(
+            r#"{
                 "jsonrpc": "2.0",
                 "id": 1,
                 "result": [
@@ -209,12 +210,13 @@ async fn test_get_book_summary_by_currency_success() {
                         "creation_timestamp": 1640995200000
                     }
                 ]
-            }"#)
+            }"#,
+        )
         .create_async()
         .await;
 
     let result = client.get_book_summary_by_currency("BTC", None).await;
-    
+
     mock.assert_async().await;
     assert!(result.is_ok());
     let summaries = result.unwrap();
@@ -226,7 +228,7 @@ async fn test_get_book_summary_by_currency_success() {
 async fn test_get_instrument_success() {
     let mut server = mockito::Server::new_async().await;
     let client = create_test_client(&server);
-    
+
     let mock_response = json!({
         "jsonrpc": "2.0",
         "result": {
@@ -248,7 +250,10 @@ async fn test_get_instrument_success() {
     });
 
     let mock = server
-        .mock("GET", "//public/get_instrument?instrument_name=BTC-PERPETUAL")
+        .mock(
+            "GET",
+            "//public/get_instrument?instrument_name=BTC-PERPETUAL",
+        )
         .with_status(200)
         .with_header("content-type", "application/json")
         .with_body(mock_response.to_string())
@@ -256,7 +261,7 @@ async fn test_get_instrument_success() {
         .await;
 
     let result = client.get_instrument("BTC-PERPETUAL").await;
-    
+
     mock.assert_async().await;
     assert!(result.is_ok());
     let instrument = result.unwrap();
@@ -268,7 +273,7 @@ async fn test_get_instrument_success() {
 async fn test_get_server_time_success() {
     let mut server = mockito::Server::new_async().await;
     let client = create_test_client(&server);
-    
+
     let mock_response = json!({
         "jsonrpc": "2.0",
         "result": 1640995200000u64,
@@ -284,7 +289,7 @@ async fn test_get_server_time_success() {
         .await;
 
     let result = client.get_server_time().await;
-    
+
     mock.assert_async().await;
     assert!(result.is_ok());
     let timestamp = result.unwrap();
@@ -295,7 +300,7 @@ async fn test_get_server_time_success() {
 async fn test_test_connection_success() {
     let mut server = mockito::Server::new_async().await;
     let client = create_test_client(&server);
-    
+
     let mock_response = json!({
         "jsonrpc": "2.0",
         "result": {
@@ -313,7 +318,7 @@ async fn test_test_connection_success() {
         .await;
 
     let result = client.test_connection().await;
-    
+
     mock.assert_async().await;
     if let Err(e) = &result {
         println!("Error: {:?}", e);
@@ -327,7 +332,7 @@ async fn test_test_connection_success() {
 async fn test_get_ticker_success() {
     let mut server = mockito::Server::new_async().await;
     let client = create_test_client(&server);
-    
+
     let mock_response = json!({
         "jsonrpc": "2.0",
         "result": {
@@ -352,7 +357,7 @@ async fn test_get_ticker_success() {
     });
 
     let mock = server
-            .mock("GET", "//public/ticker?instrument_name=BTC-PERPETUAL")
+        .mock("GET", "//public/ticker?instrument_name=BTC-PERPETUAL")
         .with_status(200)
         .with_header("content-type", "application/json")
         .with_body(mock_response.to_string())
@@ -360,7 +365,7 @@ async fn test_get_ticker_success() {
         .await;
 
     let result = client.get_ticker("BTC-PERPETUAL").await;
-    
+
     mock.assert_async().await;
     if let Err(e) = &result {
         println!("Error: {:?}", e);
@@ -375,7 +380,7 @@ async fn test_get_ticker_success() {
 async fn test_get_contract_size_success() {
     let mut server = mockito::Server::new_async().await;
     let client = create_test_client(&server);
-    
+
     let mock_response = json!({
         "jsonrpc": "2.0",
         "result": {
@@ -385,7 +390,10 @@ async fn test_get_contract_size_success() {
     });
 
     let mock = server
-        .mock("GET", "//public/get_contract_size?instrument_name=BTC-PERPETUAL")
+        .mock(
+            "GET",
+            "//public/get_contract_size?instrument_name=BTC-PERPETUAL",
+        )
         .with_status(200)
         .with_header("content-type", "application/json")
         .with_body(mock_response.to_string())
@@ -393,7 +401,7 @@ async fn test_get_contract_size_success() {
         .await;
 
     let result = client.get_contract_size("BTC-PERPETUAL").await;
-    
+
     mock.assert_async().await;
     assert!(result.is_ok());
     let contract_size = result.unwrap();
@@ -404,7 +412,7 @@ async fn test_get_contract_size_success() {
 async fn test_get_last_trades_success() {
     let mut server = mockito::Server::new_async().await;
     let client = create_test_client(&server);
-    
+
     let mock_response = json!({
         "jsonrpc": "2.0",
         "result": {
@@ -428,15 +436,20 @@ async fn test_get_last_trades_success() {
     });
 
     let mock = server
-        .mock("GET", "//public/get_last_trades_by_instrument?instrument_name=BTC-PERPETUAL&count=10")
+        .mock(
+            "GET",
+            "//public/get_last_trades_by_instrument?instrument_name=BTC-PERPETUAL&count=10",
+        )
         .with_status(200)
         .with_header("content-type", "application/json")
         .with_body(mock_response.to_string())
         .create_async()
         .await;
 
-    let result = client.get_last_trades("BTC-PERPETUAL", Some(10), None).await;
-    
+    let result = client
+        .get_last_trades("BTC-PERPETUAL", Some(10), None)
+        .await;
+
     mock.assert_async().await;
     assert!(result.is_ok());
     let trades = result.unwrap();
@@ -449,7 +462,7 @@ async fn test_get_last_trades_success() {
 async fn test_get_order_book_success() {
     let mut server = mockito::Server::new_async().await;
     let client = create_test_client(&server);
-    
+
     let mock_response = json!({
         "jsonrpc": "2.0",
         "result": {
@@ -463,7 +476,10 @@ async fn test_get_order_book_success() {
     });
 
     let mock = server
-        .mock("GET", "//public/get_order_book?instrument_name=BTC-PERPETUAL&depth=5")
+        .mock(
+            "GET",
+            "//public/get_order_book?instrument_name=BTC-PERPETUAL&depth=5",
+        )
         .with_status(200)
         .with_header("content-type", "application/json")
         .with_body(mock_response.to_string())
@@ -471,7 +487,7 @@ async fn test_get_order_book_success() {
         .await;
 
     let result = client.get_order_book("BTC-PERPETUAL", Some(5)).await;
-    
+
     mock.assert_async().await;
     assert!(result.is_ok());
     let order_book = result.unwrap();
