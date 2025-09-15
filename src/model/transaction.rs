@@ -112,39 +112,58 @@ pub struct TransactionLogEntry {
     pub instrument_name: Option<String>,
 }
 
+/// Transaction side enumeration indicating the direction or type of trade
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum TransactionSide {
+    /// Long position
     #[serde(rename = "long")]
     Long,
+    /// Short position
     #[serde(rename = "short")]
     Short,
+    /// Opening buy position
     #[serde(rename = "open buy")]
     OpenBuy,
+    /// Opening sell position
     #[serde(rename = "open sell")]
     OpenSell,
+    /// Closing buy position
     #[serde(rename = "close buy")]
     CloseBuy,
+    /// Closing sell position
     #[serde(rename = "close sell")]
     CloseSell,
+    /// No specific side
     #[serde(rename = "-")]
     None,
 }
 
+/// User role in a trade transaction
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum UserRole {
+    /// User who provides liquidity (maker)
     Maker,
+    /// User who takes liquidity (taker)
     Taker,
 }
 
+/// Request parameters for retrieving transaction log entries
 #[skip_serializing_none]
 #[derive(DebugPretty, DisplaySimple, Clone, Serialize, Deserialize, Default)]
 pub struct TransactionLogRequest {
+    /// Currency code (e.g., "BTC", "ETH", "USDC")
     pub currency: String,
+    /// Start timestamp in milliseconds since Unix epoch
     pub start_timestamp: u64,
+    /// End timestamp in milliseconds since Unix epoch
     pub end_timestamp: u64,
+    /// Optional search query string
     pub query: Option<String>,
+    /// Maximum number of entries to return
     pub count: Option<u64>,
+    /// Optional subaccount identifier
     pub subaccount_id: Option<u64>,
+    /// Continuation token for pagination
     pub continuation: Option<u64>,
 }

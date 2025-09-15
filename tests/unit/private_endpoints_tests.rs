@@ -14,7 +14,7 @@ fn create_test_client(server: &mockito::ServerGuard) -> DeribitHttpClient {
         env::set_var("DERIBIT_CLIENT_SECRET", "test_client_secret");
         env::set_var("DERIBIT_TESTNET", "true");
     }
-    
+
     let config = HttpConfig {
         base_url: Url::parse(&format!("{}/api/v2", server.url())).unwrap(),
         ..Default::default()
