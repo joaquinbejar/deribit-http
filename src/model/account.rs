@@ -3,7 +3,6 @@
    Email: jb@taunais.com
    Date: 21/7/25
 ******************************************************************************/
-use crate::model::response::other::AccountSummaryResponse;
 use pretty_simple_display::{DebugPretty, DisplaySimple};
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
@@ -12,28 +11,77 @@ use serde_with::skip_serializing_none;
 #[skip_serializing_none]
 #[derive(DebugPretty, DisplaySimple, Clone, Serialize, Deserialize)]
 pub struct Subaccount {
-    /// Subaccount email
+    /// User email
     pub email: String,
-    /// Subaccount ID
+    /// Account/Subaccount identifier
     pub id: u64,
-    /// Whether login is enabled
+    /// true when password for the subaccount has been configured
+    pub is_password: Option<bool>,
+    /// Informs whether login to the subaccount is enabled
     pub login_enabled: bool,
+    /// Margin model
+    pub margin_model: Option<String>,
+    /// New email address that has not yet been confirmed (only included if with_portfolio == true)
+    pub not_confirmed_email: Option<String>,
     /// Portfolio information (optional)
-    pub portfolio: Option<PortfolioInfo>,
-    /// Whether to receive notifications
+    pub portfolio: Option<Portfolio>,
+    /// hashed identifier used in the Proof Of Liability for the subaccount
+    pub proof_id: Option<String>,
+    /// signature used as a base string for proof_id hash
+    pub proof_id_signature: Option<String>,
+    /// When true - receive all notification emails on the main email
     pub receive_notifications: bool,
-    /// System name
+    /// Names of assignments with Security Keys assigned
+    pub security_keys_assignments: Option<Vec<String>>,
+    /// Whether the Security Keys authentication is enabled
+    pub security_keys_enabled: Option<bool>,
+    /// System generated user nickname
     pub system_name: String,
-    /// Time in force (optional)
-    pub tif: Option<String>,
-    /// Subaccount type
+    /// Account type
     #[serde(rename = "type")]
     pub subaccount_type: String,
     /// Username
     pub username: String,
 }
 
-/// Portfolio information
+/// Currency portfolio information
+#[skip_serializing_none]
+#[derive(DebugPretty, DisplaySimple, Clone, Serialize, Deserialize)]
+pub struct CurrencyPortfolio {
+    /// The account's balance reserved in other orders
+    pub additional_reserve: Option<f64>,
+    /// Available funds
+    pub available_funds: f64,
+    /// Available withdrawal funds
+    pub available_withdrawal_funds: f64,
+    /// Account balance
+    pub balance: f64,
+    /// Currency symbol
+    pub currency: String,
+    /// Account equity
+    pub equity: f64,
+    /// Initial margin requirement
+    pub initial_margin: f64,
+    /// Maintenance margin requirement
+    pub maintenance_margin: f64,
+    /// Margin balance
+    pub margin_balance: f64,
+    /// The account's balance reserved in active spot orders
+    pub spot_reserve: f64,
+}
+
+/// Trading product detail
+#[derive(DebugPretty, DisplaySimple, Clone, Serialize, Deserialize)]
+pub struct TradingProductDetail {
+    /// Whether enabled
+    pub enabled: bool,
+    /// Product name
+    pub product: String,
+    /// Whether overwriteable
+    pub overwriteable: bool,
+}
+
+/// Portfolio information (legacy)
 #[derive(DebugPretty, DisplaySimple, Clone, Serialize, Deserialize)]
 pub struct PortfolioInfo {
     /// Available funds
@@ -64,31 +112,16 @@ pub struct PortfolioInfo {
 
 /// Portfolio information
 #[skip_serializing_none]
-#[derive(DebugPretty, DisplaySimple, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Portfolio {
-    /// Currency of the portfolio
-    pub currency: String,
-    /// Account summaries for different currencies
-    pub accounts: Vec<AccountSummaryResponse>,
-    /// Total portfolio value in USD
-    pub total_usd_value: Option<f64>,
-    /// Cross-currency margin enabled
-    pub cross_margin_enabled: bool,
-}
-
-impl Portfolio {
-    /// Create a new empty portfolio
-    pub fn new(currency: String) -> Self {
-        Self {
-            currency,
-            accounts: Vec::new(),
-            total_usd_value: None,
-            cross_margin_enabled: false,
-        }
-    }
-
-    /// Add an account summary to the portfolio
-    pub fn add_account(&mut self, account: AccountSummaryResponse) {
-        self.accounts.push(account);
-    }
+    /// Bitcoin portfolio information
+    pub btc: Option<CurrencyPortfolio>,
+    /// Ethereum portfolio information
+    pub eth: Option<CurrencyPortfolio>,
+    /// USDC portfolio information (if applicable)
+    pub usdc: Option<CurrencyPortfolio>,
+    /// USDT portfolio information (if applicable)
+    pub usdt: Option<CurrencyPortfolio>,
+    /// EURR portfolio information (if applicable)
+    pub eurr: Option<CurrencyPortfolio>,
 }
