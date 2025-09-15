@@ -63,8 +63,12 @@ pub struct TradeExecution {
 #[skip_serializing_none]
 #[derive(DebugPretty, DisplaySimple, Clone, Serialize, Deserialize)]
 pub struct UserTrade {
-    /// Trade amount
+    /// Trade amount in base currency units
     pub amount: f64,
+    /// Whether the order was placed via API
+    pub api: Option<bool>,
+    /// Number of contracts traded
+    pub contracts: Option<f64>,
     /// Trade direction (buy/sell)
     pub direction: String,
     /// Trading fee paid
@@ -78,28 +82,38 @@ pub struct UserTrade {
     /// Implied volatility (for options)
     pub iv: Option<f64>,
     /// User-defined label for the trade
-    pub label: String,
-    /// Liquidity type (maker/taker)
+    pub label: Option<String>,
+    /// Liquidity type (M=maker, T=taker)
     pub liquidity: String,
     /// Mark price at execution time
     pub mark_price: f64,
     /// Matching engine identifier
     pub matching_id: Option<String>,
+    /// Whether Market Maker Protection was active
+    pub mmp: Option<bool>,
     /// Order ID that generated this trade
     pub order_id: String,
     /// Type of the order that generated this trade
     pub order_type: String,
     /// Original order type before modifications
     pub original_order_type: Option<String>,
+    /// Whether this was a post-only order
+    pub post_only: Option<bool>,
     /// Execution price
     pub price: f64,
+    /// Profit or loss from this trade
+    pub profit_loss: Option<f64>,
+    /// Whether this was a reduce-only order
+    pub reduce_only: Option<bool>,
+    /// Whether this trade was risk reducing
+    pub risk_reducing: Option<bool>,
     /// Whether this was a self trade
     pub self_trade: bool,
     /// Current state of the trade
     pub state: String,
     /// Price tick direction (1=up, -1=down, 0=no change)
     pub tick_direction: i32,
-    /// Execution timestamp
+    /// Execution timestamp (milliseconds since UNIX epoch)
     pub timestamp: u64,
     /// Unique trade identifier
     pub trade_id: String,
@@ -107,6 +121,8 @@ pub struct UserTrade {
     pub trade_seq: u64,
     /// Underlying asset price (for derivatives)
     pub underlying_price: Option<f64>,
+    /// User ID who executed the trade
+    pub user_id: Option<u64>,
 }
 
 /// Last trade

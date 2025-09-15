@@ -3,6 +3,7 @@
    Email: jb@taunais.com
    Date: 15/9/25
 ******************************************************************************/
+use std::fmt::Display;
 use pretty_simple_display::{DebugPretty, DisplaySimple};
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
@@ -23,6 +24,19 @@ pub enum InstrumentKind {
     /// Option combo
     #[serde(rename = "option_combo")]
     OptionCombo,
+}
+
+impl Display for InstrumentKind {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            InstrumentKind::Future => write!(f, "future"),
+            InstrumentKind::Option => write!(f, "option"),
+            InstrumentKind::Spot => write!(f, "spot"),
+            InstrumentKind::FutureCombo => write!(f, "future_combo"),
+            InstrumentKind::OptionCombo => write!(f, "option_combo"),
+        }
+        
+    }
 }
 
 /// Instrument type enumeration

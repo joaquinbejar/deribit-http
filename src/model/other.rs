@@ -79,3 +79,23 @@ pub struct ParsedOptionWithTicker {
     /// Associated ticker data
     pub ticker: TickerData,
 }
+
+/// Sort direction options
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+#[serde(rename_all = "lowercase")]
+pub enum SortDirection {
+    #[default]
+    Asc,
+    Desc,
+    Default,
+}
+
+impl std::fmt::Display for SortDirection {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            SortDirection::Asc => write!(f, "asc"),
+            SortDirection::Desc => write!(f, "desc"),
+            SortDirection::Default => write!(f, "default"),
+        }
+    }
+}

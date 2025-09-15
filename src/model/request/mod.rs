@@ -10,6 +10,7 @@ pub mod api_request;
 pub mod mass_quote;
 /// Order request models and types
 pub mod order;
+pub mod trade;
 
 pub use api_request::*;
 pub use mass_quote::*;

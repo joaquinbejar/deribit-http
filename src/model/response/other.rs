@@ -49,6 +49,15 @@ pub struct MatchingEngineLimit {
 /// Response type for user trades, containing a vector of user trade data
 pub type UserTradeResponse = Vec<UserTrade>;
 
+/// Response type for user trades with pagination info (used by instrument-specific endpoints)
+#[derive(DebugPretty, DisplaySimple, Clone, Serialize, Deserialize)]
+pub struct UserTradeWithPaginationResponse {
+    /// List of user trades
+    pub trades: Vec<UserTrade>,
+    /// Whether there are more trades available
+    pub has_more: bool,
+}
+
 /// Contract size response
 #[derive(DebugPretty, DisplaySimple, Clone, Serialize, Deserialize)]
 pub struct ContractSizeResponse {
