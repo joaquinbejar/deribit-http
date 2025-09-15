@@ -179,7 +179,7 @@ impl AuthManager {
 
     /// Get current authentication token
     pub fn get_token(&self) -> Option<&AuthToken> {
-        if self.is_token_expired() {
+        if !self.is_token_expired() {
             self.token.as_ref()
         } else {
             None
@@ -273,6 +273,7 @@ impl AuthManager {
     /// # Arguments
     ///
     /// * `token` - An instance of `AuthToken` containing the new authentication token and its
+    ///   metadata (e.g., expiration duration).
     ///   metadata (e.g., expiration duration).
     ///
     /// # Effects
