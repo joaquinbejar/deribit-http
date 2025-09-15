@@ -2,21 +2,12 @@
 
 #[cfg(test)]
 mod account_summary_tests {
-    use std::time::Duration;
     use deribit_http::prelude::*;
     use mockito::Server;
 
     async fn create_mock_client() -> (mockito::ServerGuard, DeribitHttpClient) {
         let server = Server::new_async().await;
-        let config = HttpConfig {
-            base_url: url::Url::parse(&server.url()).unwrap(),
-            timeout: Duration::from_secs(30),
-            user_agent: "test-agent".to_string(),
-            max_retries: 3,
-            testnet: false,
-            credentials: None,
-        };
-        let client = DeribitHttpClient::with_config(config);
+        let client = DeribitHttpClient::default();
         (server, client)
     }
 
