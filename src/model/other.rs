@@ -64,9 +64,9 @@ pub struct OptionInstrumentPair {
 
 #[derive(DebugPretty, DisplaySimple, Clone, Serialize)]
 pub struct ParsedOptionWithTicker {
-    instrument_name: String,
-    strike: f64,
-    option_type: OptionType,
-    expiry: String,
-    ticker: TickerData,
+    pub instrument_name: String,
+    pub strike: f64,
+    pub option_type: OptionType,
+    pub expiry: String,
+    pub ticker: TickerData,
 }
