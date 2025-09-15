@@ -50,7 +50,7 @@ pub enum InstrumentType {
 
 /// Instrument information
 #[skip_serializing_none]
-#[derive(DebugPretty, DisplaySimple, Clone, Serialize, Deserialize)]
+#[derive(DebugPretty, DisplaySimple, Clone, Serialize, Deserialize, Default)]
 pub struct Instrument {
     /// Instrument name (e.g., "BTC-PERPETUAL", "ETH-25JUL25-3000-C")
     pub instrument_name: String,
