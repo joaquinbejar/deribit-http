@@ -38,13 +38,13 @@ pub struct OrderInfoResponse {
     /// Whether order was placed via API
     pub api: bool,
     /// Average execution price
-    pub average_price: f64,
+    pub average_price: Option<f64>,
     /// Order creation timestamp
     pub creation_timestamp: u64,
     /// Order direction (buy/sell)
     pub direction: String,
     /// Amount that has been filled
-    pub filled_amount: f64,
+    pub filled_amount: Option<f64>,
     /// Instrument name
     pub instrument_name: String,
     /// Whether this is a liquidation order
