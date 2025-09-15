@@ -5,7 +5,7 @@
 ******************************************************************************/
 use crate::model::order::OrderType;
 use crate::model::response::order::LinkedOrderType;
-use crate::model::trigger::{TriggerFillCondition, TriggerType};
+use crate::model::trigger::{TriggerFillCondition, Trigger};
 use crate::model::types::TimeInForce;
 use pretty_simple_display::{DebugPretty, DisplaySimple};
 use serde::{Deserialize, Serialize};
@@ -45,7 +45,7 @@ pub struct OrderRequest {
     /// Trigger offset for conditional orders
     pub trigger_offset: Option<f64>,
     /// Trigger type for conditional orders
-    pub trigger: Option<TriggerType>,
+    pub trigger: Option<Trigger>,
     /// Advanced order type (USD or implied volatility)
     pub advanced: Option<AdvancedOrderType>,
     /// Market maker protection flag
