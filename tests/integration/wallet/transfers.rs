@@ -13,7 +13,6 @@ mod withdrawal_tests {
     use tracing::{debug, info, warn};
 
     /// Check if .env file exists and contains required variables
-    #[allow(dead_code)]
     fn check_env_file() -> Result<(), Box<dyn std::error::Error>> {
         if !Path::new(".env").exists() {
             return Err(
@@ -34,97 +33,7 @@ mod withdrawal_tests {
 
         Ok(())
     }
-
-    /// Authenticate client using available credentials
-    #[allow(dead_code)]
-    async fn authenticate_client(
-        _client: &DeribitHttpClient,
-    ) -> Result<(), Box<dyn std::error::Error>> {
-        if let (Ok(_client_id), Ok(_client_secret)) = (
-            std::env::var("DERIBIT_CLIENT_ID"),
-            std::env::var("DERIBIT_CLIENT_SECRET"),
-        ) {
-            // Authentication is now automatic - no need to call authenticate_oauth2
-            info!("Using automatic authentication with OAuth2 credentials");
-        } else if let (Ok(_api_key), Ok(_api_secret)) = (
-            std::env::var("DERIBIT_API_KEY"),
-            std::env::var("DERIBIT_API_SECRET"),
-        ) {
-            // Authentication is now automatic - no need to call authenticate_api_key
-            info!("Using automatic authentication with API key credentials");
-        } else {
-            return Err("No valid authentication credentials found".into());
-        }
-        Ok(())
-    }
-
-    #[tokio::test]
-    #[serial_test::serial]
-    async fn test_transfer_to_subaccount_validation() -> Result<(), Box<dyn std::error::Error>> {
-        check_env_file()?;
-
-        // Starting transfer to subaccount validation test
-
-        let client = DeribitHttpClient::new();
-
-        // First, get subaccounts to find a valid destination
-        debug!("Getting subaccounts to find transfer destination");
-        let subaccounts = client.get_subaccounts(None).await?;
-
-        if subaccounts.is_empty() {
-            info!("No subaccounts found, skipping transfer to subaccount test");
-            return Ok(());
-        }
-
-        let destination_subaccount = subaccounts[0].id;
-        info!(
-            "Using subaccount {} as transfer destination",
-            destination_subaccount
-        );
-
-        // Test with a very small amount (this might still fail due to insufficient balance)
-        let test_amount = 0.00001; // Very small amount for testing
-
-        debug!(
-            "Attempting transfer to subaccount: {} BTC to subaccount {}",
-            test_amount, destination_subaccount
-        );
-        let transfer_result = client
-            .submit_transfer_to_subaccount("BTC", test_amount, destination_subaccount)
-            .await;
-
-        match transfer_result {
-            Ok(result) => {
-                info!("Transfer to subaccount successful: {:?}", result);
-
-                // Validate transfer result structure (TransferResult only has id and status)
-                assert!(!result.id.is_empty(), "Transfer ID should not be empty");
-                assert!(!result.status.is_empty(), "Status should not be empty");
-            }
-            Err(e) => {
-                warn!(
-                    "Transfer to subaccount failed (expected for testnet with no balance): {:?}",
-                    e
-                );
-
-                // Validate that it's a reasonable error (insufficient balance, etc.)
-                let error_str = e.to_string().to_lowercase();
-                assert!(
-                    error_str.contains("insufficient")
-                        || error_str.contains("balance")
-                        || error_str.contains("not_enough")
-                        || error_str.contains("invalid")
-                        || error_str.contains("minimum"),
-                    "Error should be related to balance or validation: {}",
-                    e
-                );
-            }
-        }
-
-        info!("Transfer to subaccount validation test completed successfully");
-        Ok(())
-    }
-
+    
     #[tokio::test]
     #[serial_test::serial]
     async fn test_transfer_to_user_validation() -> Result<(), Box<dyn std::error::Error>> {

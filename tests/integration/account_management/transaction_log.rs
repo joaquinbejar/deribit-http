@@ -13,6 +13,7 @@ mod transaction_log_tests {
     use std::path::Path;
     use std::time::{SystemTime, UNIX_EPOCH};
     use tracing::{debug, info};
+    use deribit_http::model::TransactionLogRequest;
 
     /// Check if .env file exists and contains required variables
     fn check_env_file() -> Result<(), Box<dyn std::error::Error>> {
@@ -47,7 +48,15 @@ mod transaction_log_tests {
 
         debug!("Getting BTC transaction log");
         let transaction_log = client
-            .get_transaction_log("BTC", None, None, None, None)
+            .get_transaction_log(TransactionLogRequest {
+                currency: "BTC".to_string(),
+                start_timestamp: 0,
+                end_timestamp: 0,
+                query: None,
+                count: None,
+                subaccount_id: None,
+                continuation: None,
+            })
             .await?;
 
         info!(
@@ -72,19 +81,15 @@ mod transaction_log_tests {
             debug!("Transaction type: {:?}", log_entry.transaction_type);
             assert!(log_entry.timestamp > 0, "Timestamp should be positive");
             assert_eq!(log_entry.currency, "BTC", "Currency should be BTC");
-            assert!(
-                log_entry.amount.is_finite(),
-                "Amount should be a finite number"
-            );
+            // Amount can be None for some transaction types
+            if let Some(amount) = log_entry.amount {
+                assert!(amount.is_finite(), "Amount should be a finite number");
+            }
             assert!(
                 log_entry.balance.is_finite(),
                 "Balance should be a finite number"
             );
-
-            // Validate info field if present
-            if let Some(ref info) = log_entry.info {
-                assert!(!info.is_empty(), "Info should not be empty if present");
-            }
+            
         }
 
         info!("BTC transaction log test completed successfully");
@@ -102,7 +107,15 @@ mod transaction_log_tests {
 
         debug!("Getting ETH transaction log");
         let transaction_log = client
-            .get_transaction_log("ETH", None, None, None, None)
+            .get_transaction_log(TransactionLogRequest {
+                currency: "ETH".to_string(),
+                start_timestamp: 0,
+                end_timestamp: 0,
+                query: None,
+                count: None,
+                subaccount_id: None,
+                continuation: None,
+            })
             .await?;
 
         info!(
@@ -135,7 +148,15 @@ mod transaction_log_tests {
         let requested_count = 5;
         debug!("Getting transaction log with count: {}", requested_count);
         let transaction_log = client
-            .get_transaction_log("BTC", None, None, Some(requested_count), None)
+            .get_transaction_log(TransactionLogRequest {
+                currency: "BTC".to_string(),
+                start_timestamp: 0,
+                end_timestamp: 0,
+                query: None,
+                count: Some(requested_count),
+                subaccount_id: None,
+                continuation: None,
+            })
             .await?;
 
         info!(
@@ -174,7 +195,15 @@ mod transaction_log_tests {
             thirty_days_ago, now
         );
         let transaction_log = client
-            .get_transaction_log("BTC", Some(thirty_days_ago), Some(now), None, None)
+            .get_transaction_log(TransactionLogRequest {
+                currency: "BTC".to_string(),
+                start_timestamp: thirty_days_ago,
+                end_timestamp: now,
+                query: None,
+                count: None,
+                subaccount_id: None,
+                continuation: None,
+            })
             .await?;
 
         info!(
@@ -215,7 +244,15 @@ mod transaction_log_tests {
         // Get first page
         debug!("Getting first page of transaction log");
         let first_page = client
-            .get_transaction_log("BTC", None, None, Some(10), None)
+            .get_transaction_log(TransactionLogRequest {
+                currency: "BTC".to_string(),
+                start_timestamp: 0,
+                end_timestamp: 0,
+                query: None,
+                count: Some(10),
+                subaccount_id: None,
+                continuation: None,
+            })
             .await?;
 
         info!(
@@ -227,7 +264,15 @@ mod transaction_log_tests {
         if let Some(continuation) = &first_page.continuation {
             debug!("Getting second page with continuation: {}", continuation);
             let second_page = client
-                .get_transaction_log("BTC", None, None, Some(10), Some(continuation))
+                .get_transaction_log(TransactionLogRequest {
+                    currency: "BTC".to_string(),
+                    start_timestamp: 0,
+                    end_timestamp: 0,
+                    query: None,
+                    count: Some(10),
+                    subaccount_id: None,
+                    continuation: Some(*continuation),
+                })
                 .await?;
 
             info!(
@@ -279,7 +324,15 @@ mod transaction_log_tests {
 
         debug!("Getting transaction log for data validation");
         let transaction_log = client
-            .get_transaction_log("BTC", None, None, Some(20), None)
+            .get_transaction_log(TransactionLogRequest {
+                currency: "BTC".to_string(),
+                start_timestamp: 0,
+                end_timestamp: 0,
+                query: None,
+                count: Some(20),
+                subaccount_id: None,
+                continuation: None,
+            })
             .await?;
 
         info!(
@@ -295,31 +348,27 @@ mod transaction_log_tests {
 
             // Validate required fields
             assert!(log_entry.id > 0, "Transaction ID should be positive");
-            // User ID field doesn't exist in TransactionLogEntry
-            // Username field doesn't exist in TransactionLogEntry
-            // User sequence field doesn't exist in TransactionLogEntry
-            // TransactionType is an enum, validate it exists
-            debug!("Transaction type: {:?}", log_entry.transaction_type);
             assert!(log_entry.timestamp > 0, "Timestamp should be positive");
             assert!(
                 !log_entry.currency.is_empty(),
                 "Currency should not be empty"
             );
-            // Side field doesn't exist in TransactionLogEntry
+            assert!(
+                !log_entry.transaction_type.is_empty(),
+                "Transaction type should not be empty"
+            );
 
             // Validate numeric fields
-            // Only amount and balance fields exist in TransactionLogEntry
-            assert!(
-                log_entry.amount.is_finite(),
-                "Amount should be a finite number"
-            );
+            if let Some(amount) = log_entry.amount {
+                assert!(
+                    amount.is_finite(),
+                    "Amount should be a finite number"
+                );
+            }
             assert!(
                 log_entry.balance.is_finite(),
                 "Balance should be a finite number"
             );
-
-            // Validate transaction type values
-            debug!("Transaction type: {:?}", log_entry.transaction_type);
 
             // Validate currency values
             let valid_currencies = ["BTC", "ETH", "USDC", "USDT", "EURR"];
@@ -329,19 +378,10 @@ mod transaction_log_tests {
                 log_entry.currency
             );
 
-            // These fields don't exist in TransactionLogEntry
-            // Validate info field if present (replaces trade_id)
+            // Validate info field if present
             if let Some(ref info) = log_entry.info {
-                assert!(!info.is_empty(), "Info should not be empty if present");
+                assert!(!info.is_null(), "Info should not be null if present");
             }
-            // Currency field is always present
-            assert!(
-                !log_entry.currency.is_empty(),
-                "Currency should not be empty"
-            );
-            // Validate transaction type
-            // TransactionType is an enum, so we just check it exists
-            debug!("Transaction type: {:?}", log_entry.transaction_type);
         }
 
         info!("Transaction log data validation test completed successfully");
@@ -362,7 +402,15 @@ mod transaction_log_tests {
         for currency in &currencies {
             debug!("Getting transaction log for {}", currency);
             let transaction_log = client
-                .get_transaction_log(currency, None, None, Some(5), None)
+                .get_transaction_log(TransactionLogRequest {
+                    currency: currency.to_string(),
+                    start_timestamp: 0,
+                    end_timestamp: 0,
+                    query: None,
+                    count: Some(5),
+                    subaccount_id: None,
+                    continuation: None,
+                })
                 .await?;
 
             info!(

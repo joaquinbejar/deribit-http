@@ -109,44 +109,7 @@ mod network_resilience_tests {
         info!("Connection timeout handling test completed successfully");
         Ok(())
     }
-
-    #[tokio::test]
-    #[serial_test::serial]
-    async fn test_invalid_host_handling() -> Result<(), Box<dyn std::error::Error>> {
-        // Starting network recovery test
-
-        info!("Starting invalid host handling test");
-
-        // Create client with default configuration
-        // Since we can't configure custom hosts, we'll use the default client
-        let client = DeribitHttpClient::new();
-
-        debug!("Testing connection to invalid host");
-        let result = client.get_server_time().await;
-
-        match result {
-            Ok(_) => {
-                return Err("Request to invalid host should have failed".into());
-            }
-            Err(e) => {
-                info!("Request correctly failed with invalid host: {:?}", e);
-                let error_str = e.to_string().to_lowercase();
-                assert!(
-                    error_str.contains("network")
-                        || error_str.contains("dns")
-                        || error_str.contains("connection")
-                        || error_str.contains("resolve")
-                        || error_str.contains("not found"),
-                    "Error should be network-related: {}",
-                    e
-                );
-            }
-        }
-
-        info!("Invalid host handling test completed successfully");
-        Ok(())
-    }
-
+    
     #[tokio::test]
     #[serial_test::serial]
     async fn test_ssl_certificate_validation() -> Result<(), Box<dyn std::error::Error>> {

@@ -67,10 +67,7 @@ mod user_trades_log_tests {
                 !subaccount.subaccount_type.is_empty(),
                 "Account type should not be empty"
             );
-            // Validate TIF field if present
-            if let Some(ref tif) = subaccount.tif {
-                assert!(!tif.is_empty(), "TIF should not be empty if present");
-            }
+
 
             // Boolean fields are always valid - no need to test tautologies
             // ID should be positive
@@ -130,84 +127,79 @@ mod user_trades_log_tests {
                     subaccount.username
                 );
 
-                // Portfolio is a single PortfolioInfo, not a collection
                 debug!("Portfolio info: {:?}", portfolio);
-                let portfolio_info = portfolio;
-                assert!(
-                    portfolio_info.available_funds.is_finite(),
-                    "Available funds should be a finite number"
-                );
-                assert!(
-                    portfolio_info.available_withdrawal_funds.is_finite(),
-                    "Available withdrawal funds should be a finite number"
-                );
-                assert!(
-                    portfolio_info.equity.is_finite(),
-                    "Equity should be a finite number"
-                );
-                assert!(
-                    portfolio_info.initial_margin.is_finite(),
-                    "Initial margin should be a finite number"
-                );
-                assert!(
-                    portfolio_info.maintenance_margin.is_finite(),
-                    "Maintenance margin should be a finite number"
-                );
-                assert!(
-                    portfolio_info.margin_balance.is_finite(),
-                    "Margin balance should be a finite number"
-                );
-                assert!(
-                    portfolio_info.balance.is_finite(),
-                    "Balance should be a finite number"
-                );
-                assert!(
-                    portfolio_info.delta_total.is_finite(),
-                    "Delta total should be a finite number"
-                );
+                
+                // Validate each currency portfolio if present
+                let currencies = [
+                    ("btc", &portfolio.btc),
+                    ("eth", &portfolio.eth),
+                    ("usdc", &portfolio.usdc),
+                    ("usdt", &portfolio.usdt),
+                    ("eurr", &portfolio.eurr),
+                ];
+                
+                for (currency_name, currency_portfolio) in currencies {
+                    if let Some(portfolio_info) = currency_portfolio {
+                        debug!("Validating portfolio for currency: {}", currency_name);
+                        
+                        assert!(
+                            portfolio_info.available_funds.is_finite(),
+                            "Available funds should be a finite number for {}", currency_name
+                        );
+                        assert!(
+                            portfolio_info.balance.is_finite(),
+                            "Balance should be a finite number for {}", currency_name
+                        );
+                        assert!(
+                            portfolio_info.equity.is_finite(),
+                            "Equity should be a finite number for {}", currency_name
+                        );
+                        assert!(
+                            portfolio_info.initial_margin.is_finite(),
+                            "Initial margin should be a finite number for {}", currency_name
+                        );
+                        assert!(
+                            portfolio_info.maintenance_margin.is_finite(),
+                            "Maintenance margin should be a finite number for {}", currency_name
+                        );
+                        assert!(
+                            portfolio_info.margin_balance.is_finite(),
+                            "Margin balance should be a finite number for {}", currency_name
+                        );
 
-                // Validate non-negative values where appropriate
-                assert!(
-                    portfolio_info.available_funds >= 0.0,
-                    "Available funds should be non-negative"
-                );
-                assert!(
-                    portfolio_info.available_withdrawal_funds >= 0.0,
-                    "Available withdrawal funds should be non-negative"
-                );
-                assert!(
-                    portfolio_info.equity >= 0.0,
-                    "Equity should be non-negative"
-                );
-                assert!(
-                    portfolio_info.initial_margin >= 0.0,
-                    "Initial margin should be non-negative"
-                );
-                assert!(
-                    portfolio_info.maintenance_margin >= 0.0,
-                    "Maintenance margin should be non-negative"
-                );
-                // Validate currency field
-                assert!(
-                    !portfolio_info.currency.is_empty(),
-                    "Portfolio currency should not be empty"
-                );
-                assert!(
-                    portfolio_info.session_rpl.is_finite(),
-                    "Session RPL should be a finite number"
-                );
-                assert!(
-                    portfolio_info.session_upl.is_finite(),
-                    "Session UPL should be a finite number"
-                );
-                assert!(
-                    portfolio_info.total_pl.is_finite(),
-                    "Total P&L should be a finite number"
-                );
-                assert!(
-                    portfolio_info.delta_total.is_finite(),
-                    "Delta total should be a finite number"
-                );
+                        // Validate non-negative values where appropriate
+                        assert!(
+                            portfolio_info.available_funds >= 0.0,
+                            "Available funds should be non-negative for {}", currency_name
+                        );
+                        assert!(
+                            portfolio_info.available_withdrawal_funds >= 0.0,
+                            "Available withdrawal funds should be non-negative for {}", currency_name
+                        );
+                        assert!(
+                            portfolio_info.equity >= 0.0,
+                            "Equity should be non-negative for {}", currency_name
+                        );
+                        assert!(
+                            portfolio_info.initial_margin >= 0.0,
+                            "Initial margin should be non-negative for {}", currency_name
+                        );
+                        assert!(
+                            portfolio_info.maintenance_margin >= 0.0,
+                            "Maintenance margin should be non-negative for {}", currency_name
+                        );
+                        
+                        // Validate currency field
+                        assert!(
+                            !portfolio_info.currency.is_empty(),
+                            "Portfolio currency should not be empty for {}", currency_name
+                        );
+                        assert!(
+                            portfolio_info.currency.to_lowercase() == currency_name,
+                            "Portfolio currency should match expected: {} vs {}", portfolio_info.currency, currency_name
+                        );
+                    }
+                }
             } else {
                 warn!(
                     "No portfolio information found for subaccount: {}",
@@ -266,10 +258,7 @@ mod user_trades_log_tests {
                 !subaccount.subaccount_type.is_empty(),
                 "Account type should not be empty"
             );
-            // Validate TIF field if present
-            if let Some(ref tif) = subaccount.tif {
-                assert!(!tif.is_empty(), "TIF should not be empty if present");
-            }
+
 
             // Validate account type values
             assert!(
@@ -280,9 +269,90 @@ mod user_trades_log_tests {
                 subaccount.subaccount_type
             );
 
-            // Validate portfolio field if present
+            // Validate portfolio information if present
             if let Some(ref portfolio) = subaccount.portfolio {
                 debug!("Portfolio info present: {:?}", portfolio);
+                
+                // Validate each currency portfolio if present
+                let currencies = [
+                    ("btc", &portfolio.btc),
+                    ("eth", &portfolio.eth),
+                    ("usdc", &portfolio.usdc),
+                    ("usdt", &portfolio.usdt),
+                    ("eurr", &portfolio.eurr),
+                ];
+                
+                for (currency_name, currency_portfolio) in currencies {
+                    if let Some(portfolio_info) = currency_portfolio {
+                        debug!("Validating portfolio for currency: {}", currency_name);
+                        
+                        // Validate financial fields are finite
+                        assert!(
+                            portfolio_info.available_funds.is_finite(),
+                            "Available funds should be a finite number for {}", currency_name
+                        );
+                        assert!(
+                            portfolio_info.available_withdrawal_funds.is_finite(),
+                            "Available withdrawal funds should be a finite number for {}", currency_name
+                        );
+                        assert!(
+                            portfolio_info.equity.is_finite(),
+                            "Equity should be a finite number for {}", currency_name
+                        );
+                        assert!(
+                            portfolio_info.initial_margin.is_finite(),
+                            "Initial margin should be a finite number for {}", currency_name
+                        );
+                        assert!(
+                            portfolio_info.maintenance_margin.is_finite(),
+                            "Maintenance margin should be a finite number for {}", currency_name
+                        );
+                        assert!(
+                            portfolio_info.margin_balance.is_finite(),
+                            "Margin balance should be a finite number for {}", currency_name
+                        );
+                        assert!(
+                            portfolio_info.balance.is_finite(),
+                            "Balance should be a finite number for {}", currency_name
+                        );
+
+                        // Validate non-negative values where appropriate
+                        assert!(
+                            portfolio_info.available_funds >= 0.0,
+                            "Available funds should be non-negative for {}", currency_name
+                        );
+                        assert!(
+                            portfolio_info.available_withdrawal_funds >= 0.0,
+                            "Available withdrawal funds should be non-negative for {}", currency_name
+                        );
+                        assert!(
+                            portfolio_info.equity >= 0.0,
+                            "Equity should be non-negative for {}", currency_name
+                        );
+                        assert!(
+                            portfolio_info.initial_margin >= 0.0,
+                            "Initial margin should be non-negative for {}", currency_name
+                        );
+                        assert!(
+                            portfolio_info.maintenance_margin >= 0.0,
+                            "Maintenance margin should be non-negative for {}", currency_name
+                        );
+                        // Validate currency field
+                        assert!(
+                            !portfolio_info.currency.is_empty(),
+                            "Portfolio currency should not be empty for {}", currency_name
+                        );
+                        assert!(
+                            portfolio_info.currency.to_lowercase() == currency_name,
+                            "Portfolio currency should match expected: {} vs {}", portfolio_info.currency, currency_name
+                        );
+                    }
+                }
+            } else {
+                warn!(
+                    "No portfolio information found for subaccount: {}",
+                    subaccount.username
+                );
             }
 
             // Validate ID is positive

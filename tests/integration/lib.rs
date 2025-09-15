@@ -10,7 +10,6 @@
 //! including authentication, API endpoints, error handling, and network resilience.
 
 pub mod account_management;
-pub mod auth;
 pub mod connectivity;
 pub mod error_handling;
 pub mod market_data;

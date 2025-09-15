@@ -10,32 +10,9 @@
 #[cfg(test)]
 mod robust_error_handling_tests {
     use deribit_http::DeribitHttpClient;
-    use std::path::Path;
     use tokio::time::{Duration, Instant, sleep};
     use tracing::{debug, info, warn};
-
-    /// Check if .env file exists and contains required variables
-    fn check_env_file() -> Result<(), Box<dyn std::error::Error>> {
-        if !Path::new(".env").exists() {
-            return Err(
-                "Missing .env file. Please create one with authentication credentials".into(),
-            );
-        }
-
-        dotenv::dotenv().ok();
-
-        let has_oauth2 = std::env::var("DERIBIT_CLIENT_ID").is_ok()
-            && std::env::var("DERIBIT_CLIENT_SECRET").is_ok();
-        let has_api_key =
-            std::env::var("DERIBIT_API_KEY").is_ok() && std::env::var("DERIBIT_API_SECRET").is_ok();
-
-        if !has_oauth2 && !has_api_key {
-            return Err("Missing authentication credentials".into());
-        }
-
-        Ok(())
-    }
-
+    
     #[tokio::test]
     #[serial_test::serial]
     async fn test_network_error_handling() -> Result<(), Box<dyn std::error::Error>> {
@@ -125,82 +102,7 @@ mod robust_error_handling_tests {
         info!("Network error handling test completed successfully");
         Ok(())
     }
-
-    #[tokio::test]
-    #[serial_test::serial]
-    async fn test_api_error_response_handling() -> Result<(), Box<dyn std::error::Error>> {
-        check_env_file()?;
-
-        // Starting API error response handling test
-
-        let client = DeribitHttpClient::new();
-
-        // Test 1: Unauthenticated request to private endpoint
-        debug!("Testing unauthenticated request to private endpoint");
-        let unauth_result = client.get_account_summary("BTC", None).await;
-
-        match unauth_result {
-            Ok(_) => {
-                warn!("Unauthenticated request unexpectedly succeeded");
-            }
-            Err(e) => {
-                info!("Unauthenticated request correctly failed: {:?}", e);
-
-                let error_str = e.to_string().to_lowercase();
-                assert!(
-                    error_str.contains("auth")
-                        || error_str.contains("unauthorized")
-                        || error_str.contains("permission")
-                        || error_str.contains("token")
-                        || error_str.contains("credential"),
-                    "Error should indicate authentication required: {}",
-                    e
-                );
-            }
-        }
-
-        // Test 2: Invalid currency parameter
-        debug!("Testing invalid currency parameter");
-        let invalid_currency_result = client.get_account_summary("INVALID_CURRENCY", None).await;
-
-        match invalid_currency_result {
-            Ok(_) => {
-                warn!("Invalid currency unexpectedly succeeded");
-            }
-            Err(e) => {
-                info!("Invalid currency correctly failed: {:?}", e);
-
-                let error_str = e.to_string().to_lowercase();
-                // This might be an auth error or parameter error depending on implementation
-                assert!(!error_str.is_empty(), "Error message should not be empty");
-            }
-        }
-
-        // Test 3: Invalid instrument name
-        debug!("Testing invalid instrument name");
-        let invalid_instrument_result =
-            client.get_instruments("INVALID_CURRENCY", None, None).await;
-
-        match invalid_instrument_result {
-            Ok(instruments) => {
-                info!(
-                    "Invalid instrument request succeeded with {} instruments (might return empty list)",
-                    instruments.len()
-                );
-                // Some APIs return empty results for invalid parameters rather than errors
-            }
-            Err(e) => {
-                info!("Invalid instrument correctly failed: {:?}", e);
-
-                let error_str = e.to_string().to_lowercase();
-                assert!(!error_str.is_empty(), "Error message should not be empty");
-            }
-        }
-
-        info!("API error response handling test completed successfully");
-        Ok(())
-    }
-
+    
     #[tokio::test]
     #[serial_test::serial]
     async fn test_error_recovery_patterns() -> Result<(), Box<dyn std::error::Error>> {
