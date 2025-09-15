@@ -16,7 +16,7 @@ use crate::model::response::other::{
     AccountSummaryResponse, TransactionLogResponse, TransferResultResponse,
 };
 use crate::model::response::withdrawal::WithdrawalsResponse;
-use crate::model::{UserTradeResponse, UserTradeWithPaginationResponse};
+use crate::model::{UserTradeResponseByOrder, UserTradeWithPaginationResponse};
 
 /// Private endpoints implementation
 impl DeribitHttpClient {
@@ -2164,7 +2164,7 @@ impl DeribitHttpClient {
         order_id: &str,
         sorting: Option<&str>,
         historical: bool,
-    ) -> Result<UserTradeResponse, HttpError> {
+    ) -> Result<Vec<UserTradeResponseByOrder>, HttpError> {
         let mut query_params = vec![("order_id".to_string(), order_id.to_string())];
 
         if let Some(sorting) = sorting {
@@ -2199,7 +2199,7 @@ impl DeribitHttpClient {
             )));
         }
 
-        let api_response: ApiResponse<UserTradeResponse> = response
+        let api_response: ApiResponse<Vec<UserTradeResponseByOrder>> = response
             .json()
             .await
             .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;

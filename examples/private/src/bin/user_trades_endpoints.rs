@@ -20,10 +20,16 @@
 //!
 //! Then run: cargo run --bin user_trades_endpoints
 
+
+use deribit_http::model::Currency;
+use deribit_http::model::request::trade::TradesRequest;
+use deribit_http::model::instrument::InstrumentKind;
+use deribit_http::model::other::SortDirection;
 use deribit_http::prelude::*;
-use std::time::{SystemTime, UNIX_EPOCH};
-use tokio::time::{Duration, sleep};
 use tracing::{info, warn};
+
+use std::time::{SystemTime, UNIX_EPOCH};
+use tokio::time::{sleep, Duration};
 
 #[tokio::main]
 async fn main() -> Result<(), HttpError> {
@@ -92,36 +98,46 @@ async fn main() -> Result<(), HttpError> {
 
     let mut created_order_ids = Vec::new();
 
+    // Helper function to round BTC price to nearest 0.5 (tick size)
+    let round_btc_price = |price: f64| -> f64 {
+        (price * 2.0).round() / 2.0
+    };
+
+    // Helper function to round ETH price to nearest 0.05 (tick size)
+    let round_eth_price = |price: f64| -> f64 {
+        (price * 20.0).round() / 20.0
+    };
+
     // Create market buy/sell orders that might execute and generate trades
     let test_orders = vec![
         (
             "BTC-PERPETUAL",
             "user_trades_test_btc_1",
-            btc_mark_price * 0.999,
+            round_btc_price(btc_mark_price * 0.999),
             10.0,
             "buy",
-        ), // Slightly below market
+        ), // Slightly below market, rounded to tick size
         (
             "BTC-PERPETUAL",
             "user_trades_test_btc_2",
-            btc_mark_price * 1.001,
+            round_btc_price(btc_mark_price * 1.001),
             10.0,
             "sell",
-        ), // Slightly above market
+        ), // Slightly above market, rounded to tick size
         (
             "ETH-PERPETUAL",
             "user_trades_test_eth_1",
-            eth_mark_price * 0.999,
+            round_eth_price(eth_mark_price * 0.999),
             100.0,
             "buy",
-        ), // Slightly below market
+        ), // Slightly below market, rounded to tick size
         (
             "ETH-PERPETUAL",
             "user_trades_test_eth_2",
-            eth_mark_price * 1.001,
+            round_eth_price(eth_mark_price * 1.001),
             100.0,
             "sell",
-        ), // Slightly above market
+        ), // Slightly above market, rounded to tick size
     ];
 
     for (instrument, label, price, amount, side) in test_orders {
@@ -231,25 +247,30 @@ async fn main() -> Result<(), HttpError> {
     info!("----------------------------------");
 
     // Test BTC currency trades
+    let btc_request = TradesRequest {
+        currency: Currency::Btc,
+        kind: Some(InstrumentKind::Future),
+        start_id: None,
+        end_id: None,
+        count: Some(10),
+        start_timestamp: None,
+        end_timestamp: None,
+        sorting: Some(SortDirection::Desc),
+        historical: None,
+        subaccount_id: None,
+    };
+    
     match client
-        .get_user_trades_by_currency(
-            "BTC",
-            Some("future"),
-            None,
-            None,
-            Some(10),
-            Some(true),
-            Some("desc"),
-        )
+        .get_user_trades_by_currency(btc_request)
         .await
     {
         Ok(trades) => {
             info!("✅ Retrieved BTC user trades successfully");
-            info!("📊 BTC trades count: {}", trades.len());
+            info!("📊 BTC trades count: {}", trades.trades.len());
 
-            if !trades.is_empty() {
+            if !trades.trades.is_empty() {
                 info!("📝 Recent BTC trades:");
-                for trade in trades.iter().take(3) {
+                for trade in trades.trades.iter().take(3) {
                     // Show first 3
                     info!(
                         "   - Trade {}: {} {} @ ${:.2} (Fee: {:.8} {}, Liquidity: {})",
@@ -263,7 +284,7 @@ async fn main() -> Result<(), HttpError> {
                     );
                     info!(
                         "     Order ID: {}, Label: {}, Amount: {:.6}",
-                        trade.order_id, trade.label, trade.amount
+                        trade.order_id, trade.label.as_deref().unwrap_or("N/A"), trade.amount
                     );
                 }
             } else {
@@ -276,25 +297,30 @@ async fn main() -> Result<(), HttpError> {
     }
 
     // Test ETH currency trades
+    let eth_request = TradesRequest {
+        currency: Currency::Eth,
+        kind: Some(InstrumentKind::Future),
+        start_id: None,
+        end_id: None,
+        count: Some(10),
+        start_timestamp: None,
+        end_timestamp: None,
+        sorting: Some(SortDirection::Desc),
+        historical: None,
+        subaccount_id: None,
+    };
+    
     match client
-        .get_user_trades_by_currency(
-            "ETH",
-            Some("future"),
-            None,
-            None,
-            Some(10),
-            Some(true),
-            Some("desc"),
-        )
+        .get_user_trades_by_currency(eth_request)
         .await
     {
         Ok(trades) => {
             info!("✅ Retrieved ETH user trades successfully");
-            info!("📊 ETH trades count: {}", trades.len());
+            info!("📊 ETH trades count: {}", trades.trades.len());
 
-            if !trades.is_empty() {
+            if !trades.trades.is_empty() {
                 info!("📝 Recent ETH trades:");
-                for trade in trades.iter().take(3) {
+                for trade in trades.trades.iter().take(3) {
                     // Show first 3
                     info!(
                         "   - Trade {}: {} {} @ ${:.2} (Fee: {:.8} {}, Liquidity: {})",
@@ -308,7 +334,7 @@ async fn main() -> Result<(), HttpError> {
                     );
                     info!(
                         "     Order ID: {}, Label: {}, Amount: {:.6}",
-                        trade.order_id, trade.label, trade.amount
+                        trade.order_id, trade.label.as_deref().unwrap_or("N/A"), trade.amount
                     );
                 }
             } else {
@@ -328,25 +354,30 @@ async fn main() -> Result<(), HttpError> {
     info!("------------------------------------------");
 
     // Test BTC trades in the last 24 hours
+    let btc_time_request = TradesRequest {
+        currency: Currency::Btc,
+        kind: None,
+        start_id: None,
+        end_id: None,
+        count: Some(20),
+        start_timestamp: Some(one_day_ago),
+        end_timestamp: Some(current_timestamp),
+        sorting: Some(SortDirection::Desc),
+        historical: None,
+        subaccount_id: None,
+    };
+
     match client
-        .get_user_trades_by_currency_and_time(
-            "BTC",
-            one_day_ago,
-            current_timestamp,
-            Some("future"),
-            Some(20),
-            Some(true),
-            Some("desc"),
-        )
+        .get_user_trades_by_currency_and_time(btc_time_request)
         .await
     {
         Ok(trades) => {
             info!("✅ Retrieved BTC trades for last 24 hours successfully");
-            info!("📊 BTC trades in last 24h: {}", trades.len());
+            info!("📊 BTC trades in last 24h: {}", trades.trades.len());
 
-            if !trades.is_empty() {
+            if !trades.trades.is_empty() {
                 info!("📝 BTC trades in time range:");
-                for trade in trades.iter().take(2) {
+                for trade in trades.trades.iter().take(2) {
                     // Show first 2
                     let trade_time =
                         chrono::DateTime::from_timestamp((trade.timestamp / 1000) as i64, 0)
@@ -376,25 +407,30 @@ async fn main() -> Result<(), HttpError> {
     }
 
     // Test ETH trades in the last hour
+    let eth_time_request = TradesRequest {
+        currency: Currency::Eth,
+        kind: None,
+        start_id: None,
+        end_id: None,
+        count: Some(15),
+        start_timestamp: Some(one_hour_ago),
+        end_timestamp: Some(current_timestamp),
+        sorting: Some(SortDirection::Desc),
+        historical: None,
+        subaccount_id: None,
+    };
+
     match client
-        .get_user_trades_by_currency_and_time(
-            "ETH",
-            one_hour_ago,
-            current_timestamp,
-            Some("future"),
-            Some(20),
-            Some(true),
-            Some("desc"),
-        )
+        .get_user_trades_by_currency_and_time(eth_time_request)
         .await
     {
         Ok(trades) => {
             info!("✅ Retrieved ETH trades for last hour successfully");
-            info!("📊 ETH trades in last hour: {}", trades.len());
+            info!("📊 ETH trades in last hour: {}", trades.trades.len());
 
-            if !trades.is_empty() {
+            if !trades.trades.is_empty() {
                 info!("📝 ETH trades in time range:");
-                for trade in trades.iter().take(2) {
+                for trade in trades.trades.iter().take(2) {
                     // Show first 2
                     let trade_time =
                         chrono::DateTime::from_timestamp((trade.timestamp / 1000) as i64, 0)
@@ -442,13 +478,14 @@ async fn main() -> Result<(), HttpError> {
         )
         .await
     {
-        Ok(trades) => {
+        Ok(response) => {
             info!("✅ Retrieved BTC-PERPETUAL trades successfully");
-            info!("📊 BTC-PERPETUAL trades count: {}", trades.len());
+            info!("📊 BTC-PERPETUAL trades count: {}", response.trades.len());
+            info!("📄 Has more trades: {}", response.has_more);
 
-            if !trades.is_empty() {
+            if !response.trades.is_empty() {
                 info!("📝 Recent BTC-PERPETUAL trades:");
-                for trade in trades.iter().take(3) {
+                for trade in response.trades.iter().take(3) {
                     // Show first 3
                     info!(
                         "   - Trade {}: {} @ ${:.2} (Amount: {:.6}, Fee: {:.8})",
@@ -480,13 +517,14 @@ async fn main() -> Result<(), HttpError> {
         )
         .await
     {
-        Ok(trades) => {
+        Ok(response) => {
             info!("✅ Retrieved ETH-PERPETUAL trades successfully");
-            info!("📊 ETH-PERPETUAL trades count: {}", trades.len());
+            info!("📊 ETH-PERPETUAL trades count: {}", response.trades.len());
+            info!("📄 Has more trades: {}", response.has_more);
 
-            if !trades.is_empty() {
+            if !response.trades.is_empty() {
                 info!("📝 Recent ETH-PERPETUAL trades:");
-                for trade in trades.iter().take(3) {
+                for trade in response.trades.iter().take(3) {
                     // Show first 3
                     info!(
                         "   - Trade {}: {} @ ${:.2} (Amount: {:.6}, Fee: {:.8})",
@@ -525,13 +563,14 @@ async fn main() -> Result<(), HttpError> {
         )
         .await
     {
-        Ok(trades) => {
+        Ok(response) => {
             info!("✅ Retrieved BTC-PERPETUAL trades for last 24 hours successfully");
-            info!("📊 BTC-PERPETUAL trades in last 24h: {}", trades.len());
+            info!("📊 BTC-PERPETUAL trades in last 24h: {}", response.trades.len());
+            info!("📄 Has more trades: {}", response.has_more);
 
-            if !trades.is_empty() {
+            if !response.trades.is_empty() {
                 info!("📝 BTC-PERPETUAL trades in time range:");
-                for trade in trades.iter().take(2) {
+                for trade in response.trades.iter().take(2) {
                     // Show first 2
                     let trade_time =
                         chrono::DateTime::from_timestamp((trade.timestamp / 1000) as i64, 0)
@@ -568,13 +607,14 @@ async fn main() -> Result<(), HttpError> {
         )
         .await
     {
-        Ok(trades) => {
+        Ok(response) => {
             info!("✅ Retrieved ETH-PERPETUAL trades for last hour successfully");
-            info!("📊 ETH-PERPETUAL trades in last hour: {}", trades.len());
+            info!("📊 ETH-PERPETUAL trades in last hour: {}", response.trades.len());
+            info!("📄 Has more trades: {}", response.has_more);
 
-            if !trades.is_empty() {
+            if !response.trades.is_empty() {
                 info!("📝 ETH-PERPETUAL trades in time range:");
-                for trade in trades.iter().take(2) {
+                for trade in response.trades.iter().take(2) {
                     // Show first 2
                     let trade_time =
                         chrono::DateTime::from_timestamp((trade.timestamp / 1000) as i64, 0)
@@ -610,19 +650,19 @@ async fn main() -> Result<(), HttpError> {
     for (order_id, label) in created_order_ids.iter().take(3) {
         // Test first 3 orders
         match client
-            .get_user_trades_by_order(order_id, Some("desc"))
+            .get_user_trades_by_order(order_id, Some("desc"), true)
             .await
         {
-            Ok(trades) => {
+            Ok(user_trades) => {
                 info!(
                     "✅ Retrieved trades for order {} ({}) successfully",
                     order_id, label
                 );
-                info!("📊 Trades for this order: {}", trades.len());
+                info!("📊 Trades for this order: {}", user_trades.len());
 
-                if !trades.is_empty() {
-                    info!("📝 Order trades:");
-                    for trade in trades.iter() {
+                if !user_trades.is_empty() {
+                    info!("📝 Trades for order {}:", order_id);
+                    for trade in user_trades.iter() {
                         info!(
                             "   - Trade {}: {} @ ${:.2}",
                             trade.trade_id, trade.direction, trade.price

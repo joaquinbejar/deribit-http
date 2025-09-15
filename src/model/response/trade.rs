@@ -10,7 +10,8 @@ use crate::model::TradeAllocation;
 
 #[skip_serializing_none]
 #[derive(DebugPretty, DisplaySimple, Clone, Serialize, Deserialize)]
-pub struct UserTradeResponse {
+pub struct UserTradeResponseByOrder {
+    pub trade_id: String,
     /// Trade amount. For perpetual and inverse futures the amount is in USD units. 
     /// For options and linear futures it is the underlying base currency coin.
     pub amount: f64,
