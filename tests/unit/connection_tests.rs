@@ -11,7 +11,6 @@ use std::collections::HashMap;
 use std::time::Duration;
 use url::Url;
 
-
 #[tokio::test]
 async fn test_http_connection_new() {
     let config = HttpConfig {

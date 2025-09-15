@@ -1,12 +1,12 @@
 /******************************************************************************
-    Author: Joaquín Béjar García
-    Email: jb@taunais.com 
-    Date: 15/9/25
- ******************************************************************************/
-use pretty_simple_display::{DebugPretty, DisplaySimple};
-use serde::{Deserialize, Serialize};
+   Author: Joaquín Béjar García
+   Email: jb@taunais.com
+   Date: 15/9/25
+******************************************************************************/
 use crate::model::instrument::InstrumentKind;
 use crate::model::other::Greeks;
+use pretty_simple_display::{DebugPretty, DisplaySimple};
+use serde::{Deserialize, Serialize};
 
 /// Ticker stats sub-structure
 #[derive(DebugPretty, DisplaySimple, Clone, Serialize, Deserialize)]

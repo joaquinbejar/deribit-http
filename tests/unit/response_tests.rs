@@ -1,6 +1,5 @@
 //! Unit tests for HTTP response handling
 
-
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
@@ -12,8 +11,8 @@ struct TestData {
 
 #[cfg(test)]
 mod response_handler_tests {
-    use deribit_http::prelude::*;
     use super::*;
+    use deribit_http::prelude::*;
 
     #[test]
     fn test_response_handler_new() {

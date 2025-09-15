@@ -1,8 +1,8 @@
 /******************************************************************************
-    Author: Joaquín Béjar García
-    Email: jb@taunais.com 
-    Date: 15/9/25
- ******************************************************************************/
+   Author: Joaquín Béjar García
+   Email: jb@taunais.com
+   Date: 15/9/25
+******************************************************************************/
 use pretty_simple_display::{DebugPretty, DisplaySimple};
 use serde::{Deserialize, Serialize};
 
@@ -33,7 +33,6 @@ pub enum InstrumentType {
     /// Reversed instrument
     Reversed,
 }
-
 
 /// Instrument information
 #[derive(DebugPretty, DisplaySimple, Clone, Serialize, Deserialize)]
@@ -98,9 +97,9 @@ impl Instrument {
     pub fn is_perpetual(&self) -> bool {
         self.expiration_timestamp.is_none()
             && self
-            .kind
-            .as_ref()
-            .is_some_and(|k| matches!(k, InstrumentKind::Future))
+                .kind
+                .as_ref()
+                .is_some_and(|k| matches!(k, InstrumentKind::Future))
     }
 
     /// Check if the instrument is an option

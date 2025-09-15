@@ -10,8 +10,8 @@
 //! Usage: cargo run --bin btc_option_pair_example
 
 use deribit_http::prelude::*;
-use tracing::{info, warn};
 use deribit_http::utils::get_tomorrow_deribit_format;
+use tracing::{info, warn};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -19,7 +19,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     setup_logger();
     let expiry = get_tomorrow_deribit_format();
     let target_expiry = expiry.as_str();
-    
+
     info!("🚀 Deribit HTTP Client - BTC Option Pair Example");
     info!("===============================================");
     info!("📅 Target Expiry: {target_expiry}");

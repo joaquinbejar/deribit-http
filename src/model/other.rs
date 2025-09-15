@@ -1,13 +1,13 @@
 /******************************************************************************
-    Author: Joaquín Béjar García
-    Email: jb@taunais.com 
-    Date: 15/9/25
- ******************************************************************************/
+   Author: Joaquín Béjar García
+   Email: jb@taunais.com
+   Date: 15/9/25
+******************************************************************************/
+use crate::model::OptionType;
+use crate::model::instrument::Instrument;
+use crate::model::ticker::TickerData;
 use pretty_simple_display::{DebugPretty, DisplaySimple};
 use serde::{Deserialize, Serialize};
-use crate::model::instrument::Instrument;
-use crate::model::OptionType;
-use crate::model::ticker::TickerData;
 
 /// Delivery price data
 #[derive(DebugPretty, DisplaySimple, Clone, Serialize, Deserialize)]
@@ -60,7 +60,6 @@ pub struct OptionInstrumentPair {
     /// Put option instrument data, if available  
     pub put: Option<OptionInstrument>,
 }
-
 
 #[derive(DebugPretty, DisplaySimple, Clone, Serialize)]
 pub struct ParsedOptionWithTicker {

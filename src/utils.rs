@@ -1,5 +1,4 @@
-
-use chrono::{Local, Duration}; // Add chrono import
+use chrono::{Duration, Local}; // Add chrono import
 
 pub fn get_tomorrow_deribit_format() -> String {
     let today = Local::now();

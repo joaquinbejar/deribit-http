@@ -1,14 +1,14 @@
 /******************************************************************************
-    Author: Joaquín Béjar García
-    Email: jb@taunais.com 
-    Date: 15/9/25
- ******************************************************************************/
-use pretty_simple_display::{DebugPretty, DisplaySimple};
-use serde::{Deserialize, Serialize};
+   Author: Joaquín Béjar García
+   Email: jb@taunais.com
+   Date: 15/9/25
+******************************************************************************/
 use crate::model::order::OrderType;
 use crate::model::response::order::LinkedOrderType;
 use crate::model::trigger::{TriggerFillCondition, TriggerType};
 use crate::model::types::TimeInForce;
+use pretty_simple_display::{DebugPretty, DisplaySimple};
+use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
 
 #[skip_serializing_none]

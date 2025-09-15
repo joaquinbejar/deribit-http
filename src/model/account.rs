@@ -3,9 +3,9 @@
    Email: jb@taunais.com
    Date: 21/7/25
 ******************************************************************************/
+use crate::model::response::other::AccountSummaryResponse;
 use pretty_simple_display::{DebugPretty, DisplaySimple};
 use serde::{Deserialize, Serialize};
-use crate::model::response::other::AccountSummaryResponse;
 
 /// Subaccount information
 #[derive(DebugPretty, DisplaySimple, Clone, Serialize, Deserialize)]

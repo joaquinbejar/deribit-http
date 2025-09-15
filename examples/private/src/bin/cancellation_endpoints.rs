@@ -20,7 +20,6 @@ use std::path::Path;
 use tokio::time::{Duration, sleep};
 use tracing::{error, info, warn};
 
-
 #[tokio::main]
 async fn main() -> Result<(), HttpError> {
     // Load environment variables from .env file if it exists

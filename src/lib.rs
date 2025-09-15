@@ -148,18 +148,18 @@ pub mod session;
 
 // Constants
 pub mod constants;
-pub mod utils;
 pub mod logger;
+pub mod utils;
 
 // Re-export main client and error types
 pub use client::*;
 pub use error::*;
 
 // Re-export specific types to avoid conflicts
+pub use auth::AuthRequest;
 pub use auth::{ApiKeyAuth, AuthManager};
 pub use config::ApiCredentials;
+pub use config::HttpConfig;
 pub use connection::*;
 pub use message::{HttpMessageBuilder, HttpRequestBuilder, HttpResponseHandler};
 pub use session::*;
-pub use config::HttpConfig;
-pub use auth::AuthRequest;

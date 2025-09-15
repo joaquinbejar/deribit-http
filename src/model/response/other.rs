@@ -1,15 +1,15 @@
 /******************************************************************************
-    Author: Joaquín Béjar García
-    Email: jb@taunais.com 
-    Date: 15/9/25
- ******************************************************************************/
-use pretty_simple_display::{DebugPretty, DisplaySimple};
-use serde::{Deserialize, Serialize};
+   Author: Joaquín Béjar García
+   Email: jb@taunais.com
+   Date: 15/9/25
+******************************************************************************/
 use crate::model::currency::CurrencyExpirations;
 use crate::model::other::DeliveryPriceData;
 use crate::model::settlement::Settlement;
 use crate::model::trade::{LastTrade, UserTrade};
 use crate::model::transaction::TransactionLogEntry;
+use pretty_simple_display::{DebugPretty, DisplaySimple};
+use serde::{Deserialize, Serialize};
 
 pub type UserTradeResponse = Vec<UserTrade>;
 

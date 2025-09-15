@@ -131,7 +131,7 @@ async fn main() -> Result<(), HttpError> {
     let edit_request = OrderRequest {
         order_id: Some(buy_order_id.clone()),
         instrument_name: "BTC-PERPETUAL".to_string(),
-        amount: Some(15.0),   // Change amount from 10 to 15 USD
+        amount: Some(15.0), // Change amount from 10 to 15 USD
         contracts: None,
         type_: Some(OrderType::Limit),
         label: Some("example_buy_order".to_string()),

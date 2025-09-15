@@ -17,11 +17,10 @@ pub use crate::auth::{ApiKeyAuth, AuthManager, AuthRequest};
 // Re-export message types
 pub use crate::message::{HttpMessageBuilder, HttpRequestBuilder, HttpResponseHandler};
 
-
 // Re-export session types
 pub use crate::session::HttpSession;
 
 pub use crate::logger::setup_logger;
 
-pub use crate::model::*;
 pub use crate::connection::*;
+pub use crate::model::*;

@@ -10,10 +10,10 @@
 //!
 //! Usage: cargo run --bin btc_option_chain_example
 
-use deribit_http::prelude::*;
 use deribit_http::DeribitHttpClient;
-use tracing::{error, info, warn};
+use deribit_http::prelude::*;
 use deribit_http::utils::get_tomorrow_deribit_format;
+use tracing::{error, info, warn};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -21,7 +21,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     setup_logger();
     info!("🚀 Deribit HTTP Client - BTC Option Chain Example");
     info!("=================================================");
-    
+
     // Calculate tomorrow's date in Deribit format
     let expiry = get_tomorrow_deribit_format();
     let target_expiry = expiry.as_str();
@@ -30,7 +30,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Create HTTP client
     let client = DeribitHttpClient::new();
-
 
     // =================================================================
     // 1. FETCH ALL BTC OPTIONS WITH TICKER DATA
@@ -53,7 +52,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     };
 
     // =================================================================
-    // 2. FILTER BY EXPIRY DATE 
+    // 2. FILTER BY EXPIRY DATE
     // =================================================================
     info!("🔍 2. FILTERING BY EXPIRY DATE");
     info!("------------------------------");
@@ -251,7 +250,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 // HELPER STRUCTURES AND FUNCTIONS
 // =================================================================
 
-
 fn parse_option_with_ticker(
     option_instrument: &OptionInstrument,
 ) -> Option<ParsedOptionWithTicker> {
@@ -289,7 +287,3 @@ fn extract_expiry_from_name(instrument_name: &str) -> Option<String> {
         None
     }
 }
-
-
-
-

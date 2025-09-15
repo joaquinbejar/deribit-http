@@ -174,8 +174,14 @@ async fn main() -> Result<(), HttpError> {
     let rounded_btc_price = round_to_tick_size(btc_mark_price, btc_tick_size);
     let rounded_eth_price = round_to_tick_size(eth_mark_price, eth_tick_size);
 
-    info!("💰 Precio de BTC redondeado al tick size: {} -> {}", btc_mark_price, rounded_btc_price);
-    info!("💰 Precio de ETH redondeado al tick size: {} -> {}", eth_mark_price, rounded_eth_price);
+    info!(
+        "💰 Precio de BTC redondeado al tick size: {} -> {}",
+        btc_mark_price, rounded_btc_price
+    );
+    info!(
+        "💰 Precio de ETH redondeado al tick size: {} -> {}",
+        eth_mark_price, rounded_eth_price
+    );
 
     // Actualizar los precios base con los valores redondeados
     let btc_mark_price = rounded_btc_price;
@@ -260,7 +266,16 @@ async fn main() -> Result<(), HttpError> {
     ];
 
     for (instrument, label, price, amount, side, order_type) in test_orders {
-        info!("💲 Creando orden {} @ ${:.2} (tick size: {})", label, price, if instrument.contains("BTC") { btc_tick_size } else { eth_tick_size });
+        info!(
+            "💲 Creando orden {} @ ${:.2} (tick size: {})",
+            label,
+            price,
+            if instrument.contains("BTC") {
+                btc_tick_size
+            } else {
+                eth_tick_size
+            }
+        );
         if side == "buy" {
             let buy_request = OrderRequest {
                 order_id: None,
@@ -358,12 +373,15 @@ async fn main() -> Result<(), HttpError> {
         "📊 Created {} test orders for history demonstration",
         created_order_ids.len()
     );
-    
+
     // Log detailed information about created orders
     if created_order_ids.is_empty() {
         warn!("⚠️  No orders were created successfully - this may affect history demonstration");
     } else {
-        info!("✅ Successfully created {} orders for history", created_order_ids.len());
+        info!(
+            "✅ Successfully created {} orders for history",
+            created_order_ids.len()
+        );
         for (order_id, label, order_type) in &created_order_ids {
             info!("   - Order {}: {} ({:?})", order_id, label, order_type);
         }
@@ -377,7 +395,8 @@ async fn main() -> Result<(), HttpError> {
     let orders_to_cancel = std::cmp::min(4, created_order_ids.len());
     info!(
         "🔄 Cancelling {} out of {} orders to create history entries...",
-        orders_to_cancel, created_order_ids.len()
+        orders_to_cancel,
+        created_order_ids.len()
     );
 
     if orders_to_cancel == 0 {

@@ -1176,7 +1176,9 @@ impl DeribitHttpClient {
     /// * `request` - The edit order request parameters
     ///
     pub async fn edit_order(&self, request: OrderRequest) -> Result<OrderResponse, HttpError> {
-        let order_id = request.order_id.ok_or_else(|| HttpError::RequestFailed("order_id is required for edit_order".to_string()))?;
+        let order_id = request.order_id.ok_or_else(|| {
+            HttpError::RequestFailed("order_id is required for edit_order".to_string())
+        })?;
         let mut query_params = vec![("order_id", order_id.as_str())];
 
         let amount_str;

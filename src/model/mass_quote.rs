@@ -1,11 +1,11 @@
 /******************************************************************************
-    Author: Joaquín Béjar García
-    Email: jb@taunais.com 
-    Date: 15/9/25
- ******************************************************************************/
+   Author: Joaquín Béjar García
+   Email: jb@taunais.com
+   Date: 15/9/25
+******************************************************************************/
+use crate::model::order::OrderSide;
 use pretty_simple_display::{DebugPretty, DisplaySimple};
 use serde::{Deserialize, Serialize};
-use crate::model::order::OrderSide;
 
 /// Transfer result for order-related transfers (e.g., fee rebates)
 #[derive(DebugPretty, DisplaySimple, Clone, Serialize, Deserialize)]
