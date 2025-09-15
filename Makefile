@@ -25,7 +25,8 @@ test:
 # Run integration tests
 .PHONY: integration-tests
 integration-tests:
-	LOGLEVEL=WARN cargo test --test integration
+	cd tests/integration && \
+	LOGLEVEL=WARN cargo test --lib --bins --all-features
 
 # Format the code
 .PHONY: fmt
