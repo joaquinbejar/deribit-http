@@ -1,14 +1,14 @@
-use deribit_http::model::other::{
-    DeliveryPriceData, Greeks, OptionInstrument, OptionInstrumentPair, 
-    ParsedOptionWithTicker, SortDirection
-};
 use deribit_http::model::OptionType;
+use deribit_http::model::other::{
+    DeliveryPriceData, Greeks, OptionInstrument, OptionInstrumentPair, ParsedOptionWithTicker,
+    SortDirection,
+};
 use serde_json;
 
 // Mock functions for dependencies
 fn create_mock_instrument() -> deribit_http::model::instrument::Instrument {
     use deribit_http::model::instrument::{InstrumentKind, InstrumentType};
-    
+
     deribit_http::model::instrument::Instrument {
         instrument_name: "BTC-25DEC21-50000-C".to_string(),
         price_index: Some("btc_usd".to_string()),
@@ -37,7 +37,7 @@ fn create_mock_instrument() -> deribit_http::model::instrument::Instrument {
 
 fn create_mock_ticker() -> deribit_http::model::ticker::TickerData {
     use deribit_http::model::ticker::TickerStats;
-    
+
     deribit_http::model::ticker::TickerData {
         instrument_name: "BTC-25DEC21-50000-C".to_string(),
         last_price: Some(50250.0),
@@ -87,10 +87,10 @@ mod tests {
             date: "2021-12-25".to_string(),
             delivery_price: 50000.0,
         };
-        
+
         let serialized = serde_json::to_string(&data).unwrap();
         let deserialized: DeliveryPriceData = serde_json::from_str(&serialized).unwrap();
-        
+
         assert_eq!(data.date, deserialized.date);
         assert_eq!(data.delivery_price, deserialized.delivery_price);
     }
@@ -101,7 +101,7 @@ mod tests {
             date: "2021-12-25".to_string(),
             delivery_price: 50000.0,
         };
-        
+
         let cloned = data.clone();
         assert_eq!(data.date, cloned.date);
         assert_eq!(data.delivery_price, cloned.delivery_price);
@@ -116,10 +116,10 @@ mod tests {
             theta: Some(-0.05),
             rho: Some(0.02),
         };
-        
+
         let serialized = serde_json::to_string(&greeks).unwrap();
         let deserialized: Greeks = serde_json::from_str(&serialized).unwrap();
-        
+
         assert_eq!(greeks.delta, deserialized.delta);
         assert_eq!(greeks.gamma, deserialized.gamma);
         assert_eq!(greeks.vega, deserialized.vega);
@@ -136,10 +136,10 @@ mod tests {
             theta: None,
             rho: None,
         };
-        
+
         let serialized = serde_json::to_string(&greeks).unwrap();
         let deserialized: Greeks = serde_json::from_str(&serialized).unwrap();
-        
+
         assert_eq!(greeks.delta, deserialized.delta);
         assert_eq!(greeks.gamma, deserialized.gamma);
         assert_eq!(greeks.vega, deserialized.vega);
@@ -156,7 +156,7 @@ mod tests {
             theta: Some(-0.05),
             rho: Some(0.02),
         };
-        
+
         let cloned = greeks.clone();
         assert_eq!(greeks.delta, cloned.delta);
         assert_eq!(greeks.gamma, cloned.gamma);
@@ -171,12 +171,18 @@ mod tests {
             instrument: create_mock_instrument(),
             ticker: create_mock_ticker(),
         };
-        
+
         let serialized = serde_json::to_string(&option_instrument).unwrap();
         let deserialized: OptionInstrument = serde_json::from_str(&serialized).unwrap();
-        
-        assert_eq!(option_instrument.instrument.instrument_name, deserialized.instrument.instrument_name);
-        assert_eq!(option_instrument.ticker.instrument_name, deserialized.ticker.instrument_name);
+
+        assert_eq!(
+            option_instrument.instrument.instrument_name,
+            deserialized.instrument.instrument_name
+        );
+        assert_eq!(
+            option_instrument.ticker.instrument_name,
+            deserialized.ticker.instrument_name
+        );
     }
 
     #[test]
@@ -185,10 +191,16 @@ mod tests {
             instrument: create_mock_instrument(),
             ticker: create_mock_ticker(),
         };
-        
+
         let cloned = option_instrument.clone();
-        assert_eq!(option_instrument.instrument.instrument_name, cloned.instrument.instrument_name);
-        assert_eq!(option_instrument.ticker.instrument_name, cloned.ticker.instrument_name);
+        assert_eq!(
+            option_instrument.instrument.instrument_name,
+            cloned.instrument.instrument_name
+        );
+        assert_eq!(
+            option_instrument.ticker.instrument_name,
+            cloned.ticker.instrument_name
+        );
     }
 
     #[test]
@@ -197,31 +209,37 @@ mod tests {
             instrument: create_mock_instrument(),
             ticker: create_mock_ticker(),
         };
-        
+
         let mut put_instrument = create_mock_instrument();
         put_instrument.option_type = Some(OptionType::Put);
         put_instrument.instrument_name = "BTC-25DEC21-50000-P".to_string();
-        
+
         let mut put_ticker = create_mock_ticker();
         put_ticker.instrument_name = "BTC-25DEC21-50000-P".to_string();
-        
+
         let put_option = OptionInstrument {
             instrument: put_instrument,
             ticker: put_ticker,
         };
-        
+
         let pair = OptionInstrumentPair {
             call: Some(call_option),
             put: Some(put_option),
         };
-        
+
         let serialized = serde_json::to_string(&pair).unwrap();
         let deserialized: OptionInstrumentPair = serde_json::from_str(&serialized).unwrap();
-        
+
         assert!(deserialized.call.is_some());
         assert!(deserialized.put.is_some());
-        assert_eq!(deserialized.call.as_ref().unwrap().instrument.option_type, Some(OptionType::Call));
-        assert_eq!(deserialized.put.as_ref().unwrap().instrument.option_type, Some(OptionType::Put));
+        assert_eq!(
+            deserialized.call.as_ref().unwrap().instrument.option_type,
+            Some(OptionType::Call)
+        );
+        assert_eq!(
+            deserialized.put.as_ref().unwrap().instrument.option_type,
+            Some(OptionType::Put)
+        );
     }
 
     #[test]
@@ -230,15 +248,15 @@ mod tests {
             instrument: create_mock_instrument(),
             ticker: create_mock_ticker(),
         };
-        
+
         let pair = OptionInstrumentPair {
             call: Some(call_option),
             put: None,
         };
-        
+
         let serialized = serde_json::to_string(&pair).unwrap();
         let deserialized: OptionInstrumentPair = serde_json::from_str(&serialized).unwrap();
-        
+
         assert!(deserialized.call.is_some());
         assert!(deserialized.put.is_none());
     }
@@ -252,7 +270,7 @@ mod tests {
             expiry: "25DEC21".to_string(),
             ticker: create_mock_ticker(),
         };
-        
+
         let serialized = serde_json::to_string(&parsed_option).unwrap();
         assert!(serialized.contains("BTC-25DEC21-50000-C"));
         assert!(serialized.contains("50000"));
@@ -268,7 +286,7 @@ mod tests {
             expiry: "25DEC21".to_string(),
             ticker: create_mock_ticker(),
         };
-        
+
         let cloned = parsed_option.clone();
         assert_eq!(parsed_option.instrument_name, cloned.instrument_name);
         assert_eq!(parsed_option.strike, cloned.strike);
@@ -281,7 +299,7 @@ mod tests {
         let asc = SortDirection::Asc;
         let desc = SortDirection::Desc;
         let default = SortDirection::Default;
-        
+
         assert_eq!(serde_json::to_string(&asc).unwrap(), "\"asc\"");
         assert_eq!(serde_json::to_string(&desc).unwrap(), "\"desc\"");
         assert_eq!(serde_json::to_string(&default).unwrap(), "\"default\"");
@@ -292,7 +310,7 @@ mod tests {
         let asc: SortDirection = serde_json::from_str("\"asc\"").unwrap();
         let desc: SortDirection = serde_json::from_str("\"desc\"").unwrap();
         let default: SortDirection = serde_json::from_str("\"default\"").unwrap();
-        
+
         assert!(matches!(asc, SortDirection::Asc));
         assert!(matches!(desc, SortDirection::Desc));
         assert!(matches!(default, SortDirection::Default));

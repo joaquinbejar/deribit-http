@@ -19,7 +19,7 @@ fn create_mock_subaccount_transfer() -> SubaccountTransfer {
         67890,
         0.1,
         "ETH".to_string(),
-        0, // main account
+        0,   // main account
         123, // subaccount
         1640995200000,
     )
@@ -59,7 +59,7 @@ mod transfer_state_tests {
             TransferState::InsufficientFunds,
             TransferState::WithdrawalLimit,
         ];
-        
+
         for state in states {
             let serialized = serde_json::to_string(&state).unwrap();
             let deserialized: TransferState = serde_json::from_str(&serialized).unwrap();
@@ -79,7 +79,10 @@ mod transfer_tests {
         assert_eq!(transfer.currency, "BTC");
         assert_eq!(transfer.amount, 1.5);
         assert_eq!(transfer.fee, 0.0005);
-        assert_eq!(transfer.address, "bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh");
+        assert_eq!(
+            transfer.address,
+            "bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh"
+        );
         assert_eq!(transfer.state, TransferState::Prepared);
         assert_eq!(transfer.created_timestamp, 1640995200000);
         assert_eq!(transfer.updated_timestamp, 1640995200000);
@@ -90,22 +93,19 @@ mod transfer_tests {
 
     #[test]
     fn test_transfer_with_transaction_id() {
-        let transfer = create_mock_transfer()
-            .with_transaction_id("abc123def456".to_string());
+        let transfer = create_mock_transfer().with_transaction_id("abc123def456".to_string());
         assert_eq!(transfer.transaction_id, Some("abc123def456".to_string()));
     }
 
     #[test]
     fn test_transfer_with_state() {
-        let transfer = create_mock_transfer()
-            .with_state(TransferState::Confirmed);
+        let transfer = create_mock_transfer().with_state(TransferState::Confirmed);
         assert_eq!(transfer.state, TransferState::Confirmed);
     }
 
     #[test]
     fn test_transfer_with_type() {
-        let transfer = create_mock_transfer()
-            .with_type("withdrawal".to_string());
+        let transfer = create_mock_transfer().with_type("withdrawal".to_string());
         assert_eq!(transfer.transfer_type, Some("withdrawal".to_string()));
     }
 
@@ -114,7 +114,7 @@ mod transfer_tests {
         let mut transfer = create_mock_transfer();
         let confirm_time = 1640995260000;
         transfer.confirm(confirm_time);
-        
+
         assert_eq!(transfer.state, TransferState::Confirmed);
         assert_eq!(transfer.confirmed_timestamp, Some(confirm_time));
         assert_eq!(transfer.updated_timestamp, confirm_time);
@@ -125,7 +125,7 @@ mod transfer_tests {
         let mut transfer = create_mock_transfer();
         let cancel_time = 1640995260000;
         transfer.cancel(cancel_time);
-        
+
         assert_eq!(transfer.state, TransferState::Cancelled);
         assert_eq!(transfer.updated_timestamp, cancel_time);
     }
@@ -134,7 +134,7 @@ mod transfer_tests {
     fn test_transfer_is_confirmed() {
         let mut transfer = create_mock_transfer();
         assert!(!transfer.is_confirmed());
-        
+
         transfer.confirm(1640995260000);
         assert!(transfer.is_confirmed());
     }
@@ -143,7 +143,7 @@ mod transfer_tests {
     fn test_transfer_is_cancelled() {
         let mut transfer = create_mock_transfer();
         assert!(!transfer.is_cancelled());
-        
+
         transfer.cancel(1640995260000);
         assert!(transfer.is_cancelled());
     }
@@ -152,13 +152,11 @@ mod transfer_tests {
     fn test_transfer_is_pending() {
         let transfer_prepared = create_mock_transfer();
         assert!(transfer_prepared.is_pending());
-        
-        let transfer_waiting = create_mock_transfer()
-            .with_state(TransferState::WaitingForAdmin);
+
+        let transfer_waiting = create_mock_transfer().with_state(TransferState::WaitingForAdmin);
         assert!(transfer_waiting.is_pending());
-        
-        let transfer_confirmed = create_mock_transfer()
-            .with_state(TransferState::Confirmed);
+
+        let transfer_confirmed = create_mock_transfer().with_state(TransferState::Confirmed);
         assert!(!transfer_confirmed.is_pending());
     }
 
@@ -173,7 +171,7 @@ mod transfer_tests {
         let transfer = create_mock_transfer()
             .with_transaction_id("tx123".to_string())
             .with_type("withdrawal".to_string());
-        
+
         let serialized = serde_json::to_string(&transfer).unwrap();
         assert!(serialized.contains("\"id\":12345"));
         assert!(serialized.contains("\"currency\":\"BTC\""));
@@ -197,7 +195,7 @@ mod transfer_tests {
             "confirmed_timestamp": 1640995260000,
             "transfer_type": "withdrawal"
         }"#;
-        
+
         let transfer: Transfer = serde_json::from_str(json).unwrap();
         assert_eq!(transfer.id, 12345);
         assert_eq!(transfer.currency, "BTC");
@@ -217,7 +215,7 @@ mod transfer_tests {
         let original = create_mock_transfer()
             .with_transaction_id("tx456".to_string())
             .with_state(TransferState::Confirmed);
-        
+
         let serialized = serde_json::to_string(&original).unwrap();
         let deserialized: Transfer = serde_json::from_str(&serialized).unwrap();
         assert_eq!(original, deserialized);
@@ -245,7 +243,7 @@ mod transfers_tests {
         let mut transfers = Transfers::new();
         let transfer = create_mock_transfer();
         transfers.add(transfer.clone());
-        
+
         assert_eq!(transfers.transfers.len(), 1);
         assert_eq!(transfers.transfers[0], transfer);
     }
@@ -262,14 +260,14 @@ mod transfers_tests {
             "0x742d35Cc6634C0532925a3b8D4C9db96".to_string(),
             1640995200000,
         );
-        
+
         transfers.add(btc_transfer.clone());
         transfers.add(eth_transfer);
-        
+
         let btc_transfers = transfers.by_currency("BTC".to_string());
         assert_eq!(btc_transfers.len(), 1);
         assert_eq!(btc_transfers[0].currency, "BTC");
-        
+
         let eth_transfers = transfers.by_currency("ETH".to_string());
         assert_eq!(eth_transfers.len(), 1);
         assert_eq!(eth_transfers[0].currency, "ETH");
@@ -279,15 +277,14 @@ mod transfers_tests {
     fn test_transfers_by_state() {
         let mut transfers = Transfers::new();
         let prepared_transfer = create_mock_transfer();
-        let confirmed_transfer = create_mock_transfer()
-            .with_state(TransferState::Confirmed);
-        
+        let confirmed_transfer = create_mock_transfer().with_state(TransferState::Confirmed);
+
         transfers.add(prepared_transfer);
         transfers.add(confirmed_transfer);
-        
+
         let prepared_transfers = transfers.by_state(TransferState::Prepared);
         assert_eq!(prepared_transfers.len(), 1);
-        
+
         let confirmed_transfers = transfers.by_state(TransferState::Confirmed);
         assert_eq!(confirmed_transfers.len(), 1);
     }
@@ -296,15 +293,13 @@ mod transfers_tests {
     fn test_transfers_pending() {
         let mut transfers = Transfers::new();
         let prepared_transfer = create_mock_transfer();
-        let waiting_transfer = create_mock_transfer()
-            .with_state(TransferState::WaitingForAdmin);
-        let confirmed_transfer = create_mock_transfer()
-            .with_state(TransferState::Confirmed);
-        
+        let waiting_transfer = create_mock_transfer().with_state(TransferState::WaitingForAdmin);
+        let confirmed_transfer = create_mock_transfer().with_state(TransferState::Confirmed);
+
         transfers.add(prepared_transfer);
         transfers.add(waiting_transfer);
         transfers.add(confirmed_transfer);
-        
+
         let pending_transfers = transfers.pending();
         assert_eq!(pending_transfers.len(), 2);
     }
@@ -313,12 +308,11 @@ mod transfers_tests {
     fn test_transfers_confirmed() {
         let mut transfers = Transfers::new();
         let prepared_transfer = create_mock_transfer();
-        let confirmed_transfer = create_mock_transfer()
-            .with_state(TransferState::Confirmed);
-        
+        let confirmed_transfer = create_mock_transfer().with_state(TransferState::Confirmed);
+
         transfers.add(prepared_transfer);
         transfers.add(confirmed_transfer);
-        
+
         let confirmed_transfers = transfers.confirmed();
         assert_eq!(confirmed_transfers.len(), 1);
     }
@@ -343,11 +337,11 @@ mod transfers_tests {
             "0x742d35Cc6634C0532925a3b8D4C9db96".to_string(),
             1640995200000,
         ); // 10.0 ETH
-        
+
         transfers.add(btc_transfer1);
         transfers.add(btc_transfer2);
         transfers.add(eth_transfer);
-        
+
         assert_eq!(transfers.total_amount("BTC".to_string()), 4.0);
         assert_eq!(transfers.total_amount("ETH".to_string()), 10.0);
         assert_eq!(transfers.total_amount("USDT".to_string()), 0.0);
@@ -365,10 +359,10 @@ mod transfers_tests {
             "bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh".to_string(),
             1640995200000,
         ); // 0.001 BTC fee
-        
+
         transfers.add(btc_transfer1);
         transfers.add(btc_transfer2);
-        
+
         assert_eq!(transfers.total_fees("BTC".to_string()), 0.0015);
         assert_eq!(transfers.total_fees("ETH".to_string()), 0.0);
     }
@@ -377,7 +371,7 @@ mod transfers_tests {
     fn test_transfers_serialization() {
         let mut transfers = Transfers::new();
         transfers.add(create_mock_transfer());
-        
+
         let serialized = serde_json::to_string(&transfers).unwrap();
         assert!(serialized.contains("\"transfers\":"));
         assert!(serialized.contains("\"id\":12345"));
@@ -387,7 +381,7 @@ mod transfers_tests {
     fn test_transfers_clone() {
         let mut transfers = Transfers::new();
         transfers.add(create_mock_transfer());
-        
+
         let cloned = transfers.clone();
         assert_eq!(transfers, cloned);
     }
@@ -412,15 +406,13 @@ mod subaccount_transfer_tests {
 
     #[test]
     fn test_subaccount_transfer_with_state() {
-        let transfer = create_mock_subaccount_transfer()
-            .with_state(TransferState::Confirmed);
+        let transfer = create_mock_subaccount_transfer().with_state(TransferState::Confirmed);
         assert_eq!(transfer.state, TransferState::Confirmed);
     }
 
     #[test]
     fn test_subaccount_transfer_with_type() {
-        let transfer = create_mock_subaccount_transfer()
-            .with_type("internal".to_string());
+        let transfer = create_mock_subaccount_transfer().with_type("internal".to_string());
         assert_eq!(transfer.transfer_type, "internal");
     }
 
@@ -428,7 +420,7 @@ mod subaccount_transfer_tests {
     fn test_subaccount_transfer_is_main_subaccount_transfer() {
         let main_to_sub = create_mock_subaccount_transfer(); // source = 0
         assert!(main_to_sub.is_main_subaccount_transfer());
-        
+
         let sub_to_main = SubaccountTransfer::new(
             12345,
             1.0,
@@ -438,7 +430,7 @@ mod subaccount_transfer_tests {
             1640995200000,
         );
         assert!(sub_to_main.is_main_subaccount_transfer());
-        
+
         let sub_to_sub = SubaccountTransfer::new(
             12345,
             1.0,
@@ -454,7 +446,7 @@ mod subaccount_transfer_tests {
     fn test_subaccount_transfer_is_subaccount_to_subaccount() {
         let main_to_sub = create_mock_subaccount_transfer(); // source = 0
         assert!(!main_to_sub.is_subaccount_to_subaccount());
-        
+
         let sub_to_sub = SubaccountTransfer::new(
             12345,
             1.0,
@@ -470,7 +462,7 @@ mod subaccount_transfer_tests {
     fn test_subaccount_transfer_serialization() {
         let transfer = create_mock_subaccount_transfer();
         let serialized = serde_json::to_string(&transfer).unwrap();
-        
+
         assert!(serialized.contains("\"id\":67890"));
         assert!(serialized.contains("\"amount\":0.1"));
         assert!(serialized.contains("\"currency\":\"ETH\""));
@@ -491,7 +483,7 @@ mod subaccount_transfer_tests {
             "timestamp": 1640995200000,
             "transfer_type": "subaccount"
         }"#;
-        
+
         let transfer: SubaccountTransfer = serde_json::from_str(json).unwrap();
         assert_eq!(transfer.id, 67890);
         assert_eq!(transfer.amount, 0.1);
@@ -511,7 +503,7 @@ mod subaccount_transfer_tests {
         let original = create_mock_subaccount_transfer()
             .with_state(TransferState::Confirmed)
             .with_type("internal".to_string());
-        
+
         let serialized = serde_json::to_string(&original).unwrap();
         let deserialized: SubaccountTransfer = serde_json::from_str(&serialized).unwrap();
         assert_eq!(original, deserialized);
@@ -520,25 +512,12 @@ mod subaccount_transfer_tests {
     #[test]
     fn test_subaccount_transfer_edge_cases() {
         // Test with zero amounts
-        let zero_transfer = SubaccountTransfer::new(
-            1,
-            0.0,
-            "BTC".to_string(),
-            0,
-            1,
-            1640995200000,
-        );
+        let zero_transfer = SubaccountTransfer::new(1, 0.0, "BTC".to_string(), 0, 1, 1640995200000);
         assert_eq!(zero_transfer.amount, 0.0);
-        
+
         // Test with very large amounts
-        let large_transfer = SubaccountTransfer::new(
-            2,
-            1000000.0,
-            "USDT".to_string(),
-            1,
-            2,
-            1640995200000,
-        );
+        let large_transfer =
+            SubaccountTransfer::new(2, 1000000.0, "USDT".to_string(), 1, 2, 1640995200000);
         assert_eq!(large_transfer.amount, 1000000.0);
     }
 }

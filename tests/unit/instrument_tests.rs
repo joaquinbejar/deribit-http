@@ -16,8 +16,14 @@ mod instrument_kind_tests {
         assert_eq!(serde_json::to_string(&future).unwrap(), "\"future\"");
         assert_eq!(serde_json::to_string(&option).unwrap(), "\"option\"");
         assert_eq!(serde_json::to_string(&spot).unwrap(), "\"spot\"");
-        assert_eq!(serde_json::to_string(&future_combo).unwrap(), "\"future_combo\"");
-        assert_eq!(serde_json::to_string(&option_combo).unwrap(), "\"option_combo\"");
+        assert_eq!(
+            serde_json::to_string(&future_combo).unwrap(),
+            "\"future_combo\""
+        );
+        assert_eq!(
+            serde_json::to_string(&option_combo).unwrap(),
+            "\"option_combo\""
+        );
     }
 
     #[test]
@@ -163,15 +169,15 @@ mod instrument_tests {
     fn test_instrument_is_perpetual() {
         let perpetual = create_mock_perpetual_instrument();
         let option = create_mock_option_instrument();
-        
+
         assert!(perpetual.is_perpetual());
         assert!(!option.is_perpetual());
-        
+
         // Test with no kind
         let mut no_kind = create_mock_perpetual_instrument();
         no_kind.kind = None;
         assert!(!no_kind.is_perpetual());
-        
+
         // Test with expiration timestamp
         let mut with_expiration = create_mock_perpetual_instrument();
         with_expiration.expiration_timestamp = Some(1640419200000);
@@ -182,10 +188,10 @@ mod instrument_tests {
     fn test_instrument_is_option() {
         let perpetual = create_mock_perpetual_instrument();
         let option = create_mock_option_instrument();
-        
+
         assert!(!perpetual.is_option());
         assert!(option.is_option());
-        
+
         // Test with option combo
         let mut option_combo = create_mock_option_instrument();
         option_combo.kind = Some(InstrumentKind::OptionCombo);
@@ -196,10 +202,10 @@ mod instrument_tests {
     fn test_instrument_is_future() {
         let perpetual = create_mock_perpetual_instrument();
         let option = create_mock_option_instrument();
-        
+
         assert!(perpetual.is_future());
         assert!(!option.is_future());
-        
+
         // Test with future combo
         let mut future_combo = create_mock_perpetual_instrument();
         future_combo.kind = Some(InstrumentKind::FutureCombo);
@@ -210,10 +216,10 @@ mod instrument_tests {
     fn test_instrument_is_spot() {
         let perpetual = create_mock_perpetual_instrument();
         let option = create_mock_option_instrument();
-        
+
         assert!(!perpetual.is_spot());
         assert!(!option.is_spot());
-        
+
         // Test with spot
         let mut spot = create_mock_perpetual_instrument();
         spot.kind = Some(InstrumentKind::Spot);
@@ -223,15 +229,18 @@ mod instrument_tests {
     #[test]
     fn test_instrument_serialization() {
         let instrument = create_mock_perpetual_instrument();
-        
+
         let json = serde_json::to_string(&instrument).unwrap();
         let deserialized: Instrument = serde_json::from_str(&json).unwrap();
-        
+
         assert_eq!(instrument.instrument_name, deserialized.instrument_name);
         assert_eq!(instrument.kind, deserialized.kind);
         assert_eq!(instrument.currency, deserialized.currency);
         assert_eq!(instrument.is_active, deserialized.is_active);
-        assert_eq!(instrument.expiration_timestamp, deserialized.expiration_timestamp);
+        assert_eq!(
+            instrument.expiration_timestamp,
+            deserialized.expiration_timestamp
+        );
         assert_eq!(instrument.strike, deserialized.strike);
         assert_eq!(instrument.option_type, deserialized.option_type);
     }
@@ -239,13 +248,16 @@ mod instrument_tests {
     #[test]
     fn test_instrument_option_serialization() {
         let option = create_mock_option_instrument();
-        
+
         let json = serde_json::to_string(&option).unwrap();
         let deserialized: Instrument = serde_json::from_str(&json).unwrap();
-        
+
         assert_eq!(option.option_type, deserialized.option_type);
         assert_eq!(option.strike, deserialized.strike);
-        assert_eq!(option.expiration_timestamp, deserialized.expiration_timestamp);
+        assert_eq!(
+            option.expiration_timestamp,
+            deserialized.expiration_timestamp
+        );
     }
 
     #[test]
@@ -255,7 +267,7 @@ mod instrument_tests {
             instrument_name: "".to_string(),
             ..Default::default()
         };
-        
+
         assert!(!minimal_instrument.is_perpetual());
         assert!(!minimal_instrument.is_option());
         assert!(!minimal_instrument.is_future());
@@ -266,10 +278,10 @@ mod instrument_tests {
     fn test_instrument_clone_debug() {
         let instrument = create_mock_perpetual_instrument();
         let cloned = instrument.clone();
-        
+
         assert_eq!(instrument.instrument_name, cloned.instrument_name);
         assert_eq!(instrument.kind, cloned.kind);
-        
+
         // Test Debug trait (uses DebugPretty)
         let debug_str = format!("{:?}", instrument);
         assert!(debug_str.contains("BTC-PERPETUAL"));

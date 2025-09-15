@@ -1,6 +1,6 @@
-use deribit_http::model::ticker::{Ticker, TickerData, TickerStats};
 use deribit_http::model::instrument::InstrumentKind;
 use deribit_http::model::other::Greeks;
+use deribit_http::model::ticker::{Ticker, TickerData, TickerStats};
 use serde_json;
 
 // Helper functions to create mock data
@@ -116,7 +116,7 @@ fn test_ticker_stats_deserialization() {
         "high": 51000.0,
         "low": 49000.0
     }"#;
-    
+
     let deserialized: TickerStats = serde_json::from_str(json).unwrap();
     assert_eq!(deserialized.volume, 1000.0);
     assert_eq!(deserialized.volume_usd, Some(50000.0));
@@ -172,7 +172,7 @@ fn test_ticker_data_deserialization() {
             "low": 49000.0
         }
     }"#;
-    
+
     let deserialized: TickerData = serde_json::from_str(json).unwrap();
     assert_eq!(deserialized.instrument_name, "BTC-PERPETUAL");
     assert_eq!(deserialized.mark_price, 50100.0);
@@ -220,7 +220,7 @@ fn test_ticker_deserialization() {
         "volume_usd_24h": 50000000.0,
         "price_change_24h": 500.0
     }"#;
-    
+
     let deserialized: Ticker = serde_json::from_str(json).unwrap();
     assert_eq!(deserialized.instrument_name, "BTC-PERPETUAL");
     assert_eq!(deserialized.timestamp, 1640995200000);
@@ -249,7 +249,7 @@ fn test_ticker_spread_none() {
     let mut ticker = create_mock_ticker();
     ticker.best_ask_price = None;
     assert!(ticker.spread().is_none());
-    
+
     ticker.best_ask_price = Some(50050.0);
     ticker.best_bid_price = None;
     assert!(ticker.spread().is_none());
@@ -267,7 +267,7 @@ fn test_ticker_mid_price_none() {
     let mut ticker = create_mock_ticker();
     ticker.best_ask_price = None;
     assert!(ticker.mid_price().is_none());
-    
+
     ticker.best_ask_price = Some(50050.0);
     ticker.best_bid_price = None;
     assert!(ticker.mid_price().is_none());
@@ -299,11 +299,11 @@ fn test_ticker_spread_percentage_zero_mid() {
 fn test_ticker_has_valid_spread() {
     let ticker = create_mock_ticker();
     assert!(ticker.has_valid_spread());
-    
+
     let mut ticker_no_bid = create_mock_ticker();
     ticker_no_bid.best_bid_price = None;
     assert!(!ticker_no_bid.has_valid_spread());
-    
+
     let mut ticker_no_ask = create_mock_ticker();
     ticker_no_ask.best_ask_price = None;
     assert!(!ticker_no_ask.has_valid_spread());
@@ -337,7 +337,7 @@ fn test_ticker_with_minimal_data() {
         greeks: None,
         interest_rate: None,
     };
-    
+
     assert_eq!(ticker.instrument_name, "TEST");
     assert!(ticker.spread().is_none());
     assert!(ticker.mid_price().is_none());
@@ -353,7 +353,7 @@ fn test_ticker_stats_with_none_values() {
         high: None,
         low: None,
     };
-    
+
     let serialized = serde_json::to_string(&stats).unwrap();
     assert!(serialized.contains("volume"));
     assert!(!serialized.contains("volume_usd"));
@@ -364,7 +364,7 @@ fn test_ticker_data_with_expired_state() {
     let mut ticker_data = create_mock_ticker_data();
     ticker_data.state = "expired".to_string();
     ticker_data.settlement_price = Some(50500.0);
-    
+
     assert_eq!(ticker_data.state, "expired");
     assert_eq!(ticker_data.settlement_price, Some(50500.0));
 }
@@ -374,7 +374,7 @@ fn test_ticker_negative_spread() {
     let mut ticker = create_mock_ticker();
     ticker.best_bid_price = Some(50100.0);
     ticker.best_ask_price = Some(50000.0);
-    
+
     let spread = ticker.spread().unwrap();
     assert_eq!(spread, -100.0); // Negative spread (crossed market)
 }

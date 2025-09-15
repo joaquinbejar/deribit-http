@@ -1,9 +1,9 @@
+use deribit_http::model::fee::FeeStructure;
+use deribit_http::model::other::DeliveryPriceData;
 use deribit_http::model::response::other::*;
 use deribit_http::model::settlement::Settlement;
 use deribit_http::model::trade::{LastTrade, UserTrade};
 use deribit_http::model::transaction::TransactionLogEntry;
-use deribit_http::model::other::DeliveryPriceData;
-use deribit_http::model::fee::FeeStructure;
 use serde_json;
 
 fn create_mock_user_trade() -> UserTrade {
@@ -125,7 +125,7 @@ fn create_mock_transaction_log_entry() -> TransactionLogEntry {
 }
 
 fn create_mock_fee_structure() -> FeeStructure {
-    use deribit_http::model::fee::{FeeValue, DefaultFee};
+    use deribit_http::model::fee::{DefaultFee, FeeValue};
     FeeStructure {
         index_name: "BTC-PERPETUAL".to_string(),
         kind: "perpetual".to_string(),
@@ -144,10 +144,7 @@ fn create_mock_fee_structure() -> FeeStructure {
 fn create_mock_account_limits() -> AccountLimits {
     AccountLimits {
         limits_per_currency: false,
-        non_matching_engine: RateLimit {
-            burst: 10,
-            rate: 5,
-        },
+        non_matching_engine: RateLimit { burst: 10, rate: 5 },
         matching_engine: MatchingEngineLimit {
             trading: TradingLimit {
                 total: RateLimit {
@@ -159,22 +156,13 @@ fn create_mock_account_limits() -> AccountLimits {
                 burst: 20,
                 rate: 10,
             },
-            quotes: RateLimit {
-                burst: 15,
-                rate: 8,
-            },
+            quotes: RateLimit { burst: 15, rate: 8 },
             max_quotes: RateLimit {
                 burst: 25,
                 rate: 12,
             },
-            guaranteed_quotes: RateLimit {
-                burst: 5,
-                rate: 2,
-            },
-            cancel_all: RateLimit {
-                burst: 10,
-                rate: 5,
-            },
+            guaranteed_quotes: RateLimit { burst: 5, rate: 2 },
+            cancel_all: RateLimit { burst: 10, rate: 5 },
         },
     }
 }
@@ -241,7 +229,7 @@ fn test_last_trades_response_creation() {
         has_more: false,
         trades,
     };
-    
+
     assert!(!response.has_more);
     assert_eq!(response.trades.len(), 1);
     assert_eq!(response.trades[0].trade_id, "trade_123");
@@ -254,7 +242,7 @@ fn test_last_trades_response_serialization() {
         has_more: true,
         trades,
     };
-    
+
     let serialized = serde_json::to_string(&response).unwrap();
     assert!(serialized.contains("has_more"));
     assert!(serialized.contains("trades"));
@@ -278,7 +266,7 @@ fn test_last_trades_response_deserialization() {
             "amount": 1.5
         }]
     }"#;
-    
+
     let response: LastTradesResponse = serde_json::from_str(json).unwrap();
     assert!(!response.has_more);
     assert_eq!(response.trades.len(), 1);
@@ -292,7 +280,7 @@ fn test_last_trades_response_clone() {
         has_more: true,
         trades,
     };
-    
+
     let cloned = response.clone();
     assert_eq!(response.has_more, cloned.has_more);
     assert_eq!(response.trades.len(), cloned.trades.len());
@@ -303,7 +291,7 @@ fn test_last_trades_response_clone() {
 fn test_settlements_response_new() {
     let settlements = vec![create_mock_settlement()];
     let response = SettlementsResponse::new(settlements);
-    
+
     assert!(response.continuation.is_none());
     assert_eq!(response.settlements.len(), 1);
     assert!(!response.has_more());
@@ -314,7 +302,7 @@ fn test_settlements_response_with_continuation() {
     let settlements = vec![create_mock_settlement()];
     let continuation = "next_page_token".to_string();
     let response = SettlementsResponse::with_continuation(settlements, continuation.clone());
-    
+
     assert_eq!(response.continuation, Some(continuation));
     assert_eq!(response.settlements.len(), 1);
     assert!(response.has_more());
@@ -323,11 +311,11 @@ fn test_settlements_response_with_continuation() {
 #[test]
 fn test_settlements_response_has_more() {
     let settlements = vec![create_mock_settlement()];
-    
+
     // Without continuation
     let response1 = SettlementsResponse::new(settlements.clone());
     assert!(!response1.has_more());
-    
+
     // With continuation
     let response2 = SettlementsResponse::with_continuation(settlements, "token".to_string());
     assert!(response2.has_more());
@@ -337,7 +325,7 @@ fn test_settlements_response_has_more() {
 fn test_settlements_response_serialization() {
     let settlements = vec![create_mock_settlement()];
     let response = SettlementsResponse::with_continuation(settlements, "token".to_string());
-    
+
     let serialized = serde_json::to_string(&response).unwrap();
     assert!(serialized.contains("continuation"));
     assert!(serialized.contains("settlements"));
@@ -348,7 +336,7 @@ fn test_settlements_response_serialization() {
 fn test_settlements_response_clone() {
     let settlements = vec![create_mock_settlement()];
     let response = SettlementsResponse::with_continuation(settlements, "token".to_string());
-    
+
     let cloned = response.clone();
     assert_eq!(response.continuation, cloned.continuation);
     assert_eq!(response.settlements.len(), cloned.settlements.len());
@@ -358,7 +346,7 @@ fn test_settlements_response_clone() {
 #[test]
 fn test_transaction_log_response_default() {
     let response = TransactionLogResponse::default();
-    
+
     assert!(response.continuation.is_none());
     assert!(response.logs.is_empty());
 }
@@ -370,7 +358,7 @@ fn test_transaction_log_response_with_data() {
         continuation: Some(12345),
         logs,
     };
-    
+
     assert_eq!(response.continuation, Some(12345));
     assert_eq!(response.logs.len(), 1);
     assert_eq!(response.logs[0].username, "user123");
@@ -383,7 +371,7 @@ fn test_transaction_log_response_serialization() {
         continuation: Some(12345),
         logs,
     };
-    
+
     let serialized = serde_json::to_string(&response).unwrap();
     assert!(serialized.contains("continuation"));
     assert!(serialized.contains("logs"));
@@ -397,7 +385,7 @@ fn test_transaction_log_response_clone() {
         continuation: Some(12345),
         logs,
     };
-    
+
     let cloned = response.clone();
     assert_eq!(response.continuation, cloned.continuation);
     assert_eq!(response.logs.len(), cloned.logs.len());
@@ -410,7 +398,7 @@ fn test_transfer_result_response_creation() {
         id: "transfer_123".to_string(),
         status: "completed".to_string(),
     };
-    
+
     assert_eq!(response.id, "transfer_123");
     assert_eq!(response.status, "completed");
 }
@@ -421,7 +409,7 @@ fn test_transfer_result_response_serialization() {
         id: "transfer_123".to_string(),
         status: "pending".to_string(),
     };
-    
+
     let serialized = serde_json::to_string(&response).unwrap();
     assert!(serialized.contains("transfer_123"));
     assert!(serialized.contains("pending"));
@@ -433,7 +421,7 @@ fn test_transfer_result_response_deserialization() {
         "id": "transfer_456",
         "status": "failed"
     }"#;
-    
+
     let response: TransferResultResponse = serde_json::from_str(json).unwrap();
     assert_eq!(response.id, "transfer_456");
     assert_eq!(response.status, "failed");
@@ -445,7 +433,7 @@ fn test_transfer_result_response_clone() {
         id: "transfer_789".to_string(),
         status: "processing".to_string(),
     };
-    
+
     let cloned = response.clone();
     assert_eq!(response.id, cloned.id);
     assert_eq!(response.status, cloned.status);
@@ -472,7 +460,7 @@ fn test_account_summary_response_creation() {
         self_trading_extended_to_subaccounts: false,
         summaries,
     };
-    
+
     assert_eq!(response.id, 12345);
     assert_eq!(response.email, "user@example.com");
     assert_eq!(response.summaries.len(), 1);
@@ -499,7 +487,7 @@ fn test_account_summary_response_serialization() {
         self_trading_extended_to_subaccounts: false,
         summaries,
     };
-    
+
     let serialized = serde_json::to_string(&response).unwrap();
     assert!(serialized.contains("user@example.com"));
     assert!(serialized.contains("testuser"));
@@ -527,7 +515,7 @@ fn test_account_summary_response_clone() {
         self_trading_extended_to_subaccounts: false,
         summaries,
     };
-    
+
     let cloned = response.clone();
     assert_eq!(response.id, cloned.id);
     assert_eq!(response.email, cloned.email);
@@ -538,7 +526,7 @@ fn test_account_summary_response_clone() {
 #[test]
 fn test_account_result_creation() {
     let result = create_mock_account_result();
-    
+
     assert_eq!(result.currency, "BTC");
     assert_eq!(result.balance, 1.5);
     assert_eq!(result.equity, 1.6);
@@ -548,7 +536,7 @@ fn test_account_result_creation() {
 #[test]
 fn test_account_result_serialization() {
     let result = create_mock_account_result();
-    
+
     let serialized = serde_json::to_string(&result).unwrap();
     assert!(serialized.contains("BTC"));
     assert!(serialized.contains("balance"));
@@ -559,7 +547,7 @@ fn test_account_result_serialization() {
 #[test]
 fn test_account_result_clone() {
     let result = create_mock_account_result();
-    
+
     let cloned = result.clone();
     assert_eq!(result.currency, cloned.currency);
     assert_eq!(result.balance, cloned.balance);
@@ -570,7 +558,7 @@ fn test_account_result_clone() {
 #[test]
 fn test_fee_structure_creation() {
     let fee = create_mock_fee_structure();
-    
+
     assert_eq!(fee.index_name, "BTC-PERPETUAL");
     assert_eq!(fee.kind, "perpetual");
     assert_eq!(fee.value.default.taker, 0.0005);
@@ -579,7 +567,7 @@ fn test_fee_structure_creation() {
 #[test]
 fn test_fee_structure_serialization() {
     let fee = create_mock_fee_structure();
-    
+
     let serialized = serde_json::to_string(&fee).unwrap();
     assert!(serialized.contains("BTC-PERPETUAL"));
     assert!(serialized.contains("perpetual"));
@@ -590,7 +578,7 @@ fn test_fee_structure_serialization() {
 #[test]
 fn test_account_limits_creation() {
     let limits = create_mock_account_limits();
-    
+
     assert_eq!(limits.non_matching_engine.burst, 10);
     assert_eq!(limits.matching_engine.spot.rate, 10);
 }
@@ -598,7 +586,7 @@ fn test_account_limits_creation() {
 #[test]
 fn test_account_limits_serialization() {
     let limits = create_mock_account_limits();
-    
+
     let serialized = serde_json::to_string(&limits).unwrap();
     assert!(serialized.contains("non_matching_engine"));
     assert!(serialized.contains("matching_engine"));

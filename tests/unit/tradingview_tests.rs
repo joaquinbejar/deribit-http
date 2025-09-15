@@ -91,7 +91,7 @@ fn test_add_single_candle() {
         1000.0,        // volume
         50250000.0,    // cost
     );
-    
+
     assert_eq!(chart_data.ticks.len(), 1);
     assert_eq!(chart_data.open.len(), 1);
     assert_eq!(chart_data.high.len(), 1);
@@ -99,7 +99,7 @@ fn test_add_single_candle() {
     assert_eq!(chart_data.close.len(), 1);
     assert_eq!(chart_data.volume.len(), 1);
     assert_eq!(chart_data.cost.len(), 1);
-    
+
     assert_eq!(chart_data.ticks[0], 1640995200000);
     assert_eq!(chart_data.open[0], 50000.0);
     assert_eq!(chart_data.high[0], 51000.0);
@@ -112,7 +112,7 @@ fn test_add_single_candle() {
 #[test]
 fn test_add_multiple_candles() {
     let chart_data = create_mock_chart_data();
-    
+
     assert_eq!(chart_data.ticks.len(), 2);
     assert_eq!(chart_data.open.len(), 2);
     assert_eq!(chart_data.high.len(), 2);
@@ -120,7 +120,7 @@ fn test_add_multiple_candles() {
     assert_eq!(chart_data.close.len(), 2);
     assert_eq!(chart_data.volume.len(), 2);
     assert_eq!(chart_data.cost.len(), 2);
-    
+
     // First candle
     assert_eq!(chart_data.ticks[0], 1640995200000);
     assert_eq!(chart_data.open[0], 50000.0);
@@ -129,7 +129,7 @@ fn test_add_multiple_candles() {
     assert_eq!(chart_data.close[0], 50500.0);
     assert_eq!(chart_data.volume[0], 1000.0);
     assert_eq!(chart_data.cost[0], 50250000.0);
-    
+
     // Second candle
     assert_eq!(chart_data.ticks[1], 1640995260000);
     assert_eq!(chart_data.open[1], 50500.0);
@@ -144,7 +144,7 @@ fn test_add_multiple_candles() {
 fn test_add_candle_with_zero_values() {
     let mut chart_data = TradingViewChartData::new();
     chart_data.add_candle(0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
-    
+
     assert_eq!(chart_data.ticks.len(), 1);
     assert_eq!(chart_data.ticks[0], 0);
     assert_eq!(chart_data.open[0], 0.0);
@@ -167,7 +167,7 @@ fn test_add_candle_with_negative_values() {
         -10.0,   // negative volume
         -1000.0, // negative cost
     );
-    
+
     assert_eq!(chart_data.open[0], -100.0);
     assert_eq!(chart_data.high[0], 100.0);
     assert_eq!(chart_data.low[0], -200.0);
@@ -181,7 +181,7 @@ fn test_add_candle_with_negative_values() {
 fn test_trading_view_chart_data_serialization() {
     let chart_data = create_mock_chart_data();
     let serialized = serde_json::to_string(&chart_data).unwrap();
-    
+
     assert!(serialized.contains("status"));
     assert!(serialized.contains("ok"));
     assert!(serialized.contains("ticks"));
@@ -200,7 +200,7 @@ fn test_trading_view_chart_data_serialization() {
 fn test_trading_view_chart_data_serialization_empty() {
     let chart_data = TradingViewChartData::new();
     let serialized = serde_json::to_string(&chart_data).unwrap();
-    
+
     assert!(serialized.contains("status"));
     assert!(serialized.contains("ok"));
     assert!(serialized.contains("ticks"));
@@ -220,9 +220,9 @@ fn test_trading_view_chart_data_deserialization() {
         "volume": [1000.0, 800.0],
         "cost": [50250000.0, 40240000.0]
     }"#;
-    
+
     let deserialized: TradingViewChartData = serde_json::from_str(json).unwrap();
-    
+
     assert_eq!(deserialized.status, "ok");
     assert_eq!(deserialized.ticks.len(), 2);
     assert_eq!(deserialized.open.len(), 2);
@@ -231,7 +231,7 @@ fn test_trading_view_chart_data_deserialization() {
     assert_eq!(deserialized.close.len(), 2);
     assert_eq!(deserialized.volume.len(), 2);
     assert_eq!(deserialized.cost.len(), 2);
-    
+
     assert_eq!(deserialized.ticks[0], 1640995200000);
     assert_eq!(deserialized.open[0], 50000.0);
     assert_eq!(deserialized.high[0], 51000.0);
@@ -253,9 +253,9 @@ fn test_trading_view_chart_data_deserialization_empty() {
         "volume": [],
         "cost": []
     }"#;
-    
+
     let deserialized: TradingViewChartData = serde_json::from_str(json).unwrap();
-    
+
     assert_eq!(deserialized.status, "ok");
     assert!(deserialized.ticks.is_empty());
     assert!(deserialized.open.is_empty());
@@ -278,7 +278,7 @@ fn test_trading_view_chart_data_deserialization_error_status() {
         "volume": [],
         "cost": []
     }"#;
-    
+
     let deserialized: TradingViewChartData = serde_json::from_str(json).unwrap();
     assert_eq!(deserialized.status, "error");
 }
@@ -288,7 +288,7 @@ fn test_trading_view_chart_data_deserialization_error_status() {
 fn test_trading_view_chart_data_clone() {
     let chart_data = create_mock_chart_data();
     let cloned = chart_data.clone();
-    
+
     assert_eq!(chart_data.status, cloned.status);
     assert_eq!(chart_data.ticks, cloned.ticks);
     assert_eq!(chart_data.open, cloned.open);
@@ -303,7 +303,7 @@ fn test_trading_view_chart_data_clone() {
 fn test_trading_view_chart_data_clone_empty() {
     let chart_data = TradingViewChartData::new();
     let cloned = chart_data.clone();
-    
+
     assert_eq!(chart_data.status, cloned.status);
     assert_eq!(chart_data.ticks.len(), cloned.ticks.len());
     assert_eq!(chart_data.open.len(), cloned.open.len());
@@ -327,7 +327,7 @@ fn test_trading_view_chart_data_large_numbers() {
         f64::MAX,
         f64::MAX,
     );
-    
+
     assert_eq!(chart_data.ticks[0], u64::MAX);
     assert_eq!(chart_data.open[0], f64::MAX);
     assert_eq!(chart_data.high[0], f64::MAX);
@@ -340,7 +340,7 @@ fn test_trading_view_chart_data_large_numbers() {
 #[test]
 fn test_trading_view_chart_data_consistency() {
     let mut chart_data = TradingViewChartData::new();
-    
+
     // Add multiple candles
     for i in 0..10 {
         chart_data.add_candle(
@@ -353,7 +353,7 @@ fn test_trading_view_chart_data_consistency() {
             50000000.0 + i as f64,       // cost increments
         );
     }
-    
+
     // Verify all arrays have the same length
     assert_eq!(chart_data.ticks.len(), 10);
     assert_eq!(chart_data.open.len(), 10);
@@ -362,7 +362,7 @@ fn test_trading_view_chart_data_consistency() {
     assert_eq!(chart_data.close.len(), 10);
     assert_eq!(chart_data.volume.len(), 10);
     assert_eq!(chart_data.cost.len(), 10);
-    
+
     // Verify data consistency
     for i in 0..10 {
         assert_eq!(chart_data.ticks[i], 1640995200000 + (i as u64 * 60000));
@@ -379,9 +379,9 @@ fn test_trading_view_chart_data_consistency() {
 fn test_trading_view_chart_data_with_different_status() {
     let mut chart_data = TradingViewChartData::new();
     chart_data.status = "error".to_string();
-    
+
     assert_eq!(chart_data.status, "error");
-    
+
     let serialized = serde_json::to_string(&chart_data).unwrap();
     assert!(serialized.contains("error"));
     assert!(!serialized.contains("ok"));
@@ -392,7 +392,7 @@ fn test_trading_view_chart_data_round_trip_serialization() {
     let original = create_mock_chart_data();
     let serialized = serde_json::to_string(&original).unwrap();
     let deserialized: TradingViewChartData = serde_json::from_str(&serialized).unwrap();
-    
+
     assert_eq!(original.status, deserialized.status);
     assert_eq!(original.ticks, deserialized.ticks);
     assert_eq!(original.open, deserialized.open);

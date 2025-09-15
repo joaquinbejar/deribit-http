@@ -1,8 +1,8 @@
-use deribit_http::model::trade::{
-    TradeExecution, UserTrade, LastTrade, Liquidity, Trade, TradeStats, TradeAllocation, ClientInfo
-};
-use deribit_http::model::order::OrderSide;
 use deribit_http::model::instrument::InstrumentKind;
+use deribit_http::model::order::OrderSide;
+use deribit_http::model::trade::{
+    ClientInfo, LastTrade, Liquidity, Trade, TradeAllocation, TradeExecution, TradeStats, UserTrade,
+};
 use serde_json;
 
 // Helper functions to create mock data
@@ -170,7 +170,7 @@ fn test_trade_execution_deserialization() {
         "trade_id": "trade_789",
         "trade_seq": 123456
     }"#;
-    
+
     let deserialized: TradeExecution = serde_json::from_str(json).unwrap();
     assert_eq!(deserialized.trade_id, "trade_789");
     assert_eq!(deserialized.amount, 1.5);
@@ -226,7 +226,7 @@ fn test_user_trade_deserialization() {
         "trade_seq": 123456,
         "user_id": 12345
     }"#;
-    
+
     let deserialized: UserTrade = serde_json::from_str(json).unwrap();
     assert_eq!(deserialized.user_id, Some(12345));
     assert_eq!(deserialized.trade_id, "trade_789");
@@ -271,7 +271,7 @@ fn test_last_trade_deserialization() {
         "trade_id": "trade_789",
         "trade_seq": 123456
     }"#;
-    
+
     let deserialized: LastTrade = serde_json::from_str(json).unwrap();
     assert_eq!(deserialized.trade_id, "trade_789");
     assert_eq!(deserialized.amount, 1.5);
@@ -295,9 +295,18 @@ fn test_liquidity_serialization() {
 
 #[test]
 fn test_liquidity_deserialization() {
-    assert_eq!(serde_json::from_str::<Liquidity>(r#""M""#).unwrap(), Liquidity::Maker);
-    assert_eq!(serde_json::from_str::<Liquidity>(r#""T""#).unwrap(), Liquidity::Taker);
-    assert_eq!(serde_json::from_str::<Liquidity>(r#""MT""#).unwrap(), Liquidity::Mixed);
+    assert_eq!(
+        serde_json::from_str::<Liquidity>(r#""M""#).unwrap(),
+        Liquidity::Maker
+    );
+    assert_eq!(
+        serde_json::from_str::<Liquidity>(r#""T""#).unwrap(),
+        Liquidity::Taker
+    );
+    assert_eq!(
+        serde_json::from_str::<Liquidity>(r#""MT""#).unwrap(),
+        Liquidity::Mixed
+    );
 }
 
 #[test]
@@ -342,7 +351,7 @@ fn test_trade_deserialization() {
         "mark_price": 50000.0,
         "index_price": 49900.0
     }"#;
-    
+
     let deserialized: Trade = serde_json::from_str(json).unwrap();
     assert_eq!(deserialized.trade_id, "trade_789");
     assert_eq!(deserialized.direction, OrderSide::Buy);
@@ -370,10 +379,10 @@ fn test_trade_is_maker() {
     let mut trade = create_mock_trade();
     trade.liquidity = Liquidity::Maker;
     assert!(trade.is_maker());
-    
+
     trade.liquidity = Liquidity::Mixed;
     assert!(trade.is_maker());
-    
+
     trade.liquidity = Liquidity::Taker;
     assert!(!trade.is_maker());
 }
@@ -383,10 +392,10 @@ fn test_trade_is_taker() {
     let mut trade = create_mock_trade();
     trade.liquidity = Liquidity::Taker;
     assert!(trade.is_taker());
-    
+
     trade.liquidity = Liquidity::Mixed;
     assert!(trade.is_taker());
-    
+
     trade.liquidity = Liquidity::Maker;
     assert!(!trade.is_taker());
 }
@@ -449,7 +458,7 @@ fn test_trade_stats_win_rate() {
     stats.count = 10;
     stats.winning_trades = 7;
     stats.losing_trades = 3;
-    
+
     let win_rate = stats.win_rate();
     assert_eq!(win_rate, 70.0);
 }
@@ -472,7 +481,7 @@ fn test_trade_stats_serialization() {
         winning_trades: 3,
         losing_trades: 2,
     };
-    
+
     let serialized = serde_json::to_string(&stats).unwrap();
     assert!(serialized.contains("count"));
     assert!(serialized.contains("5"));
@@ -567,7 +576,7 @@ fn test_trade_with_minimal_data() {
         tick_direction: None,
         self_trade: None,
     };
-    
+
     assert_eq!(trade.notional_value(), 0.0);
     assert_eq!(trade.fee_percentage(), 0.0);
     assert!(trade.is_taker());
@@ -589,7 +598,7 @@ fn test_user_trade_with_none_values() {
     trade.label = None;
     trade.mmp = None;
     trade.user_id = None;
-    
+
     let serialized = serde_json::to_string(&trade).unwrap();
     assert!(!serialized.contains("api"));
     assert!(!serialized.contains("contracts"));
@@ -603,7 +612,7 @@ fn test_last_trade_without_iv() {
     let mut trade = create_mock_last_trade();
     trade.iv = None;
     trade.liquid = None;
-    
+
     let serialized = serde_json::to_string(&trade).unwrap();
     assert!(!serialized.contains("iv"));
     assert!(!serialized.contains("liquid"));
