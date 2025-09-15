@@ -22,3 +22,7 @@ pub mod tradingview_tests;
 pub mod withdrawal_tests;
 pub mod transfer_tests;
 pub mod utils_tests;
+pub mod book_tests;
+pub mod currency_tests;
+pub mod funding_tests;
+pub mod instrument_tests;
