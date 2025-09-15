@@ -226,7 +226,7 @@ pub struct AccountSummaryResponse {
     /// true if self trading rejection behavior is applied to trades between subaccounts
     pub self_trading_extended_to_subaccounts: bool,
     /// Aggregated list of per-currency account summaries
-    pub summaries: Vec<AccountSummaryResponse>,
+    pub summaries: Vec<AccountResult>,
 }
 
 /// Account summary information
