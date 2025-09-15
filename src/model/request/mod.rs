@@ -4,8 +4,11 @@
    Date: 15/9/25
 ******************************************************************************/
 
+/// API request structures and utilities
 pub mod api_request;
+/// Mass quote request models
 pub mod mass_quote;
+/// Order request models and types
 pub mod order;
 
 pub use api_request::*;

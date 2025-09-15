@@ -147,8 +147,11 @@ pub mod rate_limit;
 pub mod session;
 
 // Constants
+/// Application constants and configuration
 pub mod constants;
+/// Logging utilities and configuration
 pub mod logger;
+/// Utility functions and helpers
 pub mod utils;
 
 // Re-export main client and error types

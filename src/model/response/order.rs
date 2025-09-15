@@ -16,11 +16,15 @@ pub struct OrderResponse {
     pub trades: Vec<TradeExecution>,
 }
 
+/// Types of linked orders supported by Deribit
 #[derive(DebugPretty, DisplaySimple, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum LinkedOrderType {
+    /// One order triggers another (OTO)
     OneTriggersOther,
+    /// One order cancels another (OCO)
     OneCancelsOther,
+    /// One order triggers another and cancels a third (OTOCO)
     OneTriggersOneCancelsOther,
 }
 

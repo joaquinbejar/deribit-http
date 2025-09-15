@@ -1,5 +1,18 @@
 use chrono::{Duration, Local}; // Add chrono import
 
+/// Returns tomorrow's date in Deribit format (DDMMMYY)
+///
+/// # Returns
+/// A string representing tomorrow's date in the format used by Deribit:
+/// - DD: Two-digit day
+/// - MMM: Three-letter month (uppercase)
+/// - YY: Two-digit year
+///
+/// # Example
+/// ```
+/// let tomorrow = get_tomorrow_deribit_format();
+/// // Returns something like "15SEP25" for September 15, 2025
+/// ```
 pub fn get_tomorrow_deribit_format() -> String {
     let today = Local::now();
     let tomorrow = today + Duration::days(1);

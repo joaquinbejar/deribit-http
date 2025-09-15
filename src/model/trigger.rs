@@ -18,10 +18,14 @@ pub enum TriggerType {
     LastPrice,
 }
 
+/// Trigger fill condition for linked orders
 #[derive(DebugPretty, DisplaySimple, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum TriggerFillCondition {
+    /// Trigger on first hit of the trigger price
     FirstHit,
+    /// Trigger only when the order is completely filled
     CompleteFill,
+    /// Trigger incrementally as the order is filled
     Incremental,
 }

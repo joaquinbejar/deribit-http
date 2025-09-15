@@ -61,11 +61,17 @@ pub struct OptionInstrumentPair {
     pub put: Option<OptionInstrument>,
 }
 
+/// Parsed option instrument with ticker data
 #[derive(DebugPretty, DisplaySimple, Clone, Serialize)]
 pub struct ParsedOptionWithTicker {
+    /// The instrument name (e.g., "BTC-25DEC21-50000-C")
     pub instrument_name: String,
+    /// Strike price of the option
     pub strike: f64,
+    /// Type of option (Call or Put)
     pub option_type: OptionType,
+    /// Expiry date string
     pub expiry: String,
+    /// Associated ticker data
     pub ticker: TickerData,
 }

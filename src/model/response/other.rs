@@ -11,6 +11,7 @@ use crate::model::transaction::TransactionLogEntry;
 use pretty_simple_display::{DebugPretty, DisplaySimple};
 use serde::{Deserialize, Serialize};
 
+/// Response type for user trades, containing a vector of user trade data
 pub type UserTradeResponse = Vec<UserTrade>;
 
 /// Contract size response
