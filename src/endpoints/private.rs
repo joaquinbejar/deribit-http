@@ -6,6 +6,7 @@ use crate::model::account::Subaccount;
 use crate::model::position::Position;
 use crate::model::request::mass_quote::MassQuoteRequest;
 use crate::model::request::order::OrderRequest;
+use crate::prelude::Trigger;
 use crate::model::response::api_response::ApiResponse;
 use crate::model::response::deposit::DepositsResponse;
 use crate::model::response::mass_quote::MassQuoteResponse;
@@ -526,8 +527,18 @@ impl DeribitHttpClient {
             query_params.push(("reduce_only".to_string(), "true".to_string()));
         }
 
-        // Note: trigger_price and trigger fields are not currently supported in OrderRequest
-        // These would be added when stop-limit order functionality is implemented
+        if let Some(trigger_price) = request.trigger_price {
+            query_params.push(("trigger_price".to_string(), trigger_price.to_string()));
+        }
+
+        if let Some(trigger) = request.trigger {
+            let trigger_str = match trigger {
+                Trigger::IndexPrice => "index_price",
+                Trigger::MarkPrice => "mark_price",
+                Trigger::LastPrice => "last_price",
+            };
+            query_params.push(("trigger".to_string(), trigger_str.to_string()));
+        }
 
         let query_string = query_params
             .iter()
@@ -622,8 +633,18 @@ impl DeribitHttpClient {
             query_params.push(("reduce_only".to_string(), "true".to_string()));
         }
 
-        // Note: trigger_price and trigger fields are not currently supported in OrderRequest
-        // These would be added when stop-limit order functionality is implemented
+        if let Some(trigger_price) = request.trigger_price {
+            query_params.push(("trigger_price".to_string(), trigger_price.to_string()));
+        }
+
+        if let Some(trigger) = request.trigger {
+            let trigger_str = match trigger {
+                Trigger::IndexPrice => "index_price",
+                Trigger::MarkPrice => "mark_price",
+                Trigger::LastPrice => "last_price",
+            };
+            query_params.push(("trigger".to_string(), trigger_str.to_string()));
+        }
 
         let query_string = query_params
             .iter()

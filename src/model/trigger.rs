@@ -9,7 +9,7 @@ use serde::{Deserialize, Serialize};
 /// Trigger type for stop orders
 #[derive(DebugPretty, DisplaySimple, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
-pub enum TriggerType {
+pub enum Trigger {
     /// Index price trigger
     IndexPrice,
     /// Mark price trigger
