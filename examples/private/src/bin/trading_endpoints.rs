@@ -17,6 +17,7 @@
 use deribit_http::prelude::*;
 use tracing::{error, info, warn};
 
+
 #[tokio::main]
 async fn main() -> Result<(), HttpError> {
     // Initialize logging
@@ -88,7 +89,7 @@ async fn main() -> Result<(), HttpError> {
         contracts: None,
         type_: Some(OrderType::Limit),
         label: Some("example_sell_order".to_string()),
-        price: Some(100000.0), // High price to avoid execution
+        price: Some(150000.0), // High price to avoid execution
         time_in_force: Some(TimeInForce::GoodTilCancelled),
         display_amount: None,
         post_only: Some(true), // Ensure we don't execute immediately
@@ -131,7 +132,7 @@ async fn main() -> Result<(), HttpError> {
     let edit_request = OrderRequest {
         order_id: Some(buy_order_id.clone()),
         instrument_name: "BTC-PERPETUAL".to_string(),
-        amount: Some(15.0), // Change amount from 10 to 15 USD
+        amount: Some(20.0), // Change amount from 10 to 20 USD
         contracts: None,
         type_: Some(OrderType::Limit),
         label: Some("example_buy_order".to_string()),
