@@ -1491,15 +1491,18 @@ impl DeribitHttpClient {
     /// # Arguments
     ///
     /// * `label` - The label to filter orders by
+    /// * `currency` - The currency symbol (BTC, ETH, etc.)
     ///
     pub async fn get_open_orders_by_label(
         &self,
         label: &str,
+        currency: &str,
     ) -> Result<Vec<OrderInfoResponse>, HttpError> {
         let url = format!(
-            "{}/private/get_open_orders_by_label?label={}",
+            "{}/private/get_open_orders_by_label?label={}&currency={}",
             self.base_url(),
-            urlencoding::encode(label)
+            urlencoding::encode(label),
+            urlencoding::encode(currency)
         );
 
         let response = self.make_authenticated_request(&url).await?;
