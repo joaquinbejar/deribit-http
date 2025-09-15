@@ -1,18 +1,20 @@
 /******************************************************************************
-    Author: Joaquín Béjar García
-    Email: jb@taunais.com 
-    Date: 15/9/25
- ******************************************************************************/
+   Author: Joaquín Béjar García
+   Email: jb@taunais.com
+   Date: 15/9/25
+******************************************************************************/
+use crate::model::TradeAllocation;
 use pretty_simple_display::{DebugPretty, DisplaySimple};
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
-use crate::model::TradeAllocation;
 
+/// User trade response structure for order-specific trade queries
 #[skip_serializing_none]
 #[derive(DebugPretty, DisplaySimple, Clone, Serialize, Deserialize)]
 pub struct UserTradeResponseByOrder {
+    /// Unique identifier for the trade
     pub trade_id: String,
-    /// Trade amount. For perpetual and inverse futures the amount is in USD units. 
+    /// Trade amount. For perpetual and inverse futures the amount is in USD units.
     /// For options and linear futures it is the underlying base currency coin.
     pub amount: f64,
 
@@ -64,8 +66,8 @@ pub struct UserTradeResponseByOrder {
     /// Optional field containing leg trades if trade is a combo trade
     pub legs: Option<Vec<serde_json::Value>>,
 
-    /// Optional field (only for trades caused by liquidation): 
-    /// "M" when maker side was under liquidation, "T" when taker side was under liquidation, 
+    /// Optional field (only for trades caused by liquidation):
+    /// "M" when maker side was under liquidation, "T" when taker side was under liquidation,
     /// "MT" when both sides were under liquidation
     pub liquidation: Option<String>,
 
@@ -105,7 +107,7 @@ pub struct UserTradeResponseByOrder {
     /// true if user order is reduce-only
     pub reduce_only: Option<String>,
 
-    /// true if user order is marked by the platform as a risk reducing order 
+    /// true if user order is marked by the platform as a risk reducing order
     /// (can apply only to orders placed by PM users)
     pub risk_reducing: bool,
 

@@ -17,7 +17,6 @@
 use deribit_http::prelude::*;
 use tracing::{error, info, warn};
 
-
 #[tokio::main]
 async fn main() -> Result<(), HttpError> {
     // Initialize logging

@@ -3,10 +3,10 @@
    Email: jb@taunais.com
    Date: 15/9/25
 ******************************************************************************/
-use std::fmt::Display;
 use pretty_simple_display::{DebugPretty, DisplaySimple};
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
+use std::fmt::Display;
 
 /// Instrument kind enumeration
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -35,7 +35,6 @@ impl Display for InstrumentKind {
             InstrumentKind::FutureCombo => write!(f, "future_combo"),
             InstrumentKind::OptionCombo => write!(f, "option_combo"),
         }
-        
     }
 }
 

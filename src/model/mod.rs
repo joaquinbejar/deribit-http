@@ -9,6 +9,8 @@ pub mod book;
 pub mod currency;
 /// Deposit-related models
 pub mod deposit;
+/// Fee calculation and structure models
+pub mod fee;
 /// Funding rate models
 pub mod funding;
 /// Index price models
@@ -45,12 +47,12 @@ pub mod trigger;
 pub mod types;
 /// Withdrawal models
 pub mod withdrawal;
-pub mod fee;
 
 pub use account::*;
 pub use book::*;
 pub use currency::*;
 pub use deposit::*;
+pub use fee::*;
 pub use funding::*;
 pub use index::*;
 pub use instrument::*;
@@ -69,4 +71,3 @@ pub use transfer::*;
 pub use trigger::*;
 pub use types::*;
 pub use withdrawal::*;
-pub use fee::*;

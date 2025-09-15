@@ -17,8 +17,8 @@
 //!
 //! Then run: cargo run --bin order_history_endpoints
 
-use deribit_http::prelude::*;
 use deribit_http::model::trigger::Trigger;
+use deribit_http::prelude::*;
 use tokio::time::{Duration, sleep};
 use tracing::{error, info, warn};
 
@@ -297,7 +297,7 @@ async fn main() -> Result<(), HttpError> {
             } else {
                 (None, None)
             };
-            
+
             let buy_request = OrderRequest {
                 order_id: None,
                 instrument_name: instrument.to_string(),
@@ -354,7 +354,7 @@ async fn main() -> Result<(), HttpError> {
             } else {
                 (None, None)
             };
-            
+
             let sell_request = OrderRequest {
                 order_id: None,
                 instrument_name: instrument.to_string(),
@@ -451,8 +451,6 @@ async fn main() -> Result<(), HttpError> {
         }
     }
 
-
-
     // Wait for cancellations to be processed
     sleep(Duration::from_secs(2)).await;
     println!();
@@ -497,7 +495,9 @@ async fn main() -> Result<(), HttpError> {
                     );
                     info!(
                         "     Amount: {:.6}, Filled: {:.6}, Average Price: ${:.2}",
-                        order.amount, order.filled_amount.unwrap_or(0.0), order.average_price.unwrap_or(0.0)
+                        order.amount,
+                        order.filled_amount.unwrap_or(0.0),
+                        order.average_price.unwrap_or(0.0)
                     );
                 }
                 if orders.len() > 5 {
@@ -595,7 +595,9 @@ async fn main() -> Result<(), HttpError> {
                     );
                     info!(
                         "     Amount: {:.6}, Filled: {:.6}, Post Only: {}",
-                        order.amount, order.filled_amount.unwrap_or(0.0), order.post_only
+                        order.amount,
+                        order.filled_amount.unwrap_or(0.0),
+                        order.post_only
                     );
                 }
             } else {
@@ -643,7 +645,9 @@ async fn main() -> Result<(), HttpError> {
                     );
                     info!(
                         "     Amount: {:.6}, Filled: {:.6}, Reduce Only: {}",
-                        order.amount, order.filled_amount.unwrap_or(0.0), order.reduce_only
+                        order.amount,
+                        order.filled_amount.unwrap_or(0.0),
+                        order.reduce_only
                     );
                 }
             } else {

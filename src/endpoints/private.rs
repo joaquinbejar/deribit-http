@@ -7,7 +7,6 @@ use crate::model::position::Position;
 use crate::model::request::mass_quote::MassQuoteRequest;
 use crate::model::request::order::OrderRequest;
 use crate::model::request::trade::TradesRequest;
-use crate::prelude::Trigger;
 use crate::model::response::api_response::ApiResponse;
 use crate::model::response::deposit::DepositsResponse;
 use crate::model::response::mass_quote::MassQuoteResponse;
@@ -17,6 +16,7 @@ use crate::model::response::other::{
 };
 use crate::model::response::withdrawal::WithdrawalsResponse;
 use crate::model::{UserTradeResponseByOrder, UserTradeWithPaginationResponse};
+use crate::prelude::Trigger;
 
 /// Private endpoints implementation
 impl DeribitHttpClient {
@@ -1258,7 +1258,7 @@ impl DeribitHttpClient {
     }
 
     // pub async fn edit_order_by_label(&self, request: OrderRequest) -> Result<OrderResponse, HttpError> {
-    //     
+    //
     // }
 
     /// Mass quote
@@ -1353,14 +1353,23 @@ impl DeribitHttpClient {
         }
 
         // Debug: Log the raw response text before trying to parse it
-        let response_text = response.text().await
-            .map_err(|e| HttpError::InvalidResponse(format!("Failed to read response text: {}", e)))?;
-        
-        tracing::debug!("Raw API response for get_user_trades_by_instrument: {}", response_text);
-        
+        let response_text = response.text().await.map_err(|e| {
+            HttpError::InvalidResponse(format!("Failed to read response text: {}", e))
+        })?;
+
+        tracing::debug!(
+            "Raw API response for get_user_trades_by_instrument: {}",
+            response_text
+        );
+
         // Try to parse as JSON
-        let api_response: ApiResponse<UserTradeWithPaginationResponse> = serde_json::from_str(&response_text)
-            .map_err(|e| HttpError::InvalidResponse(format!("error decoding response body: {} - Raw response: {}", e, response_text)))?;
+        let api_response: ApiResponse<UserTradeWithPaginationResponse> =
+            serde_json::from_str(&response_text).map_err(|e| {
+                HttpError::InvalidResponse(format!(
+                    "error decoding response body: {} - Raw response: {}",
+                    e, response_text
+                ))
+            })?;
 
         if let Some(error) = api_response.error {
             return Err(HttpError::RequestFailed(format!(
@@ -1920,7 +1929,7 @@ impl DeribitHttpClient {
         if let Some(count) = request.count {
             query_params.push(("count".to_string(), count.to_string()));
         }
-        
+
         if let Some(sorting) = request.sorting {
             query_params.push(("sorting".to_string(), sorting.to_string()));
         }
@@ -1951,14 +1960,23 @@ impl DeribitHttpClient {
         }
 
         // Debug: Log the raw response text before trying to parse it
-        let response_text = response.text().await
-            .map_err(|e| HttpError::InvalidResponse(format!("Failed to read response text: {}", e)))?;
-        
-        tracing::debug!("Raw API response for get_user_trades_by_order: {}", response_text);
-        
+        let response_text = response.text().await.map_err(|e| {
+            HttpError::InvalidResponse(format!("Failed to read response text: {}", e))
+        })?;
+
+        tracing::debug!(
+            "Raw API response for get_user_trades_by_order: {}",
+            response_text
+        );
+
         // Try to parse as JSON
-        let api_response: ApiResponse<UserTradeWithPaginationResponse> = serde_json::from_str(&response_text)
-            .map_err(|e| HttpError::InvalidResponse(format!("error decoding response body: {} - Raw response: {}", e, response_text)))?;
+        let api_response: ApiResponse<UserTradeWithPaginationResponse> =
+            serde_json::from_str(&response_text).map_err(|e| {
+                HttpError::InvalidResponse(format!(
+                    "error decoding response body: {} - Raw response: {}",
+                    e, response_text
+                ))
+            })?;
 
         if let Some(error) = api_response.error {
             return Err(HttpError::RequestFailed(format!(
@@ -1991,9 +2009,7 @@ impl DeribitHttpClient {
         &self,
         request: TradesRequest,
     ) -> Result<UserTradeWithPaginationResponse, HttpError> {
-        let mut query_params = vec![
-            ("currency".to_string(), request.currency.to_string()),
-        ];
+        let mut query_params = vec![("currency".to_string(), request.currency.to_string())];
 
         if let Some(start_timestamp) = request.start_timestamp {
             query_params.push(("start_timestamp".to_string(), start_timestamp.to_string()));
@@ -2010,7 +2026,6 @@ impl DeribitHttpClient {
         if let Some(count) = request.count {
             query_params.push(("count".to_string(), count.to_string()));
         }
-        
 
         if let Some(sorting) = request.sorting {
             query_params.push(("sorting".to_string(), sorting.to_string()));
@@ -2042,14 +2057,23 @@ impl DeribitHttpClient {
         }
 
         // Debug: Log the raw response text before trying to parse it
-        let response_text = response.text().await
-            .map_err(|e| HttpError::InvalidResponse(format!("Failed to read response text: {}", e)))?;
-        
-        tracing::debug!("Raw API response for get_user_trades_by_order: {}", response_text);
-        
+        let response_text = response.text().await.map_err(|e| {
+            HttpError::InvalidResponse(format!("Failed to read response text: {}", e))
+        })?;
+
+        tracing::debug!(
+            "Raw API response for get_user_trades_by_order: {}",
+            response_text
+        );
+
         // Try to parse as JSON
-        let api_response: ApiResponse<UserTradeWithPaginationResponse> = serde_json::from_str(&response_text)
-            .map_err(|e| HttpError::InvalidResponse(format!("error decoding response body: {} - Raw response: {}", e, response_text)))?;
+        let api_response: ApiResponse<UserTradeWithPaginationResponse> =
+            serde_json::from_str(&response_text).map_err(|e| {
+                HttpError::InvalidResponse(format!(
+                    "error decoding response body: {} - Raw response: {}",
+                    e, response_text
+                ))
+            })?;
 
         if let Some(error) = api_response.error {
             return Err(HttpError::RequestFailed(format!(
@@ -2129,14 +2153,23 @@ impl DeribitHttpClient {
         }
 
         // Debug: Log the raw response text before trying to parse it
-        let response_text = response.text().await
-            .map_err(|e| HttpError::InvalidResponse(format!("Failed to read response text: {}", e)))?;
-        
-        tracing::debug!("Raw API response for get_user_trades_by_instrument_and_time: {}", response_text);
-        
+        let response_text = response.text().await.map_err(|e| {
+            HttpError::InvalidResponse(format!("Failed to read response text: {}", e))
+        })?;
+
+        tracing::debug!(
+            "Raw API response for get_user_trades_by_instrument_and_time: {}",
+            response_text
+        );
+
         // Try to parse as JSON
-        let api_response: ApiResponse<UserTradeWithPaginationResponse> = serde_json::from_str(&response_text)
-            .map_err(|e| HttpError::InvalidResponse(format!("error decoding response body: {} - Raw response: {}", e, response_text)))?;
+        let api_response: ApiResponse<UserTradeWithPaginationResponse> =
+            serde_json::from_str(&response_text).map_err(|e| {
+                HttpError::InvalidResponse(format!(
+                    "error decoding response body: {} - Raw response: {}",
+                    e, response_text
+                ))
+            })?;
 
         if let Some(error) = api_response.error {
             return Err(HttpError::RequestFailed(format!(

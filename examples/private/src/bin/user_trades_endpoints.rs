@@ -20,16 +20,15 @@
 //!
 //! Then run: cargo run --bin user_trades_endpoints
 
-
 use deribit_http::model::Currency;
-use deribit_http::model::request::trade::TradesRequest;
 use deribit_http::model::instrument::InstrumentKind;
 use deribit_http::model::other::SortDirection;
+use deribit_http::model::request::trade::TradesRequest;
 use deribit_http::prelude::*;
 use tracing::{info, warn};
 
 use std::time::{SystemTime, UNIX_EPOCH};
-use tokio::time::{sleep, Duration};
+use tokio::time::{Duration, sleep};
 
 #[tokio::main]
 async fn main() -> Result<(), HttpError> {
@@ -99,14 +98,10 @@ async fn main() -> Result<(), HttpError> {
     let mut created_order_ids = Vec::new();
 
     // Helper function to round BTC price to nearest 0.5 (tick size)
-    let round_btc_price = |price: f64| -> f64 {
-        (price * 2.0).round() / 2.0
-    };
+    let round_btc_price = |price: f64| -> f64 { (price * 2.0).round() / 2.0 };
 
     // Helper function to round ETH price to nearest 0.05 (tick size)
-    let round_eth_price = |price: f64| -> f64 {
-        (price * 20.0).round() / 20.0
-    };
+    let round_eth_price = |price: f64| -> f64 { (price * 20.0).round() / 20.0 };
 
     // Create market buy/sell orders that might execute and generate trades
     let test_orders = vec![
@@ -259,11 +254,8 @@ async fn main() -> Result<(), HttpError> {
         historical: None,
         subaccount_id: None,
     };
-    
-    match client
-        .get_user_trades_by_currency(btc_request)
-        .await
-    {
+
+    match client.get_user_trades_by_currency(btc_request).await {
         Ok(trades) => {
             info!("✅ Retrieved BTC user trades successfully");
             info!("📊 BTC trades count: {}", trades.trades.len());
@@ -284,7 +276,9 @@ async fn main() -> Result<(), HttpError> {
                     );
                     info!(
                         "     Order ID: {}, Label: {}, Amount: {:.6}",
-                        trade.order_id, trade.label.as_deref().unwrap_or("N/A"), trade.amount
+                        trade.order_id,
+                        trade.label.as_deref().unwrap_or("N/A"),
+                        trade.amount
                     );
                 }
             } else {
@@ -309,11 +303,8 @@ async fn main() -> Result<(), HttpError> {
         historical: None,
         subaccount_id: None,
     };
-    
-    match client
-        .get_user_trades_by_currency(eth_request)
-        .await
-    {
+
+    match client.get_user_trades_by_currency(eth_request).await {
         Ok(trades) => {
             info!("✅ Retrieved ETH user trades successfully");
             info!("📊 ETH trades count: {}", trades.trades.len());
@@ -334,7 +325,9 @@ async fn main() -> Result<(), HttpError> {
                     );
                     info!(
                         "     Order ID: {}, Label: {}, Amount: {:.6}",
-                        trade.order_id, trade.label.as_deref().unwrap_or("N/A"), trade.amount
+                        trade.order_id,
+                        trade.label.as_deref().unwrap_or("N/A"),
+                        trade.amount
                     );
                 }
             } else {
@@ -565,7 +558,10 @@ async fn main() -> Result<(), HttpError> {
     {
         Ok(response) => {
             info!("✅ Retrieved BTC-PERPETUAL trades for last 24 hours successfully");
-            info!("📊 BTC-PERPETUAL trades in last 24h: {}", response.trades.len());
+            info!(
+                "📊 BTC-PERPETUAL trades in last 24h: {}",
+                response.trades.len()
+            );
             info!("📄 Has more trades: {}", response.has_more);
 
             if !response.trades.is_empty() {
@@ -609,7 +605,10 @@ async fn main() -> Result<(), HttpError> {
     {
         Ok(response) => {
             info!("✅ Retrieved ETH-PERPETUAL trades for last hour successfully");
-            info!("📊 ETH-PERPETUAL trades in last hour: {}", response.trades.len());
+            info!(
+                "📊 ETH-PERPETUAL trades in last hour: {}",
+                response.trades.len()
+            );
             info!("📄 Has more trades: {}", response.has_more);
 
             if !response.trades.is_empty() {

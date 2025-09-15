@@ -8,13 +8,19 @@ use pretty_simple_display::{DebugPretty, DisplaySimple};
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
 
+/// Supported cryptocurrency currencies in the Deribit platform
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "UPPERCASE")]
 pub enum Currency {
+    /// Bitcoin cryptocurrency
     Btc,
+    /// Ethereum cryptocurrency
     Eth,
+    /// USD Coin stablecoin
     Usdc,
+    /// Tether USD stablecoin
     Usdt,
+    /// Euro-backed stablecoin
     Eurr,
 }
 

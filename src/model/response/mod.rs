@@ -13,15 +13,15 @@ pub mod mass_quote;
 pub mod order;
 /// Other response models and utilities
 pub mod other;
-/// Withdrawal response models
-pub mod withdrawal;
 /// Trade response models and types
 pub mod trade;
+/// Withdrawal response models
+pub mod withdrawal;
 
 pub use api_response::*;
 pub use deposit::*;
 pub use mass_quote::*;
 pub use order::*;
 pub use other::*;
-pub use withdrawal::*;
 pub use trade::*;
+pub use withdrawal::*;

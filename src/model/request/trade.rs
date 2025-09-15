@@ -1,10 +1,10 @@
 /******************************************************************************
-    Author: Joaquín Béjar García
-    Email: jb@taunais.com 
-    Date: 15/9/25
- ******************************************************************************/
-use serde::{Deserialize, Serialize};
+   Author: Joaquín Béjar García
+   Email: jb@taunais.com
+   Date: 15/9/25
+******************************************************************************/
 use crate::model::{Currency, InstrumentKind, SortDirection};
+use serde::{Deserialize, Serialize};
 
 /// Parameters for requesting user trades
 #[derive(Debug, Clone, Serialize, Deserialize)]

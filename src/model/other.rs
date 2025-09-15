@@ -84,9 +84,12 @@ pub struct ParsedOptionWithTicker {
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 #[serde(rename_all = "lowercase")]
 pub enum SortDirection {
+    /// Ascending sort order
     #[default]
     Asc,
+    /// Descending sort order
     Desc,
+    /// Default sort order (platform-specific)
     Default,
 }
 

@@ -4,16 +4,15 @@
    Date: 15/9/25
 ******************************************************************************/
 use crate::prelude::*;
+use pretty_simple_display::{DebugPretty, DisplaySimple};
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
-use pretty_simple_display::{DebugPretty, DisplaySimple};
-
-
 
 /// Trading limit structure
 #[skip_serializing_none]
 #[derive(DebugPretty, DisplaySimple, Clone, Serialize, Deserialize)]
 pub struct TradingLimit {
+    /// Total rate limit for trading operations
     pub total: RateLimit,
 }
 
@@ -21,8 +20,11 @@ pub struct TradingLimit {
 #[skip_serializing_none]
 #[derive(DebugPretty, DisplaySimple, Clone, Serialize, Deserialize)]
 pub struct AccountLimits {
+    /// Whether limits are applied per currency
     pub limits_per_currency: bool,
+    /// Rate limits for non-matching engine operations
     pub non_matching_engine: RateLimit,
+    /// Rate limits for matching engine operations
     pub matching_engine: MatchingEngineLimit,
 }
 
@@ -30,7 +32,9 @@ pub struct AccountLimits {
 #[skip_serializing_none]
 #[derive(DebugPretty, DisplaySimple, Clone, Serialize, Deserialize)]
 pub struct RateLimit {
+    /// Maximum burst capacity for rate limiting
     pub burst: u32,
+    /// Rate limit per time unit
     pub rate: u32,
 }
 
@@ -38,11 +42,17 @@ pub struct RateLimit {
 #[skip_serializing_none]
 #[derive(DebugPretty, DisplaySimple, Clone, Serialize, Deserialize)]
 pub struct MatchingEngineLimit {
+    /// Trading limits configuration
     pub trading: TradingLimit,
+    /// Spot trading rate limits
     pub spot: RateLimit,
+    /// Quote request rate limits
     pub quotes: RateLimit,
+    /// Maximum quotes rate limits
     pub max_quotes: RateLimit,
+    /// Guaranteed quotes rate limits
     pub guaranteed_quotes: RateLimit,
+    /// Cancel all orders rate limits
     pub cancel_all: RateLimit,
 }
 
@@ -202,6 +212,7 @@ pub struct TransferResultResponse {
     pub status: String,
 }
 
+/// Account summary response containing user account information
 #[skip_serializing_none]
 #[derive(DebugPretty, DisplaySimple, Clone, Serialize, Deserialize)]
 pub struct AccountSummaryResponse {
@@ -343,4 +354,3 @@ pub struct AccountResult {
     /// Account type
     pub account_type: Option<String>,
 }
-

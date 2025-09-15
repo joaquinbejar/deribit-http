@@ -82,7 +82,10 @@ mod account_summary_tests {
 
         let _mock = server
             .mock("GET", "/private/get_account_summary")
-            .match_query(mockito::Matcher::UrlEncoded("currency".into(), "BTC".into()))
+            .match_query(mockito::Matcher::UrlEncoded(
+                "currency".into(),
+                "BTC".into(),
+            ))
             .with_status(200)
             .with_header("content-type", "application/json")
             .with_body(mock_response)
@@ -95,7 +98,10 @@ mod account_summary_tests {
 
         // For now, we expect this to fail due to network/auth issues
         // In a real integration test environment, this would need proper setup
-        assert!(result.is_err(), "Expected error due to mock server not being used");
+        assert!(
+            result.is_err(),
+            "Expected error due to mock server not being used"
+        );
 
         // The mock won't be called because the client doesn't use our mock server
         // mock.assert_async().await;
@@ -160,7 +166,10 @@ mod account_summary_tests {
 
         let _mock = server
             .mock("GET", "/private/get_account_summary")
-            .match_query(mockito::Matcher::UrlEncoded("currency".into(), "ETH".into()))
+            .match_query(mockito::Matcher::UrlEncoded(
+                "currency".into(),
+                "ETH".into(),
+            ))
             .with_status(200)
             .with_header("content-type", "application/json")
             .with_body(mock_response)
@@ -168,7 +177,10 @@ mod account_summary_tests {
             .await;
 
         let result = client.get_account_summary("ETH", None).await;
-        assert!(result.is_err(), "Expected error due to mock server not being used");
+        assert!(
+            result.is_err(),
+            "Expected error due to mock server not being used"
+        );
     }
 
     #[tokio::test]
@@ -229,7 +241,10 @@ mod account_summary_tests {
             .await;
 
         let result = client.get_account_summary("BTC", Some(true)).await;
-        assert!(result.is_err(), "Expected error due to mock server not being used");
+        assert!(
+            result.is_err(),
+            "Expected error due to mock server not being used"
+        );
     }
 
     #[tokio::test]
@@ -245,7 +260,10 @@ mod account_summary_tests {
 
         let _mock = server
             .mock("GET", "/private/get_account_summary")
-            .match_query(mockito::Matcher::UrlEncoded("currency".into(), "INVALID".into()))
+            .match_query(mockito::Matcher::UrlEncoded(
+                "currency".into(),
+                "INVALID".into(),
+            ))
             .with_status(400)
             .with_header("content-type", "application/json")
             .with_body(error_response)
@@ -294,7 +312,10 @@ mod account_summary_tests {
         // For multiple currencies, we need to call without currency parameter
         // But the method requires currency, so this test needs to be redesigned
         let result = client.get_account_summary("BTC", None).await;
-        assert!(result.is_err(), "Expected error due to mock server not being used");
+        assert!(
+            result.is_err(),
+            "Expected error due to mock server not being used"
+        );
     }
 
     #[tokio::test]
@@ -326,7 +347,10 @@ mod account_summary_tests {
 
         let _mock = server
             .mock("GET", "/private/get_account_summary")
-            .match_query(mockito::Matcher::UrlEncoded("currency".into(), "BTC".into()))
+            .match_query(mockito::Matcher::UrlEncoded(
+                "currency".into(),
+                "BTC".into(),
+            ))
             .with_status(200)
             .with_header("content-type", "application/json")
             .with_body(mock_response)
@@ -334,7 +358,10 @@ mod account_summary_tests {
             .await;
 
         let result = client.get_account_summary("BTC", None).await;
-        assert!(result.is_err(), "Expected error due to mock server not being used");
+        assert!(
+            result.is_err(),
+            "Expected error due to mock server not being used"
+        );
 
         // In a real test, we would verify:
         // - total_pl = futures_pl + options_pl

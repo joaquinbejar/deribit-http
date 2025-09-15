@@ -5,7 +5,7 @@
 ******************************************************************************/
 use crate::model::order::OrderType;
 use crate::model::response::order::LinkedOrderType;
-use crate::model::trigger::{TriggerFillCondition, Trigger};
+use crate::model::trigger::{Trigger, TriggerFillCondition};
 use crate::model::types::TimeInForce;
 use pretty_simple_display::{DebugPretty, DisplaySimple};
 use serde::{Deserialize, Serialize};

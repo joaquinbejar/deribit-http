@@ -91,9 +91,4 @@ impl Portfolio {
     pub fn add_account(&mut self, account: AccountSummaryResponse) {
         self.accounts.push(account);
     }
-    
-    
-    
 }
-
-

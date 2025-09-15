@@ -319,6 +319,7 @@ pub struct TradeAllocation {
     pub user_id: u64,
 }
 
+/// Client information structure for broker allocations
 #[skip_serializing_none]
 #[derive(DebugPretty, DisplaySimple, Clone, Serialize, Deserialize)]
 pub struct ClientInfo {

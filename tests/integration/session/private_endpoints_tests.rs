@@ -351,7 +351,8 @@ mod tests {
             ))
             .with_status(200)
             .with_header("content-type", "application/json")
-            .with_body(r#"{
+            .with_body(
+                r#"{
                 "id": 10,
                 "email": "user@example.com",
                 "system_name": "user",
@@ -391,14 +392,18 @@ mod tests {
                         "session_rpl": -0.03258105
                     }
                 ]
-            }"#)
+            }"#,
+            )
             .create_async()
             .await;
 
         let result = client.get_account_summary("BTC", None).await;
         // Note: This test will fail because the client doesn't use the mock server
         // The client uses the default Deribit URL, not our mock server
-        assert!(result.is_err(), "Expected error due to mock server not being used");
+        assert!(
+            result.is_err(),
+            "Expected error due to mock server not being used"
+        );
 
         // The mock won't be called because the client doesn't use our mock server
         // mock.assert_async().await;

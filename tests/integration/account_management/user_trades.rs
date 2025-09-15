@@ -47,12 +47,12 @@ mod user_trades_log_tests {
 
         info!(
             "BTC-PERPETUAL user trades retrieved successfully, count: {}",
-            user_trades.len()
+            user_trades.trades.len()
         );
-        debug!("User trades: {:?}", user_trades);
+        debug!("User trades: {:?}", user_trades.trades);
 
         // Validate user trades structure
-        for (i, trade) in user_trades.iter().enumerate() {
+        for (i, trade) in user_trades.trades.iter().enumerate() {
             debug!("Validating user trade #{}: {}", i + 1, trade.trade_id);
 
             assert!(!trade.trade_id.is_empty(), "Trade ID should not be empty");
@@ -78,7 +78,7 @@ mod user_trades_log_tests {
             assert!(!trade.liquidity.is_empty(), "Liquidity should not be empty");
             assert!(trade.index_price > 0.0, "Index price should be positive");
             assert!(trade.mark_price > 0.0, "Mark price should be positive");
-            assert!(!trade.label.is_empty(), "Label should not be empty");
+            assert!(trade.label.is_none(), "Label should not be empty");
 
             // Validate direction values
             assert!(
@@ -122,12 +122,12 @@ mod user_trades_log_tests {
 
         info!(
             "ETH-PERPETUAL user trades retrieved successfully, count: {}",
-            user_trades.len()
+            user_trades.trades.len()
         );
-        debug!("User trades: {:?}", user_trades);
+        debug!("User trades: {:?}", user_trades.trades);
 
         // Validate that all trades are for ETH-PERPETUAL
-        for trade in &user_trades {
+        for trade in &user_trades.trades {
             assert_eq!(
                 trade.instrument_name, "ETH-PERPETUAL",
                 "All trades should be for ETH-PERPETUAL"
@@ -162,15 +162,15 @@ mod user_trades_log_tests {
 
         info!(
             "User trades with count retrieved successfully, count: {}",
-            user_trades.len()
+            user_trades.trades.len()
         );
-        debug!("User trades: {:?}", user_trades);
+        debug!("User trades: {:?}", user_trades.trades);
 
         // Validate that we got at most the requested count
         assert!(
-            user_trades.len() <= requested_count as usize,
+            user_trades.trades.len() <= requested_count as usize,
             "Should not receive more than requested count: {} <= {}",
-            user_trades.len(),
+            user_trades.trades.len(),
             requested_count
         );
 
@@ -193,13 +193,23 @@ mod user_trades_log_tests {
             .get_user_trades_by_instrument("BTC-PERPETUAL", None, None, Some(10), None, None)
             .await?;
 
-        if initial_trades.is_empty() {
+        if initial_trades.trades.is_empty() {
             info!("No trades found for sequence range test, skipping");
             return Ok(());
         }
 
-        let min_seq = initial_trades.iter().map(|t| t.trade_seq).min().unwrap();
-        let max_seq = initial_trades.iter().map(|t| t.trade_seq).max().unwrap();
+        let min_seq = initial_trades
+            .trades
+            .iter()
+            .map(|t| t.trade_seq)
+            .min()
+            .unwrap();
+        let max_seq = initial_trades
+            .trades
+            .iter()
+            .map(|t| t.trade_seq)
+            .max()
+            .unwrap();
 
         debug!("Using sequence range: {} to {}", min_seq, max_seq);
         let filtered_trades = client
@@ -215,12 +225,12 @@ mod user_trades_log_tests {
 
         info!(
             "User trades with sequence range retrieved successfully, count: {}",
-            filtered_trades.len()
+            filtered_trades.trades.len()
         );
-        debug!("Filtered trades: {:?}", filtered_trades);
+        debug!("Filtered trades: {:?}", filtered_trades.trades);
 
         // Validate that all trades are within the sequence range
-        for trade in &filtered_trades {
+        for trade in &filtered_trades.trades {
             assert!(
                 trade.trade_seq >= min_seq,
                 "Trade sequence should be >= start_seq: {} >= {}",
@@ -262,16 +272,16 @@ mod user_trades_log_tests {
 
         info!(
             "User trades retrieved - no old: {}, with old: {}",
-            trades_no_old.len(),
-            trades_with_old.len()
+            trades_no_old.trades.len(),
+            trades_with_old.trades.len()
         );
 
         // With old trades should have >= trades without old
         assert!(
-            trades_with_old.len() >= trades_no_old.len(),
+            trades_with_old.trades.len() >= trades_no_old.trades.len(),
             "Including old trades should return >= trades: {} >= {}",
-            trades_with_old.len(),
-            trades_no_old.len()
+            trades_with_old.trades.len(),
+            trades_no_old.trades.len()
         );
 
         info!("User trades include old test completed successfully");
@@ -308,30 +318,30 @@ mod user_trades_log_tests {
 
         info!(
             "User trades retrieved - asc: {}, desc: {}",
-            trades_asc.len(),
-            trades_desc.len()
+            trades_asc.trades.len(),
+            trades_desc.trades.len()
         );
 
         // Validate ascending order
-        if trades_asc.len() > 1 {
-            for i in 1..trades_asc.len() {
+        if trades_asc.trades.len() > 1 {
+            for i in 1..trades_asc.trades.len() {
                 assert!(
-                    trades_asc[i].trade_seq >= trades_asc[i - 1].trade_seq,
+                    trades_asc.trades[i].trade_seq >= trades_asc.trades[i - 1].trade_seq,
                     "Ascending order should be maintained: {} >= {}",
-                    trades_asc[i].trade_seq,
-                    trades_asc[i - 1].trade_seq
+                    trades_asc.trades[i].trade_seq,
+                    trades_asc.trades[i - 1].trade_seq
                 );
             }
         }
 
         // Validate descending order
-        if trades_desc.len() > 1 {
-            for i in 1..trades_desc.len() {
+        if trades_desc.trades.len() > 1 {
+            for i in 1..trades_desc.trades.len() {
                 assert!(
-                    trades_desc[i].trade_seq <= trades_desc[i - 1].trade_seq,
+                    trades_desc.trades[i].trade_seq <= trades_desc.trades[i - 1].trade_seq,
                     "Descending order should be maintained: {} <= {}",
-                    trades_desc[i].trade_seq,
-                    trades_desc[i - 1].trade_seq
+                    trades_desc.trades[i].trade_seq,
+                    trades_desc.trades[i - 1].trade_seq
                 );
             }
         }
@@ -356,10 +366,10 @@ mod user_trades_log_tests {
 
         info!(
             "User trades retrieved for validation, count: {}",
-            user_trades.len()
+            user_trades.trades.len()
         );
 
-        for trade in &user_trades {
+        for trade in &user_trades.trades {
             debug!(
                 "Validating user trade: {} - {}",
                 trade.trade_id, trade.instrument_name
@@ -382,7 +392,7 @@ mod user_trades_log_tests {
                 "Fee currency should not be empty"
             );
             assert!(!trade.liquidity.is_empty(), "Liquidity should not be empty");
-            assert!(!trade.label.is_empty(), "Label should not be empty");
+            assert!(trade.label.is_none(), "Label should not be empty");
 
             // Validate numeric fields
             assert!(trade.trade_seq > 0, "Trade sequence should be positive");
@@ -474,11 +484,11 @@ mod user_trades_log_tests {
             info!(
                 "{} user trades retrieved successfully, count: {}",
                 instrument,
-                user_trades.len()
+                user_trades.trades.len()
             );
 
             // Validate that all trades match the requested instrument
-            for trade in &user_trades {
+            for trade in &user_trades.trades {
                 assert_eq!(
                     trade.instrument_name, *instrument,
                     "All trades should match requested instrument: {} == {}",
