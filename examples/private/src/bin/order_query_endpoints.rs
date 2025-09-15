@@ -21,6 +21,7 @@
 //!
 //! Then run: cargo run --bin order_query_endpoints
 
+
 use deribit_http::prelude::*;
 use tokio::time::{Duration, sleep};
 use tracing::{info, warn};
@@ -48,11 +49,11 @@ async fn main() -> Result<(), HttpError> {
     let test_orders = vec![
         // BTC orders with different labels
         ("BTC-PERPETUAL", "query_test_btc_1", 30000.0, 10.0, "buy"),
-        ("BTC-PERPETUAL", "query_test_btc_2", 29000.0, 15.0, "buy"),
+        ("BTC-PERPETUAL", "query_test_btc_2", 29000.0, 20.0, "buy"),
         (
             "BTC-PERPETUAL",
             "query_test_btc_sell",
-            80000.0,
+            120000.0,
             10.0,
             "sell",
         ),
@@ -298,10 +299,13 @@ async fn main() -> Result<(), HttpError> {
     info!("🏷️  4. GET OPEN ORDERS BY LABEL");
     info!("--------------------------------");
 
-    let test_labels = vec!["query_test_btc_1", "query_test_eth_1"];
+    let test_labels = vec![
+        ("query_test_btc_1", "BTC"),
+        ("query_test_eth_1", "ETH"),
+    ];
 
-    for label in test_labels {
-        match client.get_open_orders_by_label(label).await {
+    for (label, currency) in test_labels {
+        match client.get_open_orders_by_label(label, currency).await {
             Ok(orders) => {
                 info!("✅ Retrieved orders with label '{}' successfully", label);
                 info!("📊 Orders with label '{}': {}", label, orders.len());
