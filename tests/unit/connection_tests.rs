@@ -9,7 +9,7 @@
 use deribit_http::config::HttpConfig;
 use deribit_http::connection::http_connection::HttpConnection;
 use deribit_http::error::HttpError;
-use deribit_http::model::http_types::HttpRequest;
+use deribit_http::model::types::HttpRequest;
 use std::collections::HashMap;
 use std::time::Duration;
 use url::Url;

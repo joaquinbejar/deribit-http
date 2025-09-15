@@ -7,7 +7,7 @@
 //! Unit tests for message modules
 
 use deribit_http::message::request::HttpRequestBuilder;
-use deribit_http::model::http_types::RequestParams;
+use deribit_http::model::types::RequestParams;
 
 #[test]
 fn test_http_request_builder_new() {

@@ -159,15 +159,6 @@ pub use auth::{ApiKeyAuth, AuthManager};
 pub use config::ApiCredentials;
 pub use connection::*;
 pub use message::{HttpMessageBuilder, HttpRequestBuilder, HttpResponseHandler};
-pub use model::{ApiError, ApiResponse, AuthToken, http_types};
 pub use session::*;
-
-// Re-export common types from deribit-base (avoiding conflicts)
-pub use deribit_base::prelude::*;
-
-// Allow ambiguous re-exports for remaining conflicts
-#[allow(ambiguous_glob_reexports)]
 pub use config::HttpConfig;
-
-#[allow(ambiguous_glob_reexports)]
 pub use auth::AuthRequest;

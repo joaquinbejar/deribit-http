@@ -6,7 +6,6 @@ edition = "2024"
 
 [dependencies]
 deribit-http = { workspace = true }
-deribit-base = { workspace = true }
 tracing = { workspace = true }
 tokio = { workspace = true }
 dotenv = { workspace = true }

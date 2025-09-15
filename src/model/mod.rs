@@ -1,9 +1,25 @@
 //! Model definitions for HTTP client
 
-// Re-export common models from deribit-base
-pub use deribit_base::model::*;
-
 // HTTP-specific models
-pub mod http_types;
-
-pub use http_types::*;
+pub mod types;
+pub mod request;
+pub mod response;
+pub mod trigger;
+pub mod order;
+pub mod trade;
+pub mod instrument;
+pub mod transfer;
+pub mod account;
+pub mod position;
+pub mod transaction;
+pub mod deposit;
+pub mod mass_quote;
+pub mod currency;
+pub mod withdrawal;
+pub mod index;
+pub mod book;
+pub mod other;
+pub mod ticker;
+pub mod funding;
+pub mod tradingview;
+pub mod settlement;

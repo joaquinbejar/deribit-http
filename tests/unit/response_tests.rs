@@ -2,7 +2,7 @@
 
 use deribit_http::error::HttpError;
 use deribit_http::message::response::HttpResponseHandler;
-use deribit_http::model::http_types::{ApiError, ApiResponse, HttpResponse};
+use deribit_http::model::types::{ApiError, ApiResponse, HttpResponse};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 

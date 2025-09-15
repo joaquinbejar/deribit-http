@@ -6,7 +6,7 @@
 
 use crate::config::HttpConfig;
 use crate::error::HttpError;
-use crate::model::http_types::AuthToken;
+use crate::model::types::AuthToken;
 use base64::Engine;
 use hmac::{Hmac, Mac};
 use pretty_simple_display::{DebugPretty, DisplaySimple};

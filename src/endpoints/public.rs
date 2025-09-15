@@ -5,15 +5,19 @@
 
 use crate::DeribitHttpClient;
 use crate::error::HttpError;
-use crate::model::http_types::ApiResponse;
 use std::collections::HashMap;
-
-use deribit_base::prelude::{
-    AprHistoryResponse, BookSummary, ContractSizeResponse, Currency, DeliveryPricesResponse,
-    ExpirationsResponse, FundingChartData, FundingRateData, IndexData, IndexPriceData, Instrument,
-    LastTradesResponse, OptionInstrument, OptionInstrumentPair, OptionType, OrderBook,
-    SettlementsResponse, StatusResponse, TestResponse, TickerData, Trade, TradingViewChartData,
-};
+use crate::model::book::{BookSummary, OrderBook};
+use crate::model::currency::Currency;
+use crate::model::funding::{FundingChartData, FundingRateData};
+use crate::model::index::{IndexData, IndexPriceData};
+use crate::model::instrument::{Instrument, OptionType};
+use crate::model::order::OrderSide;
+use crate::model::other::{OptionInstrument, OptionInstrumentPair};
+use crate::model::response::api::ApiResponse;
+use crate::model::response::other::{AprHistoryResponse, ContractSizeResponse, DeliveryPricesResponse, ExpirationsResponse, SettlementsResponse, StatusResponse, TestResponse};
+use crate::model::ticker::TickerData;
+use crate::model::trade::{LastTradesResponse, Liquidity, Trade};
+use crate::model::tradingview::TradingViewChartData;
 
 /// Market data endpoints
 impl DeribitHttpClient {
@@ -1122,16 +1126,16 @@ impl DeribitHttpClient {
                     instrument_name: last_trade.instrument_name,
                     order_id: String::new(), // Not available in LastTrade
                     direction: match last_trade.direction.as_str() {
-                        "buy" => deribit_base::model::order::OrderSide::Buy,
-                        "sell" => deribit_base::model::order::OrderSide::Sell,
-                        _ => deribit_base::model::order::OrderSide::Buy, // Default fallback
+                        "buy" => OrderSide::Buy,
+                        "sell" => OrderSide::Sell,
+                        _ => OrderSide::Buy, // Default fallback
                     },
                     amount: last_trade.amount,
                     price: last_trade.price,
                     timestamp: last_trade.timestamp as i64,
                     fee: 0.0,                    // Not available in LastTrade
                     fee_currency: String::new(), // Not available in LastTrade
-                    liquidity: deribit_base::model::trade::Liquidity::Taker, // Default
+                    liquidity: Liquidity::Taker, // Default
                     mark_price: 0.0,             // Not available in LastTrade
                     index_price: last_trade.index_price,
                     instrument_kind: None, // Not available in LastTrade

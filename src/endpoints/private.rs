@@ -2,12 +2,18 @@
 
 use crate::DeribitHttpClient;
 use crate::error::HttpError;
-use crate::model::http_types::ApiResponse;
-use deribit_base::prelude::{
-    AccountSummary, BuyOrderRequest, DepositsResponse, EditOrderRequest, MassQuoteRequest,
-    MassQuoteResponse, OrderInfo, OrderResponse, Position, SellOrderRequest, Subaccount,
-    TransactionLog, TransferResult, UserTrade, WithdrawalsResponse,
+use crate::model::account::Subaccount;
+use crate::model::position::Position;
+use crate::model::request::mass_quote::MassQuoteRequest;
+use crate::model::request::order::OrderRequest;
+use crate::model::response::api::ApiResponse;
+use crate::model::response::deposit::DepositsResponse;
+use crate::model::response::mass_quote::MassQuoteResponse;
+use crate::model::response::order::{OrderInfoResponse, OrderResponse};
+use crate::model::response::other::{
+    AccountSummaryResponse, TransactionLogResponse, TransferResultResponse, UserTradeResponse,
 };
+use crate::model::response::withdrawal::WithdrawalsResponse;
 
 /// Private endpoints implementation
 impl DeribitHttpClient {
@@ -113,7 +119,7 @@ impl DeribitHttpClient {
         end_timestamp: Option<u64>,
         count: Option<u32>,
         continuation: Option<&str>,
-    ) -> Result<TransactionLog, HttpError> {
+    ) -> Result<TransactionLogResponse, HttpError> {
         let mut query_params = vec![("currency".to_string(), currency.to_string())];
 
         if let Some(start_timestamp) = start_timestamp {
@@ -157,7 +163,7 @@ impl DeribitHttpClient {
             )));
         }
 
-        let api_response: ApiResponse<TransactionLog> = response
+        let api_response: ApiResponse<TransactionLogResponse> = response
             .json()
             .await
             .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
@@ -348,7 +354,7 @@ impl DeribitHttpClient {
         currency: &str,
         amount: f64,
         destination: u64,
-    ) -> Result<TransferResult, HttpError> {
+    ) -> Result<TransferResultResponse, HttpError> {
         let query_params = [
             ("currency".to_string(), currency.to_string()),
             ("amount".to_string(), amount.to_string()),
@@ -380,7 +386,7 @@ impl DeribitHttpClient {
             )));
         }
 
-        let api_response: ApiResponse<TransferResult> = response
+        let api_response: ApiResponse<TransferResultResponse> = response
             .json()
             .await
             .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
@@ -421,7 +427,7 @@ impl DeribitHttpClient {
         currency: &str,
         amount: f64,
         destination: &str,
-    ) -> Result<TransferResult, HttpError> {
+    ) -> Result<TransferResultResponse, HttpError> {
         let query_params = [
             ("currency".to_string(), currency.to_string()),
             ("amount".to_string(), amount.to_string()),
@@ -453,7 +459,7 @@ impl DeribitHttpClient {
             )));
         }
 
-        let api_response: ApiResponse<TransferResult> = response
+        let api_response: ApiResponse<TransferResultResponse> = response
             .json()
             .await
             .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
@@ -478,10 +484,15 @@ impl DeribitHttpClient {
     ///
     /// * `request` - The buy order request parameters
     ///
-    pub async fn buy_order(&self, request: BuyOrderRequest) -> Result<OrderResponse, HttpError> {
+    pub async fn buy_order(&self, request: OrderRequest) -> Result<OrderResponse, HttpError> {
         let mut query_params = vec![
             ("instrument_name".to_string(), request.instrument_name),
-            ("amount".to_string(), request.amount.to_string()),
+            (
+                "amount".to_string(),
+                request
+                    .amount
+                    .map_or_else(|| "0".to_string(), |a| a.to_string()),
+            ),
         ];
 
         if let Some(order_type) = request.type_ {
@@ -514,6 +525,9 @@ impl DeribitHttpClient {
         {
             query_params.push(("reduce_only".to_string(), "true".to_string()));
         }
+
+        // Note: trigger_price and trigger fields are not currently supported in SellOrderRequest
+        // These would be added when stop-limit order functionality is implemented
 
         let query_string = query_params
             .iter()
@@ -571,10 +585,10 @@ impl DeribitHttpClient {
     /// # Arguments
     ///
     /// * `request` - The sell order request parameters
-    pub async fn sell_order(&self, request: SellOrderRequest) -> Result<OrderResponse, HttpError> {
+    pub async fn sell_order(&self, request: OrderRequest) -> Result<OrderResponse, HttpError> {
         let mut query_params = vec![
             ("instrument_name".to_string(), request.instrument_name),
-            ("amount".to_string(), request.amount.to_string()),
+            ("amount".to_string(), request.amount.unwrap().to_string()),
         ];
 
         if let Some(order_type) = request.type_ {
@@ -607,6 +621,9 @@ impl DeribitHttpClient {
         {
             query_params.push(("reduce_only".to_string(), "true".to_string()));
         }
+
+        // Note: trigger_price and trigger fields are not currently supported in SellOrderRequest
+        // These would be added when stop-limit order functionality is implemented
 
         let query_string = query_params
             .iter()
@@ -654,7 +671,7 @@ impl DeribitHttpClient {
     ///
     /// * `order_id` - The order ID to cancel
     ///
-    pub async fn cancel_order(&self, order_id: &str) -> Result<OrderInfo, HttpError> {
+    pub async fn cancel_order(&self, order_id: &str) -> Result<OrderInfoResponse, HttpError> {
         let url = format!(
             "{}/private/cancel?order_id={}",
             self.base_url(),
@@ -674,7 +691,7 @@ impl DeribitHttpClient {
             )));
         }
 
-        let api_response: ApiResponse<OrderInfo> = response
+        let api_response: ApiResponse<OrderInfoResponse> = response
             .json()
             .await
             .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
@@ -1019,7 +1036,7 @@ impl DeribitHttpClient {
         &self,
         currency: &str,
         extended: Option<bool>,
-    ) -> Result<AccountSummary, HttpError> {
+    ) -> Result<AccountSummaryResponse, HttpError> {
         let mut query_params = vec![("currency".to_string(), currency.to_string())];
 
         if let Some(extended) = extended {
@@ -1051,7 +1068,7 @@ impl DeribitHttpClient {
             )));
         }
 
-        let api_response: ApiResponse<AccountSummary> = response
+        let api_response: ApiResponse<AccountSummaryResponse> = response
             .json()
             .await
             .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
@@ -1158,27 +1175,27 @@ impl DeribitHttpClient {
     ///
     /// * `request` - The edit order request parameters
     ///
-    pub async fn edit_order(&self, request: EditOrderRequest) -> Result<OrderResponse, HttpError> {
+    pub async fn edit_order(&self, request: OrderRequest) -> Result<OrderResponse, HttpError> {
         let mut query_params = vec![("order_id".to_string(), request.order_id)];
 
         if let Some(amount) = request.amount {
-            query_params.push(("amount".to_string(), amount.to_string()));
+            query_params.push(("amount".to_string(), Some(amount.to_string())));
         }
 
         if let Some(price) = request.price {
-            query_params.push(("price".to_string(), price.to_string()));
+            query_params.push(("price".to_string(), Some(price.to_string())));
         }
 
         if let Some(post_only) = request.post_only
             && post_only
         {
-            query_params.push(("post_only".to_string(), "true".to_string()));
+            query_params.push(("post_only".to_string(), Some("true".to_string())));
         }
 
         if let Some(reduce_only) = request.reduce_only
             && reduce_only
         {
-            query_params.push(("reduce_only".to_string(), "true".to_string()));
+            query_params.push(("reduce_only".to_string(), Some("true".to_string())));
         }
 
         let query_string = query_params
@@ -1262,7 +1279,7 @@ impl DeribitHttpClient {
         count: Option<u32>,
         include_old: Option<bool>,
         sorting: Option<&str>,
-    ) -> Result<Vec<UserTrade>, HttpError> {
+    ) -> Result<UserTradeResponse, HttpError> {
         let mut query_params = vec![("instrument_name".to_string(), instrument_name.to_string())];
 
         if let Some(start_seq) = start_seq {
@@ -1310,7 +1327,7 @@ impl DeribitHttpClient {
             )));
         }
 
-        let api_response: ApiResponse<Vec<UserTrade>> = response
+        let api_response: ApiResponse<UserTradeResponse> = response
             .json()
             .await
             .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
@@ -1390,7 +1407,7 @@ impl DeribitHttpClient {
         &self,
         kind: Option<&str>,
         order_type: Option<&str>,
-    ) -> Result<Vec<OrderInfo>, HttpError> {
+    ) -> Result<Vec<OrderInfoResponse>, HttpError> {
         let mut query_params = Vec::new();
 
         if let Some(kind) = kind {
@@ -1431,7 +1448,7 @@ impl DeribitHttpClient {
             )));
         }
 
-        let api_response: ApiResponse<Vec<OrderInfo>> = response
+        let api_response: ApiResponse<Vec<OrderInfoResponse>> = response
             .json()
             .await
             .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
@@ -1456,7 +1473,10 @@ impl DeribitHttpClient {
     ///
     /// * `label` - The label to filter orders by
     ///
-    pub async fn get_open_orders_by_label(&self, label: &str) -> Result<Vec<OrderInfo>, HttpError> {
+    pub async fn get_open_orders_by_label(
+        &self,
+        label: &str,
+    ) -> Result<Vec<OrderInfoResponse>, HttpError> {
         let url = format!(
             "{}/private/get_open_orders_by_label?label={}",
             self.base_url(),
@@ -1476,7 +1496,7 @@ impl DeribitHttpClient {
             )));
         }
 
-        let api_response: ApiResponse<Vec<OrderInfo>> = response
+        let api_response: ApiResponse<Vec<OrderInfoResponse>> = response
             .json()
             .await
             .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
@@ -1501,7 +1521,7 @@ impl DeribitHttpClient {
     ///
     /// * `order_id` - The order ID
     ///
-    pub async fn get_order_state(&self, order_id: &str) -> Result<OrderInfo, HttpError> {
+    pub async fn get_order_state(&self, order_id: &str) -> Result<OrderInfoResponse, HttpError> {
         let url = format!(
             "{}/private/get_order_state?order_id={}",
             self.base_url(),
@@ -1521,7 +1541,7 @@ impl DeribitHttpClient {
             )));
         }
 
-        let api_response: ApiResponse<OrderInfo> = response
+        let api_response: ApiResponse<OrderInfoResponse> = response
             .json()
             .await
             .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
@@ -1553,7 +1573,7 @@ impl DeribitHttpClient {
         currency: &str,
         kind: Option<&str>,
         order_type: Option<&str>,
-    ) -> Result<Vec<OrderInfo>, HttpError> {
+    ) -> Result<Vec<OrderInfoResponse>, HttpError> {
         let mut query_params = vec![("currency".to_string(), currency.to_string())];
 
         if let Some(kind) = kind {
@@ -1589,7 +1609,7 @@ impl DeribitHttpClient {
             )));
         }
 
-        let api_response: ApiResponse<Vec<OrderInfo>> = response
+        let api_response: ApiResponse<Vec<OrderInfoResponse>> = response
             .json()
             .await
             .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
@@ -1619,7 +1639,7 @@ impl DeribitHttpClient {
         &self,
         instrument_name: &str,
         order_type: Option<&str>,
-    ) -> Result<Vec<OrderInfo>, HttpError> {
+    ) -> Result<Vec<OrderInfoResponse>, HttpError> {
         let mut query_params = vec![("instrument_name".to_string(), instrument_name.to_string())];
 
         if let Some(order_type) = order_type {
@@ -1651,7 +1671,7 @@ impl DeribitHttpClient {
             )));
         }
 
-        let api_response: ApiResponse<Vec<OrderInfo>> = response
+        let api_response: ApiResponse<Vec<OrderInfoResponse>> = response
             .json()
             .await
             .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
@@ -1685,7 +1705,7 @@ impl DeribitHttpClient {
         kind: Option<&str>,
         count: Option<u32>,
         offset: Option<u32>,
-    ) -> Result<Vec<OrderInfo>, HttpError> {
+    ) -> Result<Vec<OrderInfoResponse>, HttpError> {
         let mut query_params = vec![("currency".to_string(), currency.to_string())];
 
         if let Some(kind) = kind {
@@ -1724,7 +1744,7 @@ impl DeribitHttpClient {
             )));
         }
 
-        let api_response: ApiResponse<Vec<OrderInfo>> = response
+        let api_response: ApiResponse<Vec<OrderInfoResponse>> = response
             .json()
             .await
             .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
@@ -1758,7 +1778,7 @@ impl DeribitHttpClient {
         kind: Option<&str>,
         count: Option<u32>,
         offset: Option<u32>,
-    ) -> Result<Vec<OrderInfo>, HttpError> {
+    ) -> Result<Vec<OrderInfoResponse>, HttpError> {
         // This is an alias to the existing get_order_history method
         self.get_order_history(currency, kind, count, offset).await
     }
@@ -1778,7 +1798,7 @@ impl DeribitHttpClient {
         instrument_name: &str,
         count: Option<u32>,
         offset: Option<u32>,
-    ) -> Result<Vec<OrderInfo>, HttpError> {
+    ) -> Result<Vec<OrderInfoResponse>, HttpError> {
         let mut query_params = vec![("instrument_name".to_string(), instrument_name.to_string())];
 
         if let Some(count) = count {
@@ -1814,7 +1834,7 @@ impl DeribitHttpClient {
             )));
         }
 
-        let api_response: ApiResponse<Vec<OrderInfo>> = response
+        let api_response: ApiResponse<Vec<OrderInfoResponse>> = response
             .json()
             .await
             .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
@@ -1855,7 +1875,7 @@ impl DeribitHttpClient {
         count: Option<u32>,
         include_old: Option<bool>,
         sorting: Option<&str>,
-    ) -> Result<Vec<UserTrade>, HttpError> {
+    ) -> Result<UserTradeResponse, HttpError> {
         let mut query_params = vec![("currency".to_string(), currency.to_string())];
 
         if let Some(kind) = kind {
@@ -1907,7 +1927,7 @@ impl DeribitHttpClient {
             )));
         }
 
-        let api_response: ApiResponse<Vec<UserTrade>> = response
+        let api_response: ApiResponse<UserTradeResponse> = response
             .json()
             .await
             .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
@@ -1948,7 +1968,7 @@ impl DeribitHttpClient {
         count: Option<u32>,
         include_old: Option<bool>,
         sorting: Option<&str>,
-    ) -> Result<Vec<UserTrade>, HttpError> {
+    ) -> Result<UserTradeResponse, HttpError> {
         let mut query_params = vec![
             ("currency".to_string(), currency.to_string()),
             ("start_timestamp".to_string(), start_timestamp.to_string()),
@@ -1996,7 +2016,7 @@ impl DeribitHttpClient {
             )));
         }
 
-        let api_response: ApiResponse<Vec<UserTrade>> = response
+        let api_response: ApiResponse<UserTradeResponse> = response
             .json()
             .await
             .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
@@ -2034,7 +2054,7 @@ impl DeribitHttpClient {
         count: Option<u32>,
         include_old: Option<bool>,
         sorting: Option<&str>,
-    ) -> Result<Vec<UserTrade>, HttpError> {
+    ) -> Result<UserTradeResponse, HttpError> {
         let mut query_params = vec![
             ("instrument_name".to_string(), instrument_name.to_string()),
             ("start_timestamp".to_string(), start_timestamp.to_string()),
@@ -2078,7 +2098,7 @@ impl DeribitHttpClient {
             )));
         }
 
-        let api_response: ApiResponse<Vec<UserTrade>> = response
+        let api_response: ApiResponse<UserTradeResponse> = response
             .json()
             .await
             .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
@@ -2108,7 +2128,7 @@ impl DeribitHttpClient {
         &self,
         order_id: &str,
         sorting: Option<&str>,
-    ) -> Result<Vec<UserTrade>, HttpError> {
+    ) -> Result<UserTradeResponse, HttpError> {
         let mut query_params = vec![("order_id".to_string(), order_id.to_string())];
 
         if let Some(sorting) = sorting {
@@ -2140,7 +2160,7 @@ impl DeribitHttpClient {
             )));
         }
 
-        let api_response: ApiResponse<Vec<UserTrade>> = response
+        let api_response: ApiResponse<UserTradeResponse> = response
             .json()
             .await
             .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;

@@ -1,7 +1,8 @@
 //! HTTP response message handling
 
 use crate::error::HttpError;
-use crate::model::http_types::{ApiError, ApiResponse, HttpResponse};
+use crate::model::response::api::{ApiResponse, HttpResponse};
+use crate::model::types::ApiError;
 use pretty_simple_display::{DebugPretty, DisplaySimple};
 use serde::{Deserialize, Serialize};
 

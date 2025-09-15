@@ -12,14 +12,10 @@ path = "./lib.rs"
 
 [dependencies]
 deribit-http = { workspace = true }
-deribit-base = { workspace = true }
 tokio = { workspace = true, features = ["full"] }
 tracing = { workspace = true }
-serde_json = { workspace = true }
 dotenv = { workspace = true }
 mockito = "1.7"
-assert-json-diff = "2.0"
-pretty_assertions = "1.4"
 serial_test = "3.2"
 url = "2.5.7"
 

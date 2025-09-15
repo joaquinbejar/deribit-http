@@ -6,10 +6,8 @@ edition = "2024"
 
 [dependencies]
 deribit-http = { workspace = true }
-deribit-base = { workspace = true }
 tracing = { workspace = true }
 tokio = { workspace = true }
 serde = { version = "1.0.219", features = ["derive"] }
 pretty-simple-display = { workspace = true }
-serde_json = { workspace = true }
-chrono = { workspace = true }
+

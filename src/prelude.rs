@@ -13,16 +13,12 @@ pub use crate::error::HttpError;
 
 // Re-export authentication types
 pub use crate::auth::{ApiKeyAuth, AuthManager, AuthRequest};
-pub use crate::model::http_types::AuthToken;
+pub use crate::model::types::AuthToken;
 
 // Re-export message types
 pub use crate::message::{HttpMessageBuilder, HttpRequestBuilder, HttpResponseHandler};
 
-// Re-export model types
-pub use crate::model::{ApiError, ApiResponse, http_types};
 
 // Re-export session types
 pub use crate::session::HttpSession;
 
-// Re-export common types from deribit-base
-pub use deribit_base::prelude::*;

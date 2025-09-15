@@ -2,9 +2,10 @@
 
 use crate::config::HttpConfig;
 use crate::error::HttpError;
-use crate::model::http_types::{HttpRequest, HttpResponse};
 use reqwest::Client;
 use std::collections::HashMap;
+use crate::model::request::api::HttpRequest;
+use crate::model::response::api::HttpResponse;
 
 /// HTTP connection wrapper
 #[derive(Debug, Clone)]

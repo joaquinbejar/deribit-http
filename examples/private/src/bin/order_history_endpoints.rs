@@ -21,9 +21,9 @@ use deribit_http::{
     BuyOrderRequest, DeribitHttpClient, HttpError, OrderType, SellOrderRequest, TimeInForce,
 };
 
-use deribit_base::prelude::setup_logger;
+use deribit_base::prelude::{setup_logger, Instrument, InstrumentKind};
 use tokio::time::{Duration, sleep};
-use tracing::{info, warn};
+use tracing::{error, info, warn};
 
 #[tokio::main]
 async fn main() -> Result<(), HttpError> {
@@ -32,6 +32,27 @@ async fn main() -> Result<(), HttpError> {
 
     // Create HTTP client
     let client = DeribitHttpClient::new();
+    info!("✅ Successfully created Deribit client");
+
+    // Test connectivity first
+    info!("🔌 Testing connectivity to Deribit API...");
+    match client.get_ticker("BTC-PERPETUAL").await {
+        Ok(ticker) => {
+            if let Some(price) = ticker.last_price {
+                info!("✅ Connectivity test successful - BTC price: ${:.2}", price);
+            } else {
+                info!("✅ Connectivity test successful - BTC price: N/A");
+            }
+        }
+        Err(e) => {
+            error!("❌ Connectivity test failed: {}", e);
+            info!("💡 Verifica que las credenciales estén configuradas correctamente:");
+            info!("   - DERIBIT_CLIENT_ID");
+            info!("   - DERIBIT_CLIENT_SECRET");
+            info!("   - DERIBIT_TESTNET=true (opcional)");
+            return Err(e);
+        }
+    }
 
     // =================================================================
     // SETUP: GET CURRENT MARKET PRICES FOR REALISTIC ORDER PLACEMENT
@@ -66,6 +87,104 @@ async fn main() -> Result<(), HttpError> {
 
     println!();
 
+    // Obtener información del instrumento para conocer el tick size
+    info!("🔍 Obteniendo información del instrumento BTC-PERPETUAL para conocer el tick size...");
+    let btc_instrument = match client.get_instrument("BTC-PERPETUAL").await {
+        Ok(instrument) => {
+            info!("✅ Información del instrumento obtenida");
+            if let Some(tick_size) = instrument.tick_size {
+                info!("📏 Tick size de BTC-PERPETUAL: {}", tick_size);
+            } else {
+                info!("⚠️ Tick size no disponible, usando valor por defecto");
+            }
+            instrument
+        }
+        Err(e) => {
+            warn!("❌ Error al obtener información del instrumento: {}", e);
+            // Usar valores por defecto si no se puede obtener la información
+            info!("💡 Usando tick size por defecto de 0.5");
+            // Crear un instrumento mínimo con tick size por defecto
+            Instrument {
+                tick_size: Some(0.5),
+                instrument_name: "BTC-PERPETUAL".to_string(),
+                instrument_id: None,
+                kind: Some(InstrumentKind::Future),
+                currency: Some("BTC".to_string()),
+                contract_size: None,
+                creation_timestamp: None,
+                max_leverage: None,
+                maker_commission: None,
+                expiration_timestamp: None,
+                settlement_period: None,
+                instrument_type: None,
+                quote_currency: Some("USD".to_string()),
+                min_trade_amount: None,
+                option_type: None,
+                strike: None,
+                base_currency: None,
+                is_active: Some(true),
+                price_index: None,
+                settlement_currency: None,
+                taker_commission: None,
+                counter_currency: None,
+            }
+        }
+    };
+
+    // Obtener información del instrumento ETH-PERPETUAL
+    info!("🔍 Obteniendo información del instrumento ETH-PERPETUAL...");
+    let eth_instrument = match client.get_instrument("ETH-PERPETUAL").await {
+        Ok(instrument) => {
+            info!("✅ Información del instrumento obtenida");
+            if let Some(tick_size) = instrument.tick_size {
+                info!("📏 Tick size de ETH-PERPETUAL: {}", tick_size);
+            }
+            instrument
+        }
+        Err(e) => {
+            warn!("❌ Error al obtener información del instrumento: {}", e);
+            info!("💡 Usando tick size por defecto de 0.05");
+            Instrument {
+                tick_size: Some(0.05),
+                instrument_name: "ETH-PERPETUAL".to_string(),
+                instrument_id: None,
+                kind: Some(InstrumentKind::Future),
+                currency: Some("ETH".to_string()),
+                contract_size: None,
+                creation_timestamp: None,
+                max_leverage: None,
+                maker_commission: None,
+                expiration_timestamp: None,
+                settlement_period: None,
+                instrument_type: None,
+                quote_currency: Some("USD".to_string()),
+                min_trade_amount: None,
+                option_type: None,
+                strike: None,
+                base_currency: None,
+                is_active: Some(true),
+                price_index: None,
+                settlement_currency: None,
+                taker_commission: None,
+                counter_currency: None,
+            }
+        }
+    };
+
+    // Redondear los precios de mercado según el tick size
+    let btc_tick_size = btc_instrument.tick_size.unwrap_or(0.5);
+    let eth_tick_size = eth_instrument.tick_size.unwrap_or(0.05);
+
+    let rounded_btc_price = round_to_tick_size(btc_mark_price, btc_tick_size);
+    let rounded_eth_price = round_to_tick_size(eth_mark_price, eth_tick_size);
+
+    info!("💰 Precio de BTC redondeado al tick size: {} -> {}", btc_mark_price, rounded_btc_price);
+    info!("💰 Precio de ETH redondeado al tick size: {} -> {}", eth_mark_price, rounded_eth_price);
+
+    // Actualizar los precios base con los valores redondeados
+    let btc_mark_price = rounded_btc_price;
+    let eth_mark_price = rounded_eth_price;
+
     // =================================================================
     // SETUP: CREATE TEST ORDERS FOR HISTORY DEMONSTRATION
     // =================================================================
@@ -80,7 +199,7 @@ async fn main() -> Result<(), HttpError> {
         (
             "BTC-PERPETUAL",
             "history_test_btc_1",
-            btc_mark_price * 0.95,
+            round_to_tick_size(btc_mark_price * 0.95, btc_tick_size),
             10.0,
             "buy",
             OrderType::Limit,
@@ -88,7 +207,7 @@ async fn main() -> Result<(), HttpError> {
         (
             "BTC-PERPETUAL",
             "history_test_btc_2",
-            btc_mark_price * 1.05,
+            round_to_tick_size(btc_mark_price * 1.05, btc_tick_size),
             10.0,
             "sell",
             OrderType::Limit,
@@ -96,7 +215,7 @@ async fn main() -> Result<(), HttpError> {
         (
             "ETH-PERPETUAL",
             "history_test_eth_1",
-            eth_mark_price * 0.95,
+            round_to_tick_size(eth_mark_price * 0.95, eth_tick_size),
             100.0,
             "buy",
             OrderType::Limit,
@@ -104,7 +223,7 @@ async fn main() -> Result<(), HttpError> {
         (
             "ETH-PERPETUAL",
             "history_test_eth_2",
-            eth_mark_price * 1.05,
+            round_to_tick_size(eth_mark_price * 1.05, eth_tick_size),
             100.0,
             "sell",
             OrderType::Limit,
@@ -113,7 +232,7 @@ async fn main() -> Result<(), HttpError> {
         (
             "BTC-PERPETUAL",
             "stop_history_btc_1",
-            btc_mark_price * 0.90,
+            round_to_tick_size(btc_mark_price * 0.90, btc_tick_size),
             15.0,
             "buy",
             OrderType::StopLimit,
@@ -121,7 +240,7 @@ async fn main() -> Result<(), HttpError> {
         (
             "BTC-PERPETUAL",
             "stop_history_btc_2",
-            btc_mark_price * 1.10,
+            round_to_tick_size(btc_mark_price * 1.10, btc_tick_size),
             15.0,
             "sell",
             OrderType::StopLimit,
@@ -129,7 +248,7 @@ async fn main() -> Result<(), HttpError> {
         (
             "ETH-PERPETUAL",
             "stop_history_eth_1",
-            eth_mark_price * 0.90,
+            round_to_tick_size(eth_mark_price * 0.90, eth_tick_size),
             150.0,
             "buy",
             OrderType::StopLimit,
@@ -137,7 +256,7 @@ async fn main() -> Result<(), HttpError> {
         (
             "ETH-PERPETUAL",
             "stop_history_eth_2",
-            eth_mark_price * 1.10,
+            round_to_tick_size(eth_mark_price * 1.10, eth_tick_size),
             150.0,
             "sell",
             OrderType::StopLimit,
@@ -145,6 +264,7 @@ async fn main() -> Result<(), HttpError> {
     ];
 
     for (instrument, label, price, amount, side, order_type) in test_orders {
+        info!("💲 Creando orden {} @ ${:.2} (tick size: {})", label, price, if instrument.contains("BTC") { btc_tick_size } else { eth_tick_size });
         if side == "buy" {
             let buy_request = BuyOrderRequest {
                 instrument_name: instrument.to_string(),
@@ -216,6 +336,16 @@ async fn main() -> Result<(), HttpError> {
         "📊 Created {} test orders for history demonstration",
         created_order_ids.len()
     );
+    
+    // Log detailed information about created orders
+    if created_order_ids.is_empty() {
+        warn!("⚠️  No orders were created successfully - this may affect history demonstration");
+    } else {
+        info!("✅ Successfully created {} orders for history", created_order_ids.len());
+        for (order_id, label, order_type) in &created_order_ids {
+            info!("   - Order {}: {} ({:?})", order_id, label, order_type);
+        }
+    }
     println!();
 
     // Wait for orders to be registered
@@ -224,22 +354,35 @@ async fn main() -> Result<(), HttpError> {
     // Cancel some orders to create history entries
     let orders_to_cancel = std::cmp::min(4, created_order_ids.len());
     info!(
-        "🔄 Cancelling {} orders to create history entries...",
-        orders_to_cancel
+        "🔄 Cancelling {} out of {} orders to create history entries...",
+        orders_to_cancel, created_order_ids.len()
     );
 
-    for (order_id, label, _) in created_order_ids.iter().take(orders_to_cancel) {
-        match client.cancel_order(order_id).await {
-            Ok(order_info) => {
-                info!(
-                    "✅ Cancelled order {} ({}) - Status: {}",
-                    order_id, label, order_info.order_state
-                );
-            }
-            Err(e) => {
-                warn!("⚠️  Could not cancel order {} ({}): {}", order_id, label, e);
+    if orders_to_cancel == 0 {
+        warn!("⚠️  No orders available to cancel - skipping cancellation step");
+    } else {
+        for (order_id, label, _) in created_order_ids.iter().take(orders_to_cancel) {
+            info!("🔧 Attempting to cancel order {} ({})", order_id, label);
+            match client.cancel_order(order_id).await {
+                Ok(order_info) => {
+                    info!(
+                        "✅ Cancelled order {} ({}) - Status: {}",
+                        order_id, label, order_info.order_state
+                    );
+                }
+                Err(e) => {
+                    warn!("⚠️  Could not cancel order {} ({}): {}", order_id, label, e);
+                }
             }
         }
+    }
+
+    // Función auxiliar para redondear precios según el tick size
+    fn round_to_tick_size(price: f64, tick_size: f64) -> f64 {
+        if tick_size <= 0.0 {
+            return price;
+        }
+        (price / tick_size).round() * tick_size
     }
 
     // Wait for cancellations to be processed

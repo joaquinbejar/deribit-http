@@ -1,7 +1,7 @@
 //! HTTP session management
 
 use crate::config::HttpConfig;
-use crate::model::http_types::AuthToken;
+use crate::model::types::AuthToken;
 use std::sync::Arc;
 use tokio::sync::Mutex;
 

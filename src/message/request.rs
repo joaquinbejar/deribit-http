@@ -1,6 +1,7 @@
 //! HTTP request message handling
 
-use crate::model::http_types::{HttpRequest, RequestParams};
+use crate::model::request::api::HttpRequest;
+use crate::model::types::RequestParams;
 use pretty_simple_display::{DebugPretty, DisplaySimple};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;

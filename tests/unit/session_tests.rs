@@ -7,7 +7,7 @@
 //! Unit tests for HttpSession
 
 use deribit_http::config::HttpConfig;
-use deribit_http::model::http_types::AuthToken;
+use deribit_http::model::types::AuthToken;
 use deribit_http::session::http_session::HttpSession;
 use std::time::Duration;
 use url::Url;

@@ -3,7 +3,7 @@
 use crate::auth::AuthManager;
 use crate::config::HttpConfig;
 use crate::error::HttpError;
-use crate::model::http_types::AuthToken;
+use crate::model::types::AuthToken;
 use crate::rate_limit::{RateLimiter, categorize_endpoint};
 use reqwest::Client;
 use std::sync::Arc;
