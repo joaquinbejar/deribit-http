@@ -45,6 +45,7 @@ pub mod trigger;
 pub mod types;
 /// Withdrawal models
 pub mod withdrawal;
+pub mod fee;
 
 pub use account::*;
 pub use book::*;
@@ -68,3 +69,4 @@ pub use transfer::*;
 pub use trigger::*;
 pub use types::*;
 pub use withdrawal::*;
+pub use fee::*;
