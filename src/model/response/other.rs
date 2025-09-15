@@ -197,8 +197,8 @@ impl SettlementsResponse {
 #[skip_serializing_none]
 #[derive(DebugPretty, DisplaySimple, Clone, Serialize, Deserialize, Default)]
 pub struct TransactionLogResponse {
-    /// Continuation token for pagination
-    pub continuation: Option<String>,
+    /// Continuation token for pagination. NULL when no continuation.
+    pub continuation: Option<u64>,
     /// List of transaction log entries
     pub logs: Vec<TransactionLogEntry>,
 }

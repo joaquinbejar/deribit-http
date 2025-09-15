@@ -15,7 +15,7 @@ use crate::model::response::other::{
     AccountSummaryResponse, TransactionLogResponse, TransferResultResponse,
 };
 use crate::model::response::withdrawal::WithdrawalsResponse;
-use crate::model::{UserTradeResponseByOrder, UserTradeWithPaginationResponse};
+use crate::model::{TransactionLogRequest, UserTradeResponseByOrder, UserTradeWithPaginationResponse};
 use crate::prelude::Trigger;
 
 /// Private endpoints implementation
@@ -77,10 +77,14 @@ impl DeribitHttpClient {
             )));
         }
 
-        let api_response: ApiResponse<Vec<Subaccount>> = response
-            .json()
-            .await
-            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
+        // Debug: Get raw response text first
+        let response_text = response.text().await
+            .map_err(|e| HttpError::InvalidResponse(format!("Failed to read response text: {}", e)))?;
+        
+        tracing::debug!("Raw API response: {}", response_text);
+        
+        let api_response: ApiResponse<Vec<Subaccount>> = serde_json::from_str(&response_text)
+            .map_err(|e| HttpError::InvalidResponse(format!("Failed to parse JSON: {} - Raw response: {}", e, response_text)))?;
 
         if let Some(error) = api_response.error {
             return Err(HttpError::RequestFailed(format!(
@@ -117,27 +121,26 @@ impl DeribitHttpClient {
     /// ```
     pub async fn get_transaction_log(
         &self,
-        currency: &str,
-        start_timestamp: Option<u64>,
-        end_timestamp: Option<u64>,
-        count: Option<u32>,
-        continuation: Option<&str>,
+        request: TransactionLogRequest,
     ) -> Result<TransactionLogResponse, HttpError> {
-        let mut query_params = vec![("currency".to_string(), currency.to_string())];
+        let mut query_params = vec![("currency".to_string(), request.currency.to_string())];
 
-        if let Some(start_timestamp) = start_timestamp {
-            query_params.push(("start_timestamp".to_string(), start_timestamp.to_string()));
+        query_params.push(("start_timestamp".to_string(), request.start_timestamp.to_string()));
+        query_params.push(("end_timestamp".to_string(), request.end_timestamp.to_string()));
+
+        if let Some(query) = request.query {
+            query_params.push(("query".to_string(), query));
         }
 
-        if let Some(end_timestamp) = end_timestamp {
-            query_params.push(("end_timestamp".to_string(), end_timestamp.to_string()));
-        }
-
-        if let Some(count) = count {
+        if let Some(count) = request.count {
             query_params.push(("count".to_string(), count.to_string()));
         }
 
-        if let Some(continuation) = continuation {
+        if let Some(subaccount_id) = request.subaccount_id {
+            query_params.push(("subaccount_id".to_string(), subaccount_id.to_string()));
+        }
+        
+        if let Some(continuation) = request.continuation {
             query_params.push(("continuation".to_string(), continuation.to_string()));
         }
 
