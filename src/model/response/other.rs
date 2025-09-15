@@ -175,16 +175,16 @@ pub struct AccountSummaryResponse {
     pub margin_balance: f64,
     /// Unrealized profit and loss (optional)
     pub unrealized_pnl: Option<f64>,
-    /// Realized profit and loss
-    pub realized_pnl: f64,
-    /// Total profit and loss
-    pub total_pl: f64,
-    /// Session funding
-    pub session_funding: f64,
-    /// Session realized P&L
-    pub session_rpl: f64,
-    /// Session unrealized P&L
-    pub session_upl: f64,
+    /// Realized profit and loss (optional)
+    pub realized_pnl: Option<f64>,
+    /// Total profit and loss (optional)
+    pub total_pl: Option<f64>,
+    /// Session funding (optional)
+    pub session_funding: Option<f64>,
+    /// Session realized P&L (optional)
+    pub session_rpl: Option<f64>,
+    /// Session unrealized P&L (optional)
+    pub session_upl: Option<f64>,
     /// Maintenance margin requirement
     pub maintenance_margin: f64,
     /// Initial margin requirement
@@ -225,16 +225,16 @@ pub struct AccountSummaryResponse {
     pub projected_maintenance_margin: Option<f64>,
     /// System name
     pub system_name: Option<String>,
-    /// Type of account
+    /// Type of account (optional)
     #[serde(rename = "type")]
-    pub account_type: String,
+    pub account_type: Option<String>,
     // Additional fields from deribit-http types.rs
     /// Delta total map (currency -> delta)
     pub delta_total_map: std::collections::HashMap<String, f64>,
-    /// Deposit address
-    pub deposit_address: String,
-    /// Fees structure
-    pub fees: Vec<std::collections::HashMap<String, f64>>,
+    /// Deposit address (optional)
+    pub deposit_address: Option<String>,
+    /// Fees structure (optional)
+    pub fees: Option<Vec<std::collections::HashMap<String, f64>>>,
     /// Account limits - complex structure with nested limits
     pub limits: serde_json::Value,
     /// Locked balance
@@ -293,7 +293,11 @@ impl AccountSummaryResponse {
     /// Calculate return on equity
     pub fn return_on_equity(&self) -> f64 {
         if self.equity != 0.0 {
-            (self.total_pl / self.equity) * 100.0
+            if let Some(total_pl) = self.total_pl {
+                (total_pl / self.equity) * 100.0
+            } else {
+                0.0
+            }
         } else {
             0.0
         }

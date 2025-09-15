@@ -112,7 +112,10 @@ impl Portfolio {
 
     /// Calculate total realized PnL across all accounts
     pub fn total_realized_pnl(&self) -> f64 {
-        self.accounts.iter().map(|acc| acc.realized_pnl).sum()
+        self.accounts
+            .iter()
+            .map(|acc| acc.realized_pnl.unwrap_or(0.0))
+            .sum()
     }
 }
 
@@ -129,11 +132,11 @@ mod tests {
             available_funds: 1.2,
             margin_balance: 0.3,
             unrealized_pnl: Some(-0.1),
-            realized_pnl: 0.05,
-            total_pl: -0.05,
-            session_funding: 0.001,
-            session_rpl: 0.02,
-            session_upl: -0.08,
+            realized_pnl: Some(0.05),
+            total_pl: Some(-0.05),
+            session_funding: Some(0.0),
+            session_rpl: Some(0.0),
+            session_upl: Some(0.0),
             maintenance_margin: 0.1,
             initial_margin: 0.2,
             available_withdrawal_funds: Some(1.0),
@@ -154,10 +157,10 @@ mod tests {
             projected_initial_margin: Some(0.25),
             projected_maintenance_margin: Some(0.12),
             system_name: Some("deribit".to_string()),
-            account_type: "main".to_string(),
+            account_type: Some("main".to_string()),
             delta_total_map: HashMap::new(),
-            deposit_address: "bc1qtest123".to_string(),
-            fees: vec![HashMap::new()],
+            deposit_address: Some("bc1qtest123".to_string()),
+            fees: Some(vec![HashMap::new()]),
             limits: serde_json::json!({}),
             locked_balance: Some(0.0),
             margin_model: Some("segregated_sm".to_string()),
@@ -266,9 +269,9 @@ mod tests {
     fn test_portfolio_total_realized_pnl() {
         let mut portfolio = Portfolio::new("USD".to_string());
         let mut account1 = create_test_account_summary();
-        account1.realized_pnl = 0.05;
+        account1.realized_pnl = Some(0.05);
         let mut account2 = create_test_account_summary();
-        account2.realized_pnl = 0.03;
+        account2.realized_pnl = Some(0.03);
 
         portfolio.add_account(account1);
         portfolio.add_account(account2);
