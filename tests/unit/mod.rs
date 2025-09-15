@@ -8,5 +8,7 @@ pub mod builder_tests;
 pub mod client_tests;
 pub mod connection_tests;
 pub mod message_tests;
+pub mod private_endpoints_tests;
+pub mod public_endpoints_tests;
 pub mod response_tests;
 pub mod session_tests;

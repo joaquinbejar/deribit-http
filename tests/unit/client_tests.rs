@@ -15,6 +15,7 @@ async fn test_client_new_default_testnet() {
         std::env::remove_var("DERIBIT_TESTNET");
     }
     let client = DeribitHttpClient::new();
+    // Default is testnet (true), so should contain test.deribit.com
     assert!(client.base_url().contains("test.deribit.com"));
 }
 
