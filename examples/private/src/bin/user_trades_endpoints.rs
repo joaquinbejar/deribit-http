@@ -159,10 +159,10 @@ async fn main() -> Result<(), HttpError> {
                     created_order_ids.push((order_response.order.order_id, label.to_string()));
 
                     // Check if order was executed
-                    if order_response.order.filled_amount > 0.0 {
+                    if order_response.order.filled_amount.unwrap_or(0.0) > 0.0 {
                         info!(
                             "🎉 Order partially filled: {:.6} filled",
-                            order_response.order.filled_amount
+                            order_response.order.filled_amount.unwrap_or(0.0)
                         );
                     }
                 }
@@ -204,10 +204,10 @@ async fn main() -> Result<(), HttpError> {
                     created_order_ids.push((order_response.order.order_id, label.to_string()));
 
                     // Check if order was executed
-                    if order_response.order.filled_amount > 0.0 {
+                    if order_response.order.filled_amount.unwrap_or(0.0) > 0.0 {
                         info!(
                             "🎉 Order partially filled: {:.6} filled",
-                            order_response.order.filled_amount
+                            order_response.order.filled_amount.unwrap_or(0.0)
                         );
                     }
                 }

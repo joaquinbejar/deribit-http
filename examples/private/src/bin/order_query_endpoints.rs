@@ -452,7 +452,7 @@ async fn main() -> Result<(), HttpError> {
                 info!("   - Direction: {}", order_info.direction);
                 info!("   - Price: ${:.2}", order_info.price);
                 info!("   - Amount: {:.6}", order_info.amount);
-                info!("   - Filled: {:.6}", order_info.filled_amount);
+                info!("   - Filled: {:.6}", order_info.filled_amount.unwrap_or(0.0));
                 info!("   - Label: {}", order_info.label);
                 info!("   - Time in Force: {}", order_info.time_in_force);
                 info!("   - Post Only: {}", order_info.post_only);

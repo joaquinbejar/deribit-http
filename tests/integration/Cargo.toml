@@ -8,8 +8,6 @@ publish = false
 name = "integration_tests"
 path = "./lib.rs"
 
-
-
 [dependencies]
 deribit-http = { workspace = true }
 tokio = { workspace = true, features = ["full"] }
@@ -19,4 +17,3 @@ mockito = "1.7"
 serial_test = "3.2"
 url = { workspace = true }
 serde_json = { workspace = true }
-

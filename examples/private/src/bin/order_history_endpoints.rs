@@ -18,8 +18,17 @@
 //! Then run: cargo run --bin order_history_endpoints
 
 use deribit_http::prelude::*;
+use deribit_http::model::trigger::Trigger;
 use tokio::time::{Duration, sleep};
 use tracing::{error, info, warn};
+
+// Función auxiliar para redondear precios según el tick size
+fn round_to_tick_size(price: f64, tick_size: f64) -> f64 {
+    if tick_size <= 0.0 {
+        return price;
+    }
+    (price / tick_size).round() * tick_size
+}
 
 #[tokio::main]
 async fn main() -> Result<(), HttpError> {
@@ -235,7 +244,7 @@ async fn main() -> Result<(), HttpError> {
             "BTC-PERPETUAL",
             "stop_history_btc_1",
             round_to_tick_size(btc_mark_price * 0.90, btc_tick_size),
-            15.0,
+            10.0,
             "buy",
             OrderType::StopLimit,
         ),
@@ -243,7 +252,7 @@ async fn main() -> Result<(), HttpError> {
             "BTC-PERPETUAL",
             "stop_history_btc_2",
             round_to_tick_size(btc_mark_price * 1.10, btc_tick_size),
-            15.0,
+            10.0,
             "sell",
             OrderType::StopLimit,
         ),
@@ -277,6 +286,18 @@ async fn main() -> Result<(), HttpError> {
             }
         );
         if side == "buy" {
+            let (trigger_price_val, trigger_val) = if order_type == OrderType::StopLimit {
+                // Para stop buy: trigger price por encima del precio actual
+                let trigger_price = if instrument.contains("BTC") {
+                    round_to_tick_size(btc_mark_price * 1.05, btc_tick_size)
+                } else {
+                    round_to_tick_size(eth_mark_price * 1.05, eth_tick_size)
+                };
+                (Some(trigger_price), Some(Trigger::LastPrice))
+            } else {
+                (None, None)
+            };
+            
             let buy_request = OrderRequest {
                 order_id: None,
                 instrument_name: instrument.to_string(),
@@ -290,9 +311,9 @@ async fn main() -> Result<(), HttpError> {
                 post_only: Some(true), // Avoid immediate execution
                 reject_post_only: None,
                 reduce_only: Some(false),
-                trigger_price: None,
+                trigger_price: trigger_price_val,
                 trigger_offset: None,
-                trigger: None,
+                trigger: trigger_val,
                 advanced: None,
                 mmp: None,
                 valid_until: None,
@@ -322,6 +343,18 @@ async fn main() -> Result<(), HttpError> {
                 }
             }
         } else {
+            let (trigger_price_val, trigger_val) = if order_type == OrderType::StopLimit {
+                // Para stop sell: trigger price por debajo del precio actual
+                let trigger_price = if instrument.contains("BTC") {
+                    round_to_tick_size(btc_mark_price * 0.95, btc_tick_size)
+                } else {
+                    round_to_tick_size(eth_mark_price * 0.95, eth_tick_size)
+                };
+                (Some(trigger_price), Some(Trigger::LastPrice))
+            } else {
+                (None, None)
+            };
+            
             let sell_request = OrderRequest {
                 order_id: None,
                 instrument_name: instrument.to_string(),
@@ -335,9 +368,9 @@ async fn main() -> Result<(), HttpError> {
                 post_only: Some(true), // Avoid immediate execution
                 reject_post_only: None,
                 reduce_only: Some(false),
-                trigger_price: None,
+                trigger_price: trigger_price_val,
                 trigger_offset: None,
-                trigger: None,
+                trigger: trigger_val,
                 advanced: None,
                 mmp: None,
                 valid_until: None,
@@ -418,13 +451,7 @@ async fn main() -> Result<(), HttpError> {
         }
     }
 
-    // Función auxiliar para redondear precios según el tick size
-    fn round_to_tick_size(price: f64, tick_size: f64) -> f64 {
-        if tick_size <= 0.0 {
-            return price;
-        }
-        (price / tick_size).round() * tick_size
-    }
+
 
     // Wait for cancellations to be processed
     sleep(Duration::from_secs(2)).await;
@@ -470,7 +497,7 @@ async fn main() -> Result<(), HttpError> {
                     );
                     info!(
                         "     Amount: {:.6}, Filled: {:.6}, Average Price: ${:.2}",
-                        order.amount, order.filled_amount, order.average_price
+                        order.amount, order.filled_amount.unwrap_or(0.0), order.average_price.unwrap_or(0.0)
                     );
                 }
                 if orders.len() > 5 {
@@ -568,7 +595,7 @@ async fn main() -> Result<(), HttpError> {
                     );
                     info!(
                         "     Amount: {:.6}, Filled: {:.6}, Post Only: {}",
-                        order.amount, order.filled_amount, order.post_only
+                        order.amount, order.filled_amount.unwrap_or(0.0), order.post_only
                     );
                 }
             } else {
@@ -616,7 +643,7 @@ async fn main() -> Result<(), HttpError> {
                     );
                     info!(
                         "     Amount: {:.6}, Filled: {:.6}, Reduce Only: {}",
-                        order.amount, order.filled_amount, order.reduce_only
+                        order.amount, order.filled_amount.unwrap_or(0.0), order.reduce_only
                     );
                 }
             } else {
