@@ -16,8 +16,7 @@
 //!
 //! Then run: cargo run --bin mass_quote_endpoints
 
-use deribit_base::prelude::{MassQuoteItem, MassQuoteRequest, OrderSide, setup_logger};
-use deribit_http::{DeribitHttpClient, HttpError};
+use deribit_http::prelude::*;
 use std::env;
 use std::path::Path;
 use tokio::time::{Duration, sleep};

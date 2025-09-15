@@ -1,7 +1,7 @@
 //! Simple currency checker
 //! This example only shows supported currencies
 
-use deribit_base::prelude::setup_logger;
+use deribit_http::prelude::setup_logger;
 use deribit_http::DeribitHttpClient;
 use tracing::{info, error};
 

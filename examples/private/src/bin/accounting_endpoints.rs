@@ -12,7 +12,7 @@
 //!
 //! Then run: cargo run --bin accounting_endpoints
 
-use deribit_base::prelude::setup_logger;
+use deribit_http::prelude::setup_logger;
 use deribit_http::{DeribitHttpClient, HttpError};
 use tracing::{error, info, warn};
 

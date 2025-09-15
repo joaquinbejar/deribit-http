@@ -17,11 +17,7 @@
 //!
 //! Then run: cargo run --bin order_history_endpoints
 
-use deribit_http::{
-    BuyOrderRequest, DeribitHttpClient, HttpError, OrderType, SellOrderRequest, TimeInForce,
-};
-
-use deribit_base::prelude::{setup_logger, Instrument, InstrumentKind};
+use deribit_http::prelude::*;
 use tokio::time::{Duration, sleep};
 use tracing::{error, info, warn};
 
@@ -266,7 +262,7 @@ async fn main() -> Result<(), HttpError> {
     for (instrument, label, price, amount, side, order_type) in test_orders {
         info!("💲 Creando orden {} @ ${:.2} (tick size: {})", label, price, if instrument.contains("BTC") { btc_tick_size } else { eth_tick_size });
         if side == "buy" {
-            let buy_request = BuyOrderRequest {
+            let buy_request = OrderRequest {
                 instrument_name: instrument.to_string(),
                 amount,
                 type_: Some(order_type),
@@ -298,7 +294,7 @@ async fn main() -> Result<(), HttpError> {
                 }
             }
         } else {
-            let sell_request = SellOrderRequest {
+            let sell_request = OrderRequest {
                 instrument_name: instrument.to_string(),
                 amount,
                 type_: Some(order_type),

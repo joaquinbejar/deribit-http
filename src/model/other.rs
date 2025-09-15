@@ -6,6 +6,7 @@
 use pretty_simple_display::{DebugPretty, DisplaySimple};
 use serde::{Deserialize, Serialize};
 use crate::model::instrument::Instrument;
+use crate::model::OptionType;
 use crate::model::ticker::TickerData;
 
 /// Delivery price data
@@ -58,4 +59,14 @@ pub struct OptionInstrumentPair {
     pub call: Option<OptionInstrument>,
     /// Put option instrument data, if available  
     pub put: Option<OptionInstrument>,
+}
+
+
+#[derive(DebugPretty, DisplaySimple, Clone, Serialize)]
+pub struct ParsedOptionWithTicker {
+    instrument_name: String,
+    strike: f64,
+    option_type: OptionType,
+    expiry: String,
+    ticker: TickerData,
 }

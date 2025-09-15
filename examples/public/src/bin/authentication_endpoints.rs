@@ -6,8 +6,7 @@
 //! - /public/fork_token - Create new session with same permissions
 //!   Note: HTTP client tokens expire automatically (no logout endpoint)
 
-use deribit_base::prelude::setup_logger;
-use deribit_http::{DeribitHttpClient, HttpError};
+use deribit_http::prelude::*;
 use tracing::{error, info, warn};
 
 #[tokio::main]

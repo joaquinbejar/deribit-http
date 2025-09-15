@@ -14,11 +14,7 @@
 //!
 //! Then run: cargo run --bin trading_endpoints
 
-use deribit_base::prelude::setup_logger;
-use deribit_http::{
-    BuyOrderRequest, DeribitHttpClient, EditOrderRequest, HttpError, OrderType, SellOrderRequest,
-    TimeInForce,
-};
+use deribit_http::prelude::*;
 use tracing::{error, info, warn};
 
 #[tokio::main]
@@ -38,9 +34,9 @@ async fn main() -> Result<(), HttpError> {
     info!("💰 1. PLACE BUY ORDER");
     info!("---------------------");
 
-    let buy_request = BuyOrderRequest {
+    let buy_request = OrderRequest {
         instrument_name: "BTC-PERPETUAL".to_string(),
-        amount: 10.0, // 10 USD worth of BTC
+        amount: Some(10.0), // 10 USD worth of BTC
         type_: Some(OrderType::Limit),
         price: Some(30000.0), // Low price to avoid execution
         label: Some("example_buy_order".to_string()),
@@ -72,9 +68,9 @@ async fn main() -> Result<(), HttpError> {
     info!("💸 2. PLACE SELL ORDER");
     info!("----------------------");
 
-    let sell_request = SellOrderRequest {
+    let sell_request = OrderRequest {
         instrument_name: "BTC-PERPETUAL".to_string(),
-        amount: 10.0, // 10 USD worth of BTC
+        amount: Some(10.0), // 10 USD worth of BTC
         type_: Some(OrderType::Limit),
         price: Some(100000.0), // High price to avoid execution
         label: Some("example_sell_order".to_string()),
@@ -106,8 +102,8 @@ async fn main() -> Result<(), HttpError> {
     info!("✏️  3. EDIT ORDER BY ID");
     info!("-----------------------");
 
-    let edit_request = EditOrderRequest {
-        order_id: buy_order_id.clone(),
+    let edit_request = OrderRequest {
+        order_id: Some(buy_order_id.clone()),
         amount: Some(15.0),   // Change amount from 10 to 15 USD
         price: Some(25000.0), // Change price from 30000 to 25000
         post_only: Some(true),

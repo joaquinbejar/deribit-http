@@ -9,7 +9,9 @@ use crate::model::order::OrderType;
 use crate::model::response::order::LinkedOrderType;
 use crate::model::trigger::{TriggerFillCondition, TriggerType};
 use crate::model::types::TimeInForce;
+use serde_with::skip_serializing_none;
 
+#[skip_serializing_none]
 #[derive(DebugPretty, DisplaySimple, Clone, Serialize, Deserialize)]
 pub struct OrderRequest {
     pub order_id: Option<String>,

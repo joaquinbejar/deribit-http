@@ -13,7 +13,6 @@ pub use crate::error::HttpError;
 
 // Re-export authentication types
 pub use crate::auth::{ApiKeyAuth, AuthManager, AuthRequest};
-pub use crate::model::types::AuthToken;
 
 // Re-export message types
 pub use crate::message::{HttpMessageBuilder, HttpRequestBuilder, HttpResponseHandler};
@@ -22,3 +21,7 @@ pub use crate::message::{HttpMessageBuilder, HttpRequestBuilder, HttpResponseHan
 // Re-export session types
 pub use crate::session::HttpSession;
 
+pub use crate::logger::setup_logger;
+
+pub use crate::model::*;
+pub use crate::connection::*;

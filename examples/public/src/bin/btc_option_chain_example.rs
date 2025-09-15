@@ -10,10 +10,9 @@
 //!
 //! Usage: cargo run --bin btc_option_chain_example
 
-use deribit_base::prelude::*;
+use deribit_http::prelude::*;
 use deribit_http::DeribitHttpClient;
 use pretty_simple_display::{DebugPretty, DisplaySimple};
-use serde::Serialize;
 use tracing::{error, info, warn};
 use deribit_http::utils::get_tomorrow_deribit_format;
 
@@ -253,21 +252,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 // HELPER STRUCTURES AND FUNCTIONS
 // =================================================================
 
-#[derive(Debug, Clone, PartialEq, Serialize)]
-enum OptionType {
-    Call,
-    Put,
-}
-
-#[derive(DebugPretty, DisplaySimple, Clone, Serialize)]
-#[allow(dead_code)]
-struct ParsedOptionWithTicker {
-    instrument_name: String,
-    strike: f64,
-    option_type: OptionType,
-    expiry: String,
-    ticker: TickerData,
-}
 
 fn parse_option_with_ticker(
     option_instrument: &OptionInstrument,

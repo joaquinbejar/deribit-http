@@ -149,6 +149,7 @@ pub mod session;
 // Constants
 pub mod constants;
 pub mod utils;
+pub mod logger;
 
 // Re-export main client and error types
 pub use client::*;

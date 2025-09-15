@@ -2,14 +2,13 @@
 
 #[cfg(test)]
 mod tests {
-    use deribit_base::prelude::{BuyOrderRequest, EditOrderRequest, SellOrderRequest};
-    use deribit_http::DeribitHttpClient;
+    use deribit_http::prelude::*;
     use mockito::Server;
     use std::time::Duration;
 
     async fn create_mock_client() -> (mockito::ServerGuard, DeribitHttpClient) {
         let server = Server::new_async().await;
-        let _config = deribit_http::config::HttpConfig {
+        let _config = HttpConfig {
             base_url: url::Url::parse(&server.url()).unwrap(),
             timeout: Duration::from_secs(30),
             user_agent: "test-agent".to_string(),
@@ -186,7 +185,7 @@ mod tests {
             .create_async()
             .await;
 
-        let request = BuyOrderRequest {
+        let request = OrderRequest {
             instrument_name: "BTC-PERPETUAL".to_string(),
             amount: 10.0,
             type_: None,
@@ -219,7 +218,7 @@ mod tests {
             .create_async()
             .await;
 
-        let request = SellOrderRequest {
+        let request = OrderRequest {
             instrument_name: "BTC-PERPETUAL".to_string(),
             amount: 5.0,
             type_: None,
@@ -379,8 +378,8 @@ mod tests {
             .create_async()
             .await;
 
-        let request = EditOrderRequest {
-            order_id: "order_123".to_string(),
+        let request = OrderRequest {
+            order_id: Some("order_123".to_string()),
             amount: None,
             price: None,
             post_only: None,
@@ -528,7 +527,7 @@ mod tests {
             .create_async()
             .await;
 
-        let request = BuyOrderRequest {
+        let request = OrderRequest {
             instrument_name: "INVALID-INSTRUMENT".to_string(),
             amount: 10.0,
             type_: None,

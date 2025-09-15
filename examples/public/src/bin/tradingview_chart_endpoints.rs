@@ -5,8 +5,7 @@
 //!
 //! Usage: cargo run --bin tradingview_chart_endpoints
 
-use deribit_base::prelude::setup_logger;
-use deribit_http::DeribitHttpClient;
+use deribit_http::prelude::*;
 use tracing::{info, warn};
 
 #[tokio::main]

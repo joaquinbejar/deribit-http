@@ -20,10 +20,7 @@
 //!
 //! Then run: cargo run --bin user_trades_endpoints
 
-use deribit_base::prelude::setup_logger;
-use deribit_http::{
-    BuyOrderRequest, DeribitHttpClient, HttpError, OrderType, SellOrderRequest, TimeInForce,
-};
+use deribit_http::prelude::*;
 use std::time::{SystemTime, UNIX_EPOCH};
 use tokio::time::{Duration, sleep};
 use tracing::{info, warn};
@@ -129,7 +126,7 @@ async fn main() -> Result<(), HttpError> {
 
     for (instrument, label, price, amount, side) in test_orders {
         if side == "buy" {
-            let buy_request = BuyOrderRequest {
+            let buy_request = OrderRequest {
                 instrument_name: instrument.to_string(),
                 amount,
                 type_: Some(OrderType::Limit),
@@ -161,7 +158,7 @@ async fn main() -> Result<(), HttpError> {
                 }
             }
         } else {
-            let sell_request = SellOrderRequest {
+            let sell_request = OrderRequest {
                 instrument_name: instrument.to_string(),
                 amount,
                 type_: Some(OrderType::Limit),

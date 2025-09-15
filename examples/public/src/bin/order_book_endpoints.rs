@@ -6,8 +6,7 @@
 //!
 //! Usage: cargo run --bin order_book_endpoints
 
-use deribit_base::prelude::setup_logger;
-use deribit_http::DeribitHttpClient;
+use deribit_http::prelude::*;
 use tracing::{info, warn};
 
 #[tokio::main]

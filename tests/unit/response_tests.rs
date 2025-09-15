@@ -1,8 +1,6 @@
 //! Unit tests for HTTP response handling
 
-use deribit_http::error::HttpError;
-use deribit_http::message::response::HttpResponseHandler;
-use deribit_http::model::types::{ApiError, ApiResponse, HttpResponse};
+use deribit_http::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 

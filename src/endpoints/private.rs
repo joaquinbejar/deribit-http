@@ -526,7 +526,7 @@ impl DeribitHttpClient {
             query_params.push(("reduce_only".to_string(), "true".to_string()));
         }
 
-        // Note: trigger_price and trigger fields are not currently supported in SellOrderRequest
+        // Note: trigger_price and trigger fields are not currently supported in OrderRequest
         // These would be added when stop-limit order functionality is implemented
 
         let query_string = query_params
@@ -622,7 +622,7 @@ impl DeribitHttpClient {
             query_params.push(("reduce_only".to_string(), "true".to_string()));
         }
 
-        // Note: trigger_price and trigger fields are not currently supported in SellOrderRequest
+        // Note: trigger_price and trigger fields are not currently supported in OrderRequest
         // These would be added when stop-limit order functionality is implemented
 
         let query_string = query_params
@@ -1176,26 +1176,31 @@ impl DeribitHttpClient {
     /// * `request` - The edit order request parameters
     ///
     pub async fn edit_order(&self, request: OrderRequest) -> Result<OrderResponse, HttpError> {
-        let mut query_params = vec![("order_id".to_string(), request.order_id)];
+        let order_id = request.order_id.ok_or_else(|| HttpError::RequestFailed("order_id is required for edit_order".to_string()))?;
+        let mut query_params = vec![("order_id", order_id.as_str())];
 
+        let amount_str;
         if let Some(amount) = request.amount {
-            query_params.push(("amount".to_string(), Some(amount.to_string())));
+            amount_str = amount.to_string();
+            query_params.push(("amount", amount_str.as_str()));
         }
 
+        let price_str;
         if let Some(price) = request.price {
-            query_params.push(("price".to_string(), Some(price.to_string())));
+            price_str = price.to_string();
+            query_params.push(("price", price_str.as_str()));
         }
 
         if let Some(post_only) = request.post_only
             && post_only
         {
-            query_params.push(("post_only".to_string(), Some("true".to_string())));
+            query_params.push(("post_only", "true"));
         }
 
         if let Some(reduce_only) = request.reduce_only
             && reduce_only
         {
-            query_params.push(("reduce_only".to_string(), Some("true".to_string())));
+            query_params.push(("reduce_only", "true"));
         }
 
         let query_string = query_params

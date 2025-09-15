@@ -34,6 +34,8 @@ url = { workspace = true }
 pretty-simple-display = { workspace = true }
 dotenv = { workspace = true }
 chrono = { workspace = true }
+tracing-subscriber = { workspace = true }
+serde_with = { workspace = true }
 
 [dev-dependencies]
 mockito = "1.7"
@@ -55,3 +57,5 @@ dotenv = "0.15"
 chrono = "0.4"
 url = "2.5"
 pretty-simple-display = "0.1"
+tracing-subscriber = "0.3.20"
+serde_with = "3.14.0"

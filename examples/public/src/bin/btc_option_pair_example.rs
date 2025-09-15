@@ -9,8 +9,7 @@
 //!
 //! Usage: cargo run --bin btc_option_pair_example
 
-use deribit_base::prelude::*;
-use deribit_http::DeribitHttpClient;
+use deribit_http::prelude::*;
 use tracing::{info, warn};
 use deribit_http::utils::get_tomorrow_deribit_format;
 

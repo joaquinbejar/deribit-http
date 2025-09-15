@@ -5,8 +5,7 @@
 //!
 //! Usage: cargo run --bin historical_volatility_endpoints
 
-use deribit_base::prelude::setup_logger;
-use deribit_http::DeribitHttpClient;
+use deribit_http::prelude::*;
 use tracing::{error, info, warn};
 
 #[tokio::main]

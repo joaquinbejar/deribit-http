@@ -14,12 +14,12 @@
 //!
 //! Then run: cargo run --bin cancellation_endpoints
 
-use deribit_base::prelude::setup_logger;
-use deribit_http::{BuyOrderRequest, DeribitHttpClient, HttpError, OrderType, TimeInForce};
+use deribit_http::prelude::*;
 use std::env;
 use std::path::Path;
 use tokio::time::{Duration, sleep};
 use tracing::{error, info, warn};
+
 
 #[tokio::main]
 async fn main() -> Result<(), HttpError> {
@@ -60,9 +60,9 @@ async fn main() -> Result<(), HttpError> {
     info!("📝 1. CREATE TEST ORDER");
     info!("-----------------------");
 
-    let buy_request = BuyOrderRequest {
+    let buy_request = OrderRequest {
         instrument_name: "BTC-PERPETUAL".to_string(),
-        amount: 10.0,
+        amount: Some(10.0),
         type_: Some(OrderType::Limit),
         price: Some(20000.0), // Very low price to avoid execution
         label: Some("test_cancel_order".to_string()),

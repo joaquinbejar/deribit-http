@@ -6,13 +6,11 @@
 
 //! Unit tests for HttpConnection
 
-use deribit_http::config::HttpConfig;
-use deribit_http::connection::http_connection::HttpConnection;
-use deribit_http::error::HttpError;
-use deribit_http::model::types::HttpRequest;
+use deribit_http::prelude::*;
 use std::collections::HashMap;
 use std::time::Duration;
 use url::Url;
+
 
 #[tokio::test]
 async fn test_http_connection_new() {
