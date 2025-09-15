@@ -61,14 +61,27 @@ async fn main() -> Result<(), HttpError> {
     info!("-----------------------");
 
     let buy_request = OrderRequest {
+        order_id: None,
         instrument_name: "BTC-PERPETUAL".to_string(),
         amount: Some(10.0),
+        contracts: None,
         type_: Some(OrderType::Limit),
-        price: Some(20000.0), // Very low price to avoid execution
         label: Some("test_cancel_order".to_string()),
+        price: Some(20000.0), // Very low price to avoid execution
         time_in_force: Some(TimeInForce::GoodTilCancelled),
+        display_amount: None,
         post_only: Some(true),
+        reject_post_only: None,
         reduce_only: Some(false),
+        trigger_price: None,
+        trigger_offset: None,
+        trigger: None,
+        advanced: None,
+        mmp: None,
+        valid_until: None,
+        linked_order_type: None,
+        trigger_fill_condition: None,
+        otoco_config: None,
     };
 
     let order_id = match client.buy_order(buy_request).await {

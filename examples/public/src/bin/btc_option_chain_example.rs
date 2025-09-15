@@ -12,7 +12,6 @@
 
 use deribit_http::prelude::*;
 use deribit_http::DeribitHttpClient;
-use pretty_simple_display::{DebugPretty, DisplaySimple};
 use tracing::{error, info, warn};
 use deribit_http::utils::get_tomorrow_deribit_format;
 

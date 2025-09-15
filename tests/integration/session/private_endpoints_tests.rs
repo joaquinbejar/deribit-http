@@ -186,14 +186,27 @@ mod tests {
             .await;
 
         let request = OrderRequest {
+            order_id: None,
             instrument_name: "BTC-PERPETUAL".to_string(),
-            amount: 10.0,
+            amount: Some(10.0),
+            contracts: None,
             type_: None,
             label: None,
             price: None,
             time_in_force: None,
+            display_amount: None,
             post_only: None,
+            reject_post_only: None,
             reduce_only: None,
+            trigger_price: None,
+            trigger_offset: None,
+            trigger: None,
+            advanced: None,
+            mmp: None,
+            valid_until: None,
+            linked_order_type: None,
+            trigger_fill_condition: None,
+            otoco_config: None,
         };
 
         let result = client.buy_order(request).await;
@@ -219,14 +232,27 @@ mod tests {
             .await;
 
         let request = OrderRequest {
+            order_id: None,
             instrument_name: "BTC-PERPETUAL".to_string(),
-            amount: 5.0,
+            amount: Some(5.0),
+            contracts: None,
             type_: None,
             label: None,
             price: None,
             time_in_force: None,
+            display_amount: None,
             post_only: None,
+            reject_post_only: None,
             reduce_only: None,
+            trigger_price: None,
+            trigger_offset: None,
+            trigger: None,
+            advanced: None,
+            mmp: None,
+            valid_until: None,
+            linked_order_type: None,
+            trigger_fill_condition: None,
+            otoco_config: None,
         };
 
         let result = client.sell_order(request).await;
@@ -380,11 +406,26 @@ mod tests {
 
         let request = OrderRequest {
             order_id: Some("order_123".to_string()),
+            instrument_name: "BTC-PERPETUAL".to_string(),
             amount: None,
+            contracts: None,
+            type_: None,
+            label: None,
             price: None,
-            post_only: None,
-            reduce_only: None,
             time_in_force: None,
+            display_amount: None,
+            post_only: None,
+            reject_post_only: None,
+            reduce_only: None,
+            trigger_price: None,
+            trigger_offset: None,
+            trigger: None,
+            advanced: None,
+            mmp: None,
+            valid_until: None,
+            linked_order_type: None,
+            trigger_fill_condition: None,
+            otoco_config: None,
         };
 
         let result = client.edit_order(request).await;
@@ -528,14 +569,27 @@ mod tests {
             .await;
 
         let request = OrderRequest {
+            order_id: None,
             instrument_name: "INVALID-INSTRUMENT".to_string(),
-            amount: 10.0,
+            amount: Some(10.0),
+            contracts: None,
             type_: None,
             label: None,
             price: None,
             time_in_force: None,
+            display_amount: None,
             post_only: None,
+            reject_post_only: None,
             reduce_only: None,
+            trigger_price: None,
+            trigger_offset: None,
+            trigger: None,
+            advanced: None,
+            mmp: None,
+            valid_until: None,
+            linked_order_type: None,
+            trigger_fill_condition: None,
+            otoco_config: None,
         };
 
         let result = client.buy_order(request).await;

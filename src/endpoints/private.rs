@@ -6,7 +6,7 @@ use crate::model::account::Subaccount;
 use crate::model::position::Position;
 use crate::model::request::mass_quote::MassQuoteRequest;
 use crate::model::request::order::OrderRequest;
-use crate::model::response::api::ApiResponse;
+use crate::model::response::api_response::ApiResponse;
 use crate::model::response::deposit::DepositsResponse;
 use crate::model::response::mass_quote::MassQuoteResponse;
 use crate::model::response::order::{OrderInfoResponse, OrderResponse};

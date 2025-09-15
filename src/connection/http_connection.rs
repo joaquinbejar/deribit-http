@@ -4,8 +4,8 @@ use crate::config::HttpConfig;
 use crate::error::HttpError;
 use reqwest::Client;
 use std::collections::HashMap;
-use crate::model::request::api::HttpRequest;
-use crate::model::response::api::HttpResponse;
+use crate::model::request::api_request::HttpRequest;
+use crate::model::response::api_response::HttpResponse;
 
 /// HTTP connection wrapper
 #[derive(Debug, Clone)]

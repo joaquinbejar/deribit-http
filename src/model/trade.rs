@@ -280,12 +280,3 @@ impl Default for TradeStats {
         Self::new()
     }
 }
-
-/// Last trades response
-#[derive(DebugPretty, DisplaySimple, Clone, Serialize, Deserialize)]
-pub struct LastTradesResponse {
-    /// Whether there are more trades available
-    pub has_more: bool,
-    /// List of recent trades
-    pub trades: Vec<LastTrade>,
-}

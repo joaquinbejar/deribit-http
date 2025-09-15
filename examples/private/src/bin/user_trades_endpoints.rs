@@ -127,14 +127,27 @@ async fn main() -> Result<(), HttpError> {
     for (instrument, label, price, amount, side) in test_orders {
         if side == "buy" {
             let buy_request = OrderRequest {
+                order_id: None,
                 instrument_name: instrument.to_string(),
-                amount,
+                amount: Some(amount),
+                contracts: None,
                 type_: Some(OrderType::Limit),
-                price: Some(price),
                 label: Some(label.to_string()),
+                price: Some(price),
                 time_in_force: Some(TimeInForce::GoodTilCancelled),
+                display_amount: None,
                 post_only: Some(false), // Allow execution to potentially generate trades
+                reject_post_only: None,
                 reduce_only: Some(false),
+                trigger_price: None,
+                trigger_offset: None,
+                trigger: None,
+                advanced: None,
+                mmp: None,
+                valid_until: None,
+                linked_order_type: None,
+                trigger_fill_condition: None,
+                otoco_config: None,
             };
 
             match client.buy_order(buy_request).await {
@@ -159,14 +172,27 @@ async fn main() -> Result<(), HttpError> {
             }
         } else {
             let sell_request = OrderRequest {
+                order_id: None,
                 instrument_name: instrument.to_string(),
-                amount,
+                amount: Some(amount),
+                contracts: None,
                 type_: Some(OrderType::Limit),
-                price: Some(price),
                 label: Some(label.to_string()),
+                price: Some(price),
                 time_in_force: Some(TimeInForce::GoodTilCancelled),
+                display_amount: None,
                 post_only: Some(false), // Allow execution to potentially generate trades
+                reject_post_only: None,
                 reduce_only: Some(false),
+                trigger_price: None,
+                trigger_offset: None,
+                trigger: None,
+                advanced: None,
+                mmp: None,
+                valid_until: None,
+                linked_order_type: None,
+                trigger_fill_condition: None,
+                otoco_config: None,
             };
 
             match client.sell_order(sell_request).await {

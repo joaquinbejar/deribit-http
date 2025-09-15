@@ -11,12 +11,13 @@ use crate::model::currency::Currency;
 use crate::model::funding::{FundingChartData, FundingRateData};
 use crate::model::index::{IndexData, IndexPriceData};
 use crate::model::instrument::{Instrument, OptionType};
+use crate::model::LastTradesResponse;
 use crate::model::order::OrderSide;
 use crate::model::other::{OptionInstrument, OptionInstrumentPair};
-use crate::model::response::api::ApiResponse;
+use crate::model::response::api_response::ApiResponse;
 use crate::model::response::other::{AprHistoryResponse, ContractSizeResponse, DeliveryPricesResponse, ExpirationsResponse, SettlementsResponse, StatusResponse, TestResponse};
 use crate::model::ticker::TickerData;
-use crate::model::trade::{LastTradesResponse, Liquidity, Trade};
+use crate::model::trade::{ Liquidity, Trade};
 use crate::model::tradingview::TradingViewChartData;
 
 /// Market data endpoints

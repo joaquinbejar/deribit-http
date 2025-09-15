@@ -35,14 +35,27 @@ async fn main() -> Result<(), HttpError> {
     info!("---------------------");
 
     let buy_request = OrderRequest {
+        order_id: None,
         instrument_name: "BTC-PERPETUAL".to_string(),
         amount: Some(10.0), // 10 USD worth of BTC
+        contracts: None,
         type_: Some(OrderType::Limit),
-        price: Some(30000.0), // Low price to avoid execution
         label: Some("example_buy_order".to_string()),
+        price: Some(30000.0), // Low price to avoid execution
         time_in_force: Some(TimeInForce::GoodTilCancelled),
+        display_amount: None,
         post_only: Some(true), // Ensure we don't execute immediately
+        reject_post_only: None,
         reduce_only: Some(false),
+        trigger_price: None,
+        trigger_offset: None,
+        trigger: None,
+        advanced: None,
+        mmp: None,
+        valid_until: None,
+        linked_order_type: None,
+        trigger_fill_condition: None,
+        otoco_config: None,
     };
 
     let buy_order_id = match client.buy_order(buy_request).await {
@@ -69,14 +82,27 @@ async fn main() -> Result<(), HttpError> {
     info!("----------------------");
 
     let sell_request = OrderRequest {
+        order_id: None,
         instrument_name: "BTC-PERPETUAL".to_string(),
         amount: Some(10.0), // 10 USD worth of BTC
+        contracts: None,
         type_: Some(OrderType::Limit),
-        price: Some(100000.0), // High price to avoid execution
         label: Some("example_sell_order".to_string()),
+        price: Some(100000.0), // High price to avoid execution
         time_in_force: Some(TimeInForce::GoodTilCancelled),
+        display_amount: None,
         post_only: Some(true), // Ensure we don't execute immediately
+        reject_post_only: None,
         reduce_only: Some(false),
+        trigger_price: None,
+        trigger_offset: None,
+        trigger: None,
+        advanced: None,
+        mmp: None,
+        valid_until: None,
+        linked_order_type: None,
+        trigger_fill_condition: None,
+        otoco_config: None,
     };
 
     let sell_order_id = match client.sell_order(sell_request).await {
@@ -104,11 +130,26 @@ async fn main() -> Result<(), HttpError> {
 
     let edit_request = OrderRequest {
         order_id: Some(buy_order_id.clone()),
+        instrument_name: "BTC-PERPETUAL".to_string(),
         amount: Some(15.0),   // Change amount from 10 to 15 USD
+        contracts: None,
+        type_: Some(OrderType::Limit),
+        label: Some("example_buy_order".to_string()),
         price: Some(25000.0), // Change price from 30000 to 25000
-        post_only: Some(true),
-        reduce_only: Some(false),
         time_in_force: Some(TimeInForce::GoodTilCancelled),
+        display_amount: None,
+        post_only: Some(true),
+        reject_post_only: None,
+        reduce_only: Some(false),
+        trigger_price: None,
+        trigger_offset: None,
+        trigger: None,
+        advanced: None,
+        mmp: None,
+        valid_until: None,
+        linked_order_type: None,
+        trigger_fill_condition: None,
+        otoco_config: None,
     };
 
     match client.edit_order(edit_request).await {
