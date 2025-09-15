@@ -6,15 +6,17 @@ use crate::model::account::Subaccount;
 use crate::model::position::Position;
 use crate::model::request::mass_quote::MassQuoteRequest;
 use crate::model::request::order::OrderRequest;
+use crate::model::request::trade::TradesRequest;
 use crate::prelude::Trigger;
 use crate::model::response::api_response::ApiResponse;
 use crate::model::response::deposit::DepositsResponse;
 use crate::model::response::mass_quote::MassQuoteResponse;
 use crate::model::response::order::{OrderInfoResponse, OrderResponse};
 use crate::model::response::other::{
-    AccountSummaryResponse, TransactionLogResponse, TransferResultResponse, UserTradeResponse,
+    AccountSummaryResponse, TransactionLogResponse, TransferResultResponse,
 };
 use crate::model::response::withdrawal::WithdrawalsResponse;
+use crate::model::{UserTradeResponse, UserTradeWithPaginationResponse};
 
 /// Private endpoints implementation
 impl DeribitHttpClient {
@@ -1255,6 +1257,10 @@ impl DeribitHttpClient {
             .ok_or_else(|| HttpError::InvalidResponse("No order data in response".to_string()))
     }
 
+    // pub async fn edit_order_by_label(&self, request: OrderRequest) -> Result<OrderResponse, HttpError> {
+    //     
+    // }
+
     /// Mass quote
     ///
     /// Places multiple quotes at once.
@@ -1298,7 +1304,7 @@ impl DeribitHttpClient {
         count: Option<u32>,
         include_old: Option<bool>,
         sorting: Option<&str>,
-    ) -> Result<UserTradeResponse, HttpError> {
+    ) -> Result<UserTradeWithPaginationResponse, HttpError> {
         let mut query_params = vec![("instrument_name".to_string(), instrument_name.to_string())];
 
         if let Some(start_seq) = start_seq {
@@ -1346,10 +1352,15 @@ impl DeribitHttpClient {
             )));
         }
 
-        let api_response: ApiResponse<UserTradeResponse> = response
-            .json()
-            .await
-            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
+        // Debug: Log the raw response text before trying to parse it
+        let response_text = response.text().await
+            .map_err(|e| HttpError::InvalidResponse(format!("Failed to read response text: {}", e)))?;
+        
+        tracing::debug!("Raw API response for get_user_trades_by_instrument: {}", response_text);
+        
+        // Try to parse as JSON
+        let api_response: ApiResponse<UserTradeWithPaginationResponse> = serde_json::from_str(&response_text)
+            .map_err(|e| HttpError::InvalidResponse(format!("error decoding response body: {} - Raw response: {}", e, response_text)))?;
 
         if let Some(error) = api_response.error {
             return Err(HttpError::RequestFailed(format!(
@@ -1890,37 +1901,27 @@ impl DeribitHttpClient {
     #[allow(clippy::too_many_arguments)]
     pub async fn get_user_trades_by_currency(
         &self,
-        currency: &str,
-        kind: Option<&str>,
-        start_seq: Option<u64>,
-        end_seq: Option<u64>,
-        count: Option<u32>,
-        include_old: Option<bool>,
-        sorting: Option<&str>,
-    ) -> Result<UserTradeResponse, HttpError> {
-        let mut query_params = vec![("currency".to_string(), currency.to_string())];
+        request: TradesRequest,
+    ) -> Result<UserTradeWithPaginationResponse, HttpError> {
+        let mut query_params = vec![("currency".to_string(), request.currency.to_string())];
 
-        if let Some(kind) = kind {
+        if let Some(kind) = request.kind {
             query_params.push(("kind".to_string(), kind.to_string()));
         }
 
-        if let Some(start_seq) = start_seq {
+        if let Some(start_seq) = request.start_timestamp {
             query_params.push(("start_seq".to_string(), start_seq.to_string()));
         }
 
-        if let Some(end_seq) = end_seq {
+        if let Some(end_seq) = request.end_timestamp {
             query_params.push(("end_seq".to_string(), end_seq.to_string()));
         }
 
-        if let Some(count) = count {
+        if let Some(count) = request.count {
             query_params.push(("count".to_string(), count.to_string()));
         }
-
-        if let Some(include_old) = include_old {
-            query_params.push(("include_old".to_string(), include_old.to_string()));
-        }
-
-        if let Some(sorting) = sorting {
+        
+        if let Some(sorting) = request.sorting {
             query_params.push(("sorting".to_string(), sorting.to_string()));
         }
 
@@ -1949,10 +1950,15 @@ impl DeribitHttpClient {
             )));
         }
 
-        let api_response: ApiResponse<UserTradeResponse> = response
-            .json()
-            .await
-            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
+        // Debug: Log the raw response text before trying to parse it
+        let response_text = response.text().await
+            .map_err(|e| HttpError::InvalidResponse(format!("Failed to read response text: {}", e)))?;
+        
+        tracing::debug!("Raw API response for get_user_trades_by_order: {}", response_text);
+        
+        // Try to parse as JSON
+        let api_response: ApiResponse<UserTradeWithPaginationResponse> = serde_json::from_str(&response_text)
+            .map_err(|e| HttpError::InvalidResponse(format!("error decoding response body: {} - Raw response: {}", e, response_text)))?;
 
         if let Some(error) = api_response.error {
             return Err(HttpError::RequestFailed(format!(
@@ -1983,33 +1989,30 @@ impl DeribitHttpClient {
     #[allow(clippy::too_many_arguments)]
     pub async fn get_user_trades_by_currency_and_time(
         &self,
-        currency: &str,
-        start_timestamp: u64,
-        end_timestamp: u64,
-        kind: Option<&str>,
-        count: Option<u32>,
-        include_old: Option<bool>,
-        sorting: Option<&str>,
-    ) -> Result<UserTradeResponse, HttpError> {
+        request: TradesRequest,
+    ) -> Result<UserTradeWithPaginationResponse, HttpError> {
         let mut query_params = vec![
-            ("currency".to_string(), currency.to_string()),
-            ("start_timestamp".to_string(), start_timestamp.to_string()),
-            ("end_timestamp".to_string(), end_timestamp.to_string()),
+            ("currency".to_string(), request.currency.to_string()),
         ];
 
-        if let Some(kind) = kind {
+        if let Some(start_timestamp) = request.start_timestamp {
+            query_params.push(("start_timestamp".to_string(), start_timestamp.to_string()));
+        }
+
+        if let Some(end_timestamp) = request.end_timestamp {
+            query_params.push(("end_timestamp".to_string(), end_timestamp.to_string()));
+        }
+
+        if let Some(kind) = request.kind {
             query_params.push(("kind".to_string(), kind.to_string()));
         }
 
-        if let Some(count) = count {
+        if let Some(count) = request.count {
             query_params.push(("count".to_string(), count.to_string()));
         }
+        
 
-        if let Some(include_old) = include_old {
-            query_params.push(("include_old".to_string(), include_old.to_string()));
-        }
-
-        if let Some(sorting) = sorting {
+        if let Some(sorting) = request.sorting {
             query_params.push(("sorting".to_string(), sorting.to_string()));
         }
 
@@ -2038,10 +2041,15 @@ impl DeribitHttpClient {
             )));
         }
 
-        let api_response: ApiResponse<UserTradeResponse> = response
-            .json()
-            .await
-            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
+        // Debug: Log the raw response text before trying to parse it
+        let response_text = response.text().await
+            .map_err(|e| HttpError::InvalidResponse(format!("Failed to read response text: {}", e)))?;
+        
+        tracing::debug!("Raw API response for get_user_trades_by_order: {}", response_text);
+        
+        // Try to parse as JSON
+        let api_response: ApiResponse<UserTradeWithPaginationResponse> = serde_json::from_str(&response_text)
+            .map_err(|e| HttpError::InvalidResponse(format!("error decoding response body: {} - Raw response: {}", e, response_text)))?;
 
         if let Some(error) = api_response.error {
             return Err(HttpError::RequestFailed(format!(
@@ -2076,7 +2084,7 @@ impl DeribitHttpClient {
         count: Option<u32>,
         include_old: Option<bool>,
         sorting: Option<&str>,
-    ) -> Result<UserTradeResponse, HttpError> {
+    ) -> Result<UserTradeWithPaginationResponse, HttpError> {
         let mut query_params = vec![
             ("instrument_name".to_string(), instrument_name.to_string()),
             ("start_timestamp".to_string(), start_timestamp.to_string()),
@@ -2120,10 +2128,15 @@ impl DeribitHttpClient {
             )));
         }
 
-        let api_response: ApiResponse<UserTradeResponse> = response
-            .json()
-            .await
-            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
+        // Debug: Log the raw response text before trying to parse it
+        let response_text = response.text().await
+            .map_err(|e| HttpError::InvalidResponse(format!("Failed to read response text: {}", e)))?;
+        
+        tracing::debug!("Raw API response for get_user_trades_by_instrument_and_time: {}", response_text);
+        
+        // Try to parse as JSON
+        let api_response: ApiResponse<UserTradeWithPaginationResponse> = serde_json::from_str(&response_text)
+            .map_err(|e| HttpError::InvalidResponse(format!("error decoding response body: {} - Raw response: {}", e, response_text)))?;
 
         if let Some(error) = api_response.error {
             return Err(HttpError::RequestFailed(format!(
@@ -2150,11 +2163,15 @@ impl DeribitHttpClient {
         &self,
         order_id: &str,
         sorting: Option<&str>,
+        historical: bool,
     ) -> Result<UserTradeResponse, HttpError> {
         let mut query_params = vec![("order_id".to_string(), order_id.to_string())];
 
         if let Some(sorting) = sorting {
             query_params.push(("sorting".to_string(), sorting.to_string()));
+        }
+        if historical {
+            query_params.push(("historical".to_string(), historical.to_string()));
         }
 
         let query_string = query_params

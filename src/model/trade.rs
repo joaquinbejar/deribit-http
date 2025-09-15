@@ -301,3 +301,33 @@ impl Default for TradeStats {
         Self::new()
     }
 }
+
+/// Trade allocation structure for Block RFQ pre-allocation
+#[skip_serializing_none]
+#[derive(DebugPretty, DisplaySimple, Clone, Serialize, Deserialize)]
+pub struct TradeAllocation {
+    /// Amount allocated to this user
+    pub amount: f64,
+
+    /// Optional client allocation info for brokers
+    pub client_info: Option<ClientInfo>,
+
+    /// Fee for the allocated part of the trade
+    pub fee: f64,
+
+    /// User ID to which part of the trade is allocated. For brokers the User ID is obstructed.
+    pub user_id: u64,
+}
+
+#[skip_serializing_none]
+#[derive(DebugPretty, DisplaySimple, Clone, Serialize, Deserialize)]
+pub struct ClientInfo {
+    /// ID of a client; available to broker. Represents a group of users under a common name.
+    pub client_id: u64,
+
+    /// ID assigned to a single user in a client; available to broker.
+    pub client_link_id: u64,
+
+    /// Name of the linked user within the client; available to broker.
+    pub name: String,
+}

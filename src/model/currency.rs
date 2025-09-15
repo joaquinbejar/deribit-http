@@ -8,10 +8,32 @@ use pretty_simple_display::{DebugPretty, DisplaySimple};
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "UPPERCASE")]
+pub enum Currency {
+    Btc,
+    Eth,
+    Usdc,
+    Usdt,
+    Eurr,
+}
+
+impl std::fmt::Display for Currency {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Currency::Btc => write!(f, "BTC"),
+            Currency::Eth => write!(f, "ETH"),
+            Currency::Usdc => write!(f, "USDC"),
+            Currency::Usdt => write!(f, "USDT"),
+            Currency::Eurr => write!(f, "EURR"),
+        }
+    }
+}
+
 /// Currency structure
 #[skip_serializing_none]
 #[derive(DebugPretty, DisplaySimple, Clone, Serialize, Deserialize)]
-pub struct Currency {
+pub struct CurrencyStruct {
     /// Currency symbol (BTC, ETH, etc.)
     pub currency: String,
     /// Long currency name

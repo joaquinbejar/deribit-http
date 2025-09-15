@@ -7,7 +7,7 @@ use crate::DeribitHttpClient;
 use crate::error::HttpError;
 use crate::model::LastTradesResponse;
 use crate::model::book::{BookSummary, OrderBook};
-use crate::model::currency::Currency;
+use crate::model::currency::CurrencyStruct;
 use crate::model::funding::{FundingChartData, FundingRateData};
 use crate::model::index::{IndexData, IndexPriceData};
 use crate::model::instrument::{Instrument, OptionType};
@@ -44,7 +44,7 @@ impl DeribitHttpClient {
     /// # Ok(())
     /// # }
     /// ```
-    pub async fn get_currencies(&self) -> Result<Vec<Currency>, HttpError> {
+    pub async fn get_currencies(&self) -> Result<Vec<CurrencyStruct>, HttpError> {
         let url = format!("{}/public/get_currencies", self.base_url());
 
         let response = self
@@ -65,7 +65,7 @@ impl DeribitHttpClient {
             )));
         }
 
-        let api_response: ApiResponse<Vec<Currency>> = response
+        let api_response: ApiResponse<Vec<CurrencyStruct>> = response
             .json()
             .await
             .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
