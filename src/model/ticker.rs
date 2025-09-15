@@ -7,112 +7,90 @@ use crate::model::instrument::InstrumentKind;
 use crate::model::other::Greeks;
 use pretty_simple_display::{DebugPretty, DisplaySimple};
 use serde::{Deserialize, Serialize};
+use serde_with::skip_serializing_none;
 
 /// Ticker stats sub-structure
+#[skip_serializing_none]
 #[derive(DebugPretty, DisplaySimple, Clone, Serialize, Deserialize)]
 pub struct TickerStats {
     /// Trading volume
     pub volume: f64,
     /// Trading volume in USD
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub volume_usd: Option<f64>,
     /// Price change from previous period
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub price_change: Option<f64>,
     /// Highest price in the period
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub high: Option<f64>,
     /// Lowest price in the period
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub low: Option<f64>,
 }
 
 /// Ticker data structure with corrected field types
+#[skip_serializing_none]
 #[derive(DebugPretty, DisplaySimple, Clone, Serialize, Deserialize)]
 pub struct TickerData {
     /// Name of the instrument
     pub instrument_name: String,
     /// Last traded price
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub last_price: Option<f64>,
     /// Current mark price
     pub mark_price: f64,
     /// Best bid price available
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub best_bid_price: Option<f64>,
     /// Best ask price available
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub best_ask_price: Option<f64>,
     /// Amount available at best bid price
     pub best_bid_amount: f64,
     /// Amount available at best ask price
     pub best_ask_amount: f64,
     /// Trading volume in base currency
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub volume: Option<f64>,
     /// Trading volume in USD
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub volume_usd: Option<f64>,
     /// Open interest for the instrument
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub open_interest: Option<f64>,
     /// Highest price in 24h period
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub high: Option<f64>,
     /// Lowest price in 24h period
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub low: Option<f64>,
     /// Absolute price change in 24h
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub price_change: Option<f64>,
     /// Percentage price change in 24h
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub price_change_percentage: Option<f64>,
     /// Implied volatility at best bid
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub bid_iv: Option<f64>,
     /// Implied volatility at best ask
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub ask_iv: Option<f64>,
     /// Mark implied volatility
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub mark_iv: Option<f64>,
     /// Timestamp of the ticker data
     pub timestamp: u64,
     /// Current state of the instrument
     pub state: String,
     /// Settlement price (for expired instruments)
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub settlement_price: Option<f64>,
     /// Additional ticker statistics
     pub stats: TickerStats,
     /// Greeks for options (delta, gamma, vega, theta, rho)
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub greeks: Option<Greeks>,
     /// Index price
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub index_price: Option<f64>,
     /// Minimum price
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub min_price: Option<f64>,
     /// Maximum price
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub max_price: Option<f64>,
     /// Interest rate
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub interest_rate: Option<f64>,
     /// Underlying price
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub underlying_price: Option<f64>,
     /// Underlying index
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub underlying_index: Option<String>,
     /// Estimated delivery price
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub estimated_delivery_price: Option<f64>,
 }
 
 /// Ticker information
+#[skip_serializing_none]
 #[derive(DebugPretty, DisplaySimple, Clone, Serialize, Deserialize)]
 pub struct Ticker {
     /// Instrument name

@@ -6,6 +6,7 @@
 use crate::model::trade::TradeExecution;
 use pretty_simple_display::{DebugPretty, DisplaySimple};
 use serde::{Deserialize, Serialize};
+use serde_with::skip_serializing_none;
 
 /// Order response
 #[derive(DebugPretty, DisplaySimple, Clone, Serialize, Deserialize)]
@@ -29,6 +30,7 @@ pub enum LinkedOrderType {
 }
 
 /// Order information
+#[skip_serializing_none]
 #[derive(DebugPretty, DisplaySimple, Clone, Serialize, Deserialize)]
 pub struct OrderInfoResponse {
     /// Order amount

@@ -5,6 +5,7 @@
 ******************************************************************************/
 use pretty_simple_display::{DebugPretty, DisplaySimple};
 use serde::{Deserialize, Serialize};
+use serde_with::skip_serializing_none;
 
 /// Instrument kind enumeration
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -35,21 +36,18 @@ pub enum InstrumentType {
 }
 
 /// Instrument information
+#[skip_serializing_none]
 #[derive(DebugPretty, DisplaySimple, Clone, Serialize, Deserialize)]
 pub struct Instrument {
     /// Instrument name (e.g., "BTC-PERPETUAL", "ETH-25JUL25-3000-C")
     pub instrument_name: String,
     /// Price index used for mark price calculation
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub price_index: Option<String>,
     /// Instrument kind
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub kind: Option<InstrumentKind>,
     /// Base currency
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub currency: Option<String>,
     /// Whether the instrument is active for trading
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub is_active: Option<bool>,
     /// Expiration timestamp (None for perpetuals)
     pub expiration_timestamp: Option<i64>,
@@ -58,13 +56,10 @@ pub struct Instrument {
     /// Option type (call/put, for options only)
     pub option_type: Option<OptionType>,
     /// Minimum price movement
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub tick_size: Option<f64>,
     /// Minimum trade amount
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub min_trade_amount: Option<f64>,
     /// Contract size
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub contract_size: Option<f64>,
     /// Settlement period
     pub settlement_period: Option<String>,
@@ -85,10 +80,8 @@ pub struct Instrument {
     /// Unique instrument identifier
     pub instrument_id: Option<u32>,
     /// Base currency for the instrument
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub base_currency: Option<String>,
     /// Counter currency for the instrument
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub counter_currency: Option<String>,
 }
 

@@ -6,8 +6,10 @@
 use crate::model::mass_quote::MassQuoteItem;
 use pretty_simple_display::{DebugPretty, DisplaySimple};
 use serde::{Deserialize, Serialize};
+use serde_with::skip_serializing_none;
 
 /// Mass quote request
+#[skip_serializing_none]
 #[derive(DebugPretty, DisplaySimple, Clone, Serialize, Deserialize)]
 pub struct MassQuoteRequest {
     /// List of quote items

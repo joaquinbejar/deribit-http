@@ -5,6 +5,7 @@
 ******************************************************************************/
 use pretty_simple_display::{DebugPretty, DisplaySimple};
 use serde::{Deserialize, Serialize};
+use serde_with::skip_serializing_none;
 
 /// Settlement event types
 #[derive(DebugPretty, DisplaySimple, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
@@ -25,6 +26,7 @@ impl Default for SettlementType {
 }
 
 /// Settlement event information
+#[skip_serializing_none]
 #[derive(DebugPretty, DisplaySimple, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Settlement {
     /// Type of settlement event
@@ -33,38 +35,27 @@ pub struct Settlement {
     /// Timestamp of the settlement event (milliseconds since Unix epoch)
     pub timestamp: i64,
     /// Instrument name (settlement and delivery only)
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub instrument_name: Option<String>,
     /// Position size in quote currency (settlement and delivery only)
-    #[serde(alias = "position", skip_serializing_if = "Option::is_none")]
+    #[serde(alias = "position")]
     pub position_size: Option<f64>,
     /// Mark price at settlement time in quote currency (settlement and delivery only)
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub mark_price: Option<f64>,
     /// Underlying index price at time of event in quote currency (settlement and delivery only)
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub index_price: Option<f64>,
     /// Profit and loss in base currency (settlement and delivery only)
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub profit_loss: Option<f64>,
     /// Funding in base currency (settlement for perpetual product only)
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub funding: Option<f64>,
-    // Additional fields from deribit-http types.rs
     /// Session profit and loss (optional)
-    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub session_profit_loss: Option<f64>,
     /// Session bankruptcy (optional)
-    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub session_bankrupt_cy: Option<f64>,
     /// Session tax (optional)
-    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub session_tax: Option<f64>,
     /// Session tax rate (optional)
-    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub session_tax_rate: Option<f64>,
     /// Socialized losses (optional)
-    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub socialized_losses: Option<f64>,
     /// Additional fields that might be present in the API response
     #[serde(flatten)]

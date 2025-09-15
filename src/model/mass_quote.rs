@@ -6,6 +6,7 @@
 use crate::model::order::OrderSide;
 use pretty_simple_display::{DebugPretty, DisplaySimple};
 use serde::{Deserialize, Serialize};
+use serde_with::skip_serializing_none;
 
 /// Transfer result for order-related transfers (e.g., fee rebates)
 #[derive(DebugPretty, DisplaySimple, Clone, Serialize, Deserialize)]
@@ -30,6 +31,7 @@ pub struct MassQuoteItem {
 }
 
 /// Quote result
+#[skip_serializing_none]
 #[derive(DebugPretty, DisplaySimple, Clone, Serialize, Deserialize)]
 pub struct QuoteResult {
     /// Name of the instrument that was quoted

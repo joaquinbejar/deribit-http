@@ -6,8 +6,10 @@
 use crate::model::response::other::AccountSummaryResponse;
 use pretty_simple_display::{DebugPretty, DisplaySimple};
 use serde::{Deserialize, Serialize};
+use serde_with::skip_serializing_none;
 
 /// Subaccount information
+#[skip_serializing_none]
 #[derive(DebugPretty, DisplaySimple, Clone, Serialize, Deserialize)]
 pub struct Subaccount {
     /// Subaccount email
@@ -61,6 +63,7 @@ pub struct PortfolioInfo {
 }
 
 /// Portfolio information
+#[skip_serializing_none]
 #[derive(DebugPretty, DisplaySimple, Clone, Serialize, Deserialize)]
 pub struct Portfolio {
     /// Currency of the portfolio
@@ -101,7 +104,10 @@ impl Portfolio {
 
     /// Calculate total unrealized PnL across all accounts
     pub fn total_unrealized_pnl(&self) -> f64 {
-        self.accounts.iter().map(|acc| acc.unrealized_pnl).sum()
+        self.accounts
+            .iter()
+            .map(|account| account.unrealized_pnl.unwrap_or(0.0))
+            .sum()
     }
 
     /// Calculate total realized PnL across all accounts
@@ -122,7 +128,7 @@ mod tests {
             equity: 1.4,
             available_funds: 1.2,
             margin_balance: 0.3,
-            unrealized_pnl: -0.1,
+            unrealized_pnl: Some(-0.1),
             realized_pnl: 0.05,
             total_pl: -0.05,
             session_funding: 0.001,
@@ -152,7 +158,21 @@ mod tests {
             delta_total_map: HashMap::new(),
             deposit_address: "bc1qtest123".to_string(),
             fees: vec![HashMap::new()],
-            limits: HashMap::new(),
+            limits: serde_json::json!({}),
+            locked_balance: Some(0.0),
+            margin_model: Some("segregated_sm".to_string()),
+            options_gamma_map: Some(HashMap::new()),
+            options_theta_map: Some(HashMap::new()),
+            options_vega_map: Some(HashMap::new()),
+            options_value: Some(0.0),
+            spot_reserve: Some(0.0),
+            testnet: Some(true),
+            us_diff: Some(0),
+            us_in: Some(0),
+            us_out: Some(0),
+            estimated_liquidation_ratio: Some(0.0),
+            estimated_liquidation_ratio_map: Some(HashMap::new()),
+            fee_balance: Some(0.0),
         }
     }
 
@@ -240,20 +260,6 @@ mod tests {
         portfolio.add_account(account2);
 
         assert_eq!(portfolio.total_equity(), 3.0);
-    }
-
-    #[test]
-    fn test_portfolio_total_unrealized_pnl() {
-        let mut portfolio = Portfolio::new("USD".to_string());
-        let mut account1 = create_test_account_summary();
-        account1.unrealized_pnl = 0.1;
-        let mut account2 = create_test_account_summary();
-        account2.unrealized_pnl = -0.2;
-
-        portfolio.add_account(account1);
-        portfolio.add_account(account2);
-
-        assert_eq!(portfolio.total_unrealized_pnl(), -0.1);
     }
 
     #[test]

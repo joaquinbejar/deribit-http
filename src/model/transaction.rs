@@ -5,6 +5,7 @@
 ******************************************************************************/
 use pretty_simple_display::{DebugPretty, DisplaySimple};
 use serde::{Deserialize, Serialize};
+use serde_with::skip_serializing_none;
 
 /// Transaction type enumeration
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
@@ -33,6 +34,7 @@ pub enum TransactionType {
 }
 
 /// Generic transaction log entry
+#[skip_serializing_none]
 #[derive(DebugPretty, DisplaySimple, Clone, Serialize, Deserialize)]
 pub struct TransactionLogEntry {
     /// Unique transaction identifier

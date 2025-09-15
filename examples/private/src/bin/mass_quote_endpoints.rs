@@ -17,7 +17,6 @@
 //! Then run: cargo run --bin mass_quote_endpoints
 
 use deribit_http::prelude::*;
-use std::env;
 use std::path::Path;
 use tokio::time::{Duration, sleep};
 use tracing::{error, info, warn};
@@ -35,34 +34,8 @@ async fn main() -> Result<(), HttpError> {
     info!("====================================================");
     println!();
 
-    // Get authentication credentials from environment
-    let _client_id = env::var("DERIBIT_CLIENT_ID").map_err(|_| {
-        HttpError::ConfigError("Missing DERIBIT_CLIENT_ID environment variable".to_string())
-    })?;
-    let _client_secret = env::var("DERIBIT_CLIENT_SECRET").map_err(|_| {
-        HttpError::ConfigError(
-            "DERIBIT_CLIENT_SECRET not found in environment variables".to_string(),
-        )
-    })?;
-
-    // Determine if we should use testnet or production
-    let use_testnet = env::var("DERIBIT_TESTNET")
-        .map(|val| val.to_lowercase() == "true")
-        .unwrap_or(true); // Default to testnet for safety
-
-    info!(
-        "🌐 Environment: {}",
-        if use_testnet { "Testnet" } else { "Production" }
-    );
-
     // Create HTTP client
     let client = DeribitHttpClient::default();
-    info!(
-        "✅ HTTP client created for {}: {}",
-        if use_testnet { "testnet" } else { "production" },
-        client.base_url()
-    );
-    println!();
 
     // =================================================================
     // SETUP: GET CURRENT MARKET PRICES FOR REALISTIC QUOTES

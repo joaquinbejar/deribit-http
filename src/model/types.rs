@@ -2,9 +2,11 @@
 
 use pretty_simple_display::{DebugPretty, DisplaySimple};
 use serde::{Deserialize, Serialize};
+use serde_with::skip_serializing_none;
 use std::collections::HashMap;
 
 /// API error structure
+#[skip_serializing_none]
 #[derive(DebugPretty, DisplaySimple, Clone, Serialize, Deserialize)]
 pub struct ApiError {
     /// Error code number
@@ -16,6 +18,7 @@ pub struct ApiError {
 }
 
 /// Authentication token structure
+#[skip_serializing_none]
 #[derive(DebugPretty, DisplaySimple, Clone, Serialize, Deserialize)]
 pub struct AuthToken {
     /// OAuth2 access token
@@ -91,6 +94,7 @@ impl TimeInForce {
 }
 
 /// Withdrawal information
+#[skip_serializing_none]
 #[derive(DebugPretty, DisplaySimple, Clone, Serialize, Deserialize)]
 pub struct Withdrawal {
     /// Withdrawal address

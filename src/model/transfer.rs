@@ -5,6 +5,7 @@
 ******************************************************************************/
 use pretty_simple_display::{DebugPretty, DisplaySimple};
 use serde::{Deserialize, Serialize};
+use serde_with::skip_serializing_none;
 
 /// Transfer state enumeration
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
@@ -31,6 +32,7 @@ impl Default for TransferState {
 }
 
 /// Transfer information
+#[skip_serializing_none]
 #[derive(DebugPretty, DisplaySimple, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Transfer {
     /// Transfer ID
@@ -44,7 +46,6 @@ pub struct Transfer {
     /// Destination address
     pub address: String,
     /// Blockchain transaction ID
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub transaction_id: Option<String>,
     /// Current transfer state
     pub state: TransferState,
@@ -53,10 +54,8 @@ pub struct Transfer {
     /// Last update timestamp (milliseconds since Unix epoch)
     pub updated_timestamp: i64,
     /// Confirmation timestamp (milliseconds since Unix epoch)
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub confirmed_timestamp: Option<i64>,
     /// Transfer type description
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub transfer_type: Option<String>,
 }
 

@@ -7,8 +7,10 @@ use crate::model::instrument::InstrumentKind;
 use crate::model::order::OrderSide;
 use pretty_simple_display::{DebugPretty, DisplaySimple};
 use serde::{Deserialize, Serialize};
+use serde_with::skip_serializing_none;
 
 /// Trade execution
+#[skip_serializing_none]
 #[derive(DebugPretty, DisplaySimple, Clone, Serialize, Deserialize)]
 pub struct TradeExecution {
     /// Trade amount
@@ -58,6 +60,7 @@ pub struct TradeExecution {
 }
 
 /// User trade information
+#[skip_serializing_none]
 #[derive(DebugPretty, DisplaySimple, Clone, Serialize, Deserialize)]
 pub struct UserTrade {
     /// Trade amount
@@ -107,6 +110,7 @@ pub struct UserTrade {
 }
 
 /// Last trade
+#[skip_serializing_none]
 #[derive(DebugPretty, DisplaySimple, Clone, Serialize, Deserialize)]
 pub struct LastTrade {
     /// Trade amount
@@ -148,6 +152,7 @@ pub enum Liquidity {
 }
 
 /// Trade execution information
+#[skip_serializing_none]
 #[derive(DebugPretty, DisplaySimple, Clone, Serialize, Deserialize)]
 pub struct Trade {
     /// Unique trade identifier

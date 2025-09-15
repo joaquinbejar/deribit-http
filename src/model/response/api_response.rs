@@ -6,9 +6,11 @@
 use crate::model::types::ApiError;
 use pretty_simple_display::{DebugPretty, DisplaySimple};
 use serde::{Deserialize, Serialize};
+use serde_with::skip_serializing_none;
 use std::collections::HashMap;
 
 /// HTTP response structure
+#[skip_serializing_none]
 #[derive(DebugPretty, DisplaySimple, Clone, Serialize, Deserialize)]
 pub struct HttpResponse {
     /// HTTP status code
@@ -20,6 +22,7 @@ pub struct HttpResponse {
 }
 
 /// Generic API response wrapper
+#[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ApiResponse<T> {
     /// Successful result data

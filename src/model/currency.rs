@@ -6,8 +6,10 @@
 use crate::model::withdrawal::WithdrawalPriority;
 use pretty_simple_display::{DebugPretty, DisplaySimple};
 use serde::{Deserialize, Serialize};
+use serde_with::skip_serializing_none;
 
 /// Currency structure
+#[skip_serializing_none]
 #[derive(DebugPretty, DisplaySimple, Clone, Serialize, Deserialize)]
 pub struct Currency {
     /// Currency symbol (BTC, ETH, etc.)
@@ -29,6 +31,7 @@ pub struct Currency {
 }
 
 /// Currency information and configuration
+#[skip_serializing_none]
 #[derive(DebugPretty, DisplaySimple, Clone, PartialEq, Serialize, Deserialize)]
 pub struct CurrencyInfo {
     /// Coin type identifier (e.g., "BITCOIN", "ETHEREUM")
@@ -48,13 +51,10 @@ pub struct CurrencyInfo {
     /// Available withdrawal priorities
     pub withdrawal_priorities: Vec<WithdrawalPriority>,
     /// Whether the currency is disabled
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub disabled: Option<bool>,
     /// Minimum deposit amount
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub min_deposit_amount: Option<f64>,
     /// Maximum withdrawal amount
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub max_withdrawal_amount: Option<f64>,
 }
 

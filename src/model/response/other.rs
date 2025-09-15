@@ -10,6 +10,7 @@ use crate::model::trade::{LastTrade, UserTrade};
 use crate::model::transaction::TransactionLogEntry;
 use pretty_simple_display::{DebugPretty, DisplaySimple};
 use serde::{Deserialize, Serialize};
+use serde_with::skip_serializing_none;
 
 /// Response type for user trades, containing a vector of user trade data
 pub type UserTradeResponse = Vec<UserTrade>;
@@ -29,6 +30,7 @@ pub struct TestResponse {
 }
 
 /// Status response
+#[skip_serializing_none]
 #[derive(DebugPretty, DisplaySimple, Clone, Serialize, Deserialize)]
 pub struct StatusResponse {
     /// Whether the system is locked (optional)
@@ -43,6 +45,7 @@ pub struct StatusResponse {
 }
 
 /// APR history response
+#[skip_serializing_none]
 #[derive(DebugPretty, DisplaySimple, Clone, Serialize, Deserialize)]
 pub struct AprHistoryResponse {
     /// List of APR data points
@@ -68,6 +71,7 @@ pub struct DeliveryPricesResponse {
 }
 
 /// APR data point
+#[skip_serializing_none]
 #[derive(DebugPretty, DisplaySimple, Clone, Serialize, Deserialize)]
 pub struct AprDataPoint {
     /// Annual percentage rate
@@ -79,6 +83,7 @@ pub struct AprDataPoint {
 }
 
 /// Expirations response
+#[skip_serializing_none]
 #[derive(DebugPretty, DisplaySimple, Clone, Serialize, Deserialize)]
 pub struct ExpirationsResponse {
     /// Direct future expirations (when currency="any")
@@ -100,6 +105,7 @@ pub struct LastTradesResponse {
 }
 
 /// Settlements response structure
+#[skip_serializing_none]
 #[derive(DebugPretty, DisplaySimple, Clone, Serialize, Deserialize)]
 pub struct SettlementsResponse {
     /// Continuation token for pagination
@@ -135,6 +141,7 @@ impl SettlementsResponse {
 }
 
 /// Paginated transaction log response
+#[skip_serializing_none]
 #[derive(DebugPretty, DisplaySimple, Clone, Serialize, Deserialize, Default)]
 pub struct TransactionLogResponse {
     /// Continuation token for pagination
@@ -153,6 +160,7 @@ pub struct TransferResultResponse {
 }
 
 /// Account summary information
+#[skip_serializing_none]
 #[derive(DebugPretty, DisplaySimple, Clone, Serialize, Deserialize)]
 pub struct AccountSummaryResponse {
     /// Account currency (kept as Currencies enum for compatibility)
@@ -165,8 +173,8 @@ pub struct AccountSummaryResponse {
     pub available_funds: f64,
     /// Margin balance
     pub margin_balance: f64,
-    /// Unrealized profit and loss
-    pub unrealized_pnl: f64,
+    /// Unrealized profit and loss (optional)
+    pub unrealized_pnl: Option<f64>,
     /// Realized profit and loss
     pub realized_pnl: f64,
     /// Total profit and loss
@@ -227,8 +235,39 @@ pub struct AccountSummaryResponse {
     pub deposit_address: String,
     /// Fees structure
     pub fees: Vec<std::collections::HashMap<String, f64>>,
-    /// Account limits
-    pub limits: std::collections::HashMap<String, f64>,
+    /// Account limits - complex structure with nested limits
+    pub limits: serde_json::Value,
+    /// Locked balance
+    pub locked_balance: Option<f64>,
+    /// Margin model (e.g., "segregated_sm")
+    pub margin_model: Option<String>,
+    /// Options gamma map (currency -> gamma)
+    pub options_gamma_map: Option<std::collections::HashMap<String, f64>>,
+    /// Options theta map (currency -> theta)
+    pub options_theta_map: Option<std::collections::HashMap<String, f64>>,
+    /// Options vega map (currency -> vega)
+    pub options_vega_map: Option<std::collections::HashMap<String, f64>>,
+    /// Options value
+    pub options_value: Option<f64>,
+    /// Spot reserve
+    pub spot_reserve: Option<f64>,
+    /// Whether this is testnet
+    pub testnet: Option<bool>,
+    /// US time difference
+    #[serde(rename = "usDiff")]
+    pub us_diff: Option<i64>,
+    /// US time in
+    #[serde(rename = "usIn")]
+    pub us_in: Option<u64>,
+    /// US time out
+    #[serde(rename = "usOut")]
+    pub us_out: Option<u64>,
+    /// Estimated liquidation ratio
+    pub estimated_liquidation_ratio: Option<f64>,
+    /// Estimated liquidation ratio map
+    pub estimated_liquidation_ratio_map: Option<std::collections::HashMap<String, f64>>,
+    /// Fee balance
+    pub fee_balance: Option<f64>,
 }
 
 impl AccountSummaryResponse {

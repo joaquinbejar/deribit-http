@@ -8,6 +8,7 @@ use crate::model::instrument::Instrument;
 use crate::model::ticker::TickerData;
 use pretty_simple_display::{DebugPretty, DisplaySimple};
 use serde::{Deserialize, Serialize};
+use serde_with::skip_serializing_none;
 
 /// Delivery price data
 #[derive(DebugPretty, DisplaySimple, Clone, Serialize, Deserialize)]
@@ -19,6 +20,7 @@ pub struct DeliveryPriceData {
 }
 
 /// Greeks sub-structure for options
+#[skip_serializing_none]
 #[derive(DebugPretty, DisplaySimple, Clone, Serialize, Deserialize)]
 pub struct Greeks {
     /// Delta value
@@ -53,6 +55,7 @@ pub struct OptionInstrument {
 /// allowing for easy access to both sides of an option strategy. Both options are optional,
 /// meaning you can have just a call, just a put, or both.
 ///
+#[skip_serializing_none]
 #[derive(DebugPretty, DisplaySimple, Clone, Serialize, Deserialize)]
 pub struct OptionInstrumentPair {
     /// Call option instrument data, if available
@@ -62,6 +65,7 @@ pub struct OptionInstrumentPair {
 }
 
 /// Parsed option instrument with ticker data
+#[skip_serializing_none]
 #[derive(DebugPretty, DisplaySimple, Clone, Serialize)]
 pub struct ParsedOptionWithTicker {
     /// The instrument name (e.g., "BTC-25DEC21-50000-C")

@@ -5,8 +5,10 @@
 ******************************************************************************/
 use pretty_simple_display::{DebugPretty, DisplaySimple};
 use serde::{Deserialize, Serialize};
+use serde_with::skip_serializing_none;
 
 /// Book summary information for an instrument
+#[skip_serializing_none]
 #[derive(DebugPretty, DisplaySimple, Clone, PartialEq, Serialize, Deserialize)]
 pub struct BookSummary {
     /// Instrument name
@@ -22,51 +24,36 @@ pub struct BookSummary {
     /// Open interest
     pub open_interest: f64,
     /// 24h price change percentage
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub price_change: Option<f64>,
     /// Current mark price
     pub mark_price: f64,
     /// Mark implied volatility (options only)
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub mark_iv: Option<f64>,
     /// Best bid price
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub bid_price: Option<f64>,
     /// Best ask price
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub ask_price: Option<f64>,
     /// Mid price (bid + ask) / 2
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub mid_price: Option<f64>,
     /// Last trade price
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub last: Option<f64>,
     /// 24h high price
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub high: Option<f64>,
     /// 24h low price
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub low: Option<f64>,
     /// Estimated delivery price
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub estimated_delivery_price: Option<f64>,
     /// Current funding rate (perpetuals only)
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub current_funding: Option<f64>,
     /// 8h funding rate (perpetuals only)
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub funding_8h: Option<f64>,
     /// Creation timestamp (milliseconds since Unix epoch)
     pub creation_timestamp: i64,
-    // Additional optional fields merged from deribit-http types.rs
     /// Underlying index name
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub underlying_index: Option<String>,
     /// Underlying price
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub underlying_price: Option<f64>,
     /// Interest rate
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub interest_rate: Option<f64>,
 }
 
@@ -296,6 +283,7 @@ impl OrderBookEntry {
 }
 
 /// Order book data
+#[skip_serializing_none]
 #[derive(DebugPretty, DisplaySimple, Clone, Serialize, Deserialize)]
 pub struct OrderBook {
     /// Instrument name

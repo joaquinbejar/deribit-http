@@ -4,14 +4,15 @@
    Date: 10/9/25
 ******************************************************************************/
 
-//! Integration tests library for deribit-http
+//! Integration tests for the Deribit HTTP client
 //!
-//! This library provides common utilities and test modules for integration testing
-//! of the Deribit HTTP client functionality.
+//! This module contains comprehensive integration tests for all aspects of the Deribit HTTP client,
+//! including authentication, API endpoints, error handling, and network resilience.
 
 pub mod account_management;
 pub mod auth;
 pub mod connectivity;
+pub mod debug_response;
 pub mod error_handling;
 pub mod market_data;
 pub mod order_management;
