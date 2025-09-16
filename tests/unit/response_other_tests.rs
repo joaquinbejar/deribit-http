@@ -1,52 +1,10 @@
 use deribit_http::model::fee::FeeStructure;
-use deribit_http::model::other::DeliveryPriceData;
+
 use deribit_http::model::response::other::*;
 use deribit_http::model::settlement::Settlement;
-use deribit_http::model::trade::{LastTrade, UserTrade};
+use deribit_http::model::trade::LastTrade;
 use deribit_http::model::transaction::TransactionLogEntry;
 use serde_json;
-
-fn create_mock_user_trade() -> UserTrade {
-    UserTrade {
-        amount: 1.0,
-        api: Some(true),
-        contracts: Some(10.0),
-        direction: "buy".to_string(),
-        fee: 0.25,
-        fee_currency: "BTC".to_string(),
-        index_price: 50000.0,
-        instrument_name: "BTC-PERPETUAL".to_string(),
-        iv: None,
-        label: Some("test_label".to_string()),
-        liquidity: "T".to_string(),
-        mark_price: 50100.0,
-        matching_id: Some("match123".to_string()),
-        mmp: Some(false),
-        order_id: "67890".to_string(),
-        order_type: "limit".to_string(),
-        original_order_type: Some("limit".to_string()),
-        post_only: Some(false),
-        price: 50000.0,
-        profit_loss: Some(100.0),
-        reduce_only: Some(false),
-        risk_reducing: Some(false),
-        self_trade: false,
-        state: "filled".to_string(),
-        tick_direction: 1,
-        timestamp: 1234567890,
-        trade_id: "trade_123".to_string(),
-        trade_seq: 123456,
-        underlying_price: Some(49900.0),
-        user_id: Some(12345),
-    }
-}
-
-fn create_mock_delivery_price_data() -> DeliveryPriceData {
-    DeliveryPriceData {
-        date: "2022-01-01".to_string(),
-        delivery_price: 50000.0,
-    }
-}
 
 // Mock data creation functions
 fn create_mock_last_trade() -> LastTrade {

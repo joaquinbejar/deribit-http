@@ -2,7 +2,7 @@ use chrono::{Datelike, Duration, Local};
 use deribit_http::utils::get_tomorrow_deribit_format;
 
 #[cfg(test)]
-mod utils_tests {
+mod tests {
     use super::*;
 
     #[test]

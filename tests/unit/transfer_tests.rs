@@ -69,7 +69,7 @@ mod transfer_state_tests {
 }
 
 #[cfg(test)]
-mod transfer_tests {
+mod tests {
     use super::*;
 
     #[test]

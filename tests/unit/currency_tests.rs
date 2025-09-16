@@ -7,7 +7,7 @@ use deribit_http::model::withdrawal::WithdrawalPriority;
 use serde_json;
 
 #[cfg(test)]
-mod currency_tests {
+mod tests {
     use super::*;
 
     #[test]

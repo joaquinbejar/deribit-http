@@ -98,7 +98,7 @@ mod option_type_tests {
 }
 
 #[cfg(test)]
-mod instrument_tests {
+mod tests {
     use super::*;
 
     fn create_mock_perpetual_instrument() -> Instrument {
