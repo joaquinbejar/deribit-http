@@ -19,6 +19,8 @@ pub mod index;
 pub mod instrument;
 /// Mass quote models
 pub mod mass_quote;
+/// Option contract models and types
+pub mod option;
 /// Order models and types
 pub mod order;
 /// Other miscellaneous models
@@ -57,6 +59,7 @@ pub use funding::*;
 pub use index::*;
 pub use instrument::*;
 pub use mass_quote::*;
+pub use option::*;
 pub use order::*;
 pub use other::*;
 pub use position::*;

@@ -24,3 +24,4 @@ pub use crate::logger::setup_logger;
 
 pub use crate::connection::*;
 pub use crate::model::*;
+pub use crate::utils::*;

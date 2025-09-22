@@ -26,4 +26,8 @@ pub enum HttpError {
     /// Network connection error occurred
     #[error("Network error: {0}")]
     NetworkError(String),
+
+    /// Error parsing
+    #[error("Parse error: {0}")]
+    ParseError(String),
 }
