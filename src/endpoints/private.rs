@@ -1201,6 +1201,51 @@ impl DeribitHttpClient {
             .ok_or_else(|| HttpError::InvalidResponse("No positions data in response".to_string()))
     }
 
+    /// Get position for a specific instrument
+    ///
+    /// Retrieves the current position for the specified instrument.
+    ///
+    /// # Arguments
+    ///
+    /// * `instrument_name` - The name of the instrument to get position for
+    ///
+    /// # Returns
+    ///
+    /// Returns a vector of positions for the specified instrument
+    ///
+    pub async fn get_position(&self, instrument_name: &str) -> Result<Vec<Position>, HttpError> {
+        let query_string = format!("instrument_name={}", instrument_name);
+        let url = format!("{}{}{}", self.base_url(), GET_POSITION, query_string);
+        let response = self.make_authenticated_request(&url).await?;
+
+        if !response.status().is_success() {
+            let error_text = response
+                .text()
+                .await
+                .unwrap_or_else(|_| "Unknown error".to_string());
+            return Err(HttpError::RequestFailed(format!(
+                "Get positions failed: {}",
+                error_text
+            )));
+        }
+
+        let api_response: ApiResponse<Vec<Position>> = response
+            .json()
+            .await
+            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
+
+        if let Some(error) = api_response.error {
+            return Err(HttpError::RequestFailed(format!(
+                "API error: {} - {}",
+                error.code, error.message
+            )));
+        }
+
+        api_response
+            .result
+            .ok_or_else(|| HttpError::InvalidResponse("No positions data in response".to_string()))
+    }
+
     /// Edit an order
     ///
     /// Edits an existing order.
@@ -1277,6 +1322,7 @@ impl DeribitHttpClient {
             .ok_or_else(|| HttpError::InvalidResponse("No order data in response".to_string()))
     }
 
+    // TODO:
     // pub async fn edit_order_by_label(&self, request: OrderRequest) -> Result<OrderResponse, HttpError> {
     //
     // }
