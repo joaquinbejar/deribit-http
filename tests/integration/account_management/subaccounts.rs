@@ -129,16 +129,10 @@ mod user_trades_log_tests {
                 debug!("Portfolio info: {:?}", portfolio);
 
                 // Validate each currency portfolio if present
-                let currencies = [
-                    ("btc", &portfolio.btc),
-                    ("eth", &portfolio.eth),
-                    ("usdc", &portfolio.usdc),
-                    ("usdt", &portfolio.usdt),
-                    ("eurr", &portfolio.eurr),
-                ];
+                let currencies = ["btc", "eth", "usdc", "usdt", "eurr"];
 
-                for (currency_name, currency_portfolio) in currencies {
-                    if let Some(portfolio_info) = currency_portfolio {
+                for currency_name in currencies {
+                    if let Some(portfolio_info) = portfolio.get(currency_name) {
                         debug!("Validating portfolio for currency: {}", currency_name);
 
                         assert!(
@@ -286,16 +280,10 @@ mod user_trades_log_tests {
                 debug!("Portfolio info present: {:?}", portfolio);
 
                 // Validate each currency portfolio if present
-                let currencies = [
-                    ("btc", &portfolio.btc),
-                    ("eth", &portfolio.eth),
-                    ("usdc", &portfolio.usdc),
-                    ("usdt", &portfolio.usdt),
-                    ("eurr", &portfolio.eurr),
-                ];
+                let currencies = ["btc", "eth", "usdc", "usdt", "eurr"];
 
-                for (currency_name, currency_portfolio) in currencies {
-                    if let Some(portfolio_info) = currency_portfolio {
+                for currency_name in currencies {
+                    if let Some(portfolio_info) = portfolio.get(currency_name) {
                         debug!("Validating portfolio for currency: {}", currency_name);
 
                         // Validate financial fields are finite
