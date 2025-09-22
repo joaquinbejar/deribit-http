@@ -1,4 +1,4 @@
-use chrono::{Duration, Local}; // Add chrono import
+use chrono::{DateTime, Duration, Local, Utc}; // Add chrono import
 
 /// Returns tomorrow's date in Deribit format (DDMMMYY)
 ///
@@ -19,4 +19,29 @@ pub fn get_tomorrow_deribit_format() -> String {
     let year = tomorrow.format("%y").to_string(); // Two-digit year
 
     format!("{}{}{}", day, month, year)
+}
+
+/// Converts a date string from Deribit format to UTC DateTime
+///
+/// Parses a date string in Deribit's DDMMMYY format and converts it to a UTC DateTime.
+///
+/// # Arguments
+///
+/// * `date` - A date string in DDMMMYY format (e.g., "15SEP25")
+///
+/// # Returns
+///
+/// Returns a `Result` containing either:
+/// - `Ok(DateTime<Utc>)` - The parsed date in UTC timezone
+/// - `Err(chrono::ParseError)` - If the date string cannot be parsed
+///
+/// # Examples
+///
+/// ```
+/// use deribit_http::utils::from_deribit_format_date;
+///
+/// let date = from_deribit_format_date("15SEP25").unwrap();
+/// ```
+pub fn from_deribit_format_date(date: &str) -> Result<DateTime<Utc>, chrono::ParseError> {
+    Ok(DateTime::parse_from_str(date, "%d%b%y")?.with_timezone(&Utc))
 }
