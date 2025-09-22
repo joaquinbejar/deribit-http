@@ -112,6 +112,8 @@ pub mod endpoints {
     // Private account endpoints
     /// Get account summary information
     pub const GET_ACCOUNT_SUMMARY: &str = "/private/get_account_summary";
+    /// Get position
+    pub const GET_POSITION: &str = "/private/get_position";
     /// Get current positions
     pub const GET_POSITIONS: &str = "/private/get_positions";
     /// Get subaccount information
