@@ -274,7 +274,6 @@ impl AuthManager {
     ///
     /// * `token` - An instance of `AuthToken` containing the new authentication token and its
     ///   metadata (e.g., expiration duration).
-    ///   metadata (e.g., expiration duration).
     ///
     /// # Effects
     ///
