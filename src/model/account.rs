@@ -3,6 +3,7 @@
    Email: jb@taunais.com
    Date: 21/7/25
 ******************************************************************************/
+use crate::model::response::other::AccountSummaryResponse;
 use pretty_simple_display::{DebugPretty, DisplaySimple};
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
@@ -11,63 +12,72 @@ use serde_with::skip_serializing_none;
 #[skip_serializing_none]
 #[derive(DebugPretty, DisplaySimple, Clone, Serialize, Deserialize)]
 pub struct Subaccount {
-    /// User email
+    /// Subaccount email
     pub email: String,
-    /// Account/Subaccount identifier
+    /// Subaccount ID
     pub id: u64,
-    /// true when password for the subaccount has been configured
-    pub is_password: Option<bool>,
-    /// Informs whether login to the subaccount is enabled
+    /// Whether login is enabled
     pub login_enabled: bool,
-    /// Margin model
-    pub margin_model: Option<String>,
-    /// New email address that has not yet been confirmed (only included if with_portfolio == true)
-    pub not_confirmed_email: Option<String>,
     /// Portfolio information (optional)
-    pub portfolio: Option<Portfolio>,
-    /// hashed identifier used in the Proof Of Liability for the subaccount
-    pub proof_id: Option<String>,
-    /// signature used as a base string for proof_id hash
-    pub proof_id_signature: Option<String>,
-    /// When true - receive all notification emails on the main email
+    pub portfolio: Option<std::collections::HashMap<String, CurrencyPortfolio>>,
+    /// Whether to receive notifications
     pub receive_notifications: bool,
-    /// Names of assignments with Security Keys assigned
-    pub security_keys_assignments: Option<Vec<String>>,
-    /// Whether the Security Keys authentication is enabled
-    pub security_keys_enabled: Option<bool>,
-    /// System generated user nickname
+    /// System name
     pub system_name: String,
-    /// Account type
+    /// Time in force (optional)
+    pub tif: Option<String>,
+    /// Subaccount type
     #[serde(rename = "type")]
     pub subaccount_type: String,
     /// Username
     pub username: String,
+    /// Margin model
+    pub margin_model: Option<String>,
+    /// Available funds
+    pub available_funds: Option<f64>,
+    /// Disabled trading products
+    pub disabled_trading_products: Option<Vec<String>>,
+    /// Is password
+    pub is_password: Option<bool>,
+    /// Proof ID
+    pub proof_id: Option<String>,
+    /// Proof ID signature
+    pub proof_id_signature: Option<String>,
+    /// Security keys assignments
+    pub security_keys_assignments: Option<Vec<serde_json::Value>>,
+    /// Security keys enabled
+    pub security_keys_enabled: Option<bool>,
+    /// Trading products details
+    pub trading_products_details: Option<Vec<TradingProductDetail>>,
+    /// Referrals count
+    pub referrals_count: Option<u64>,
 }
 
 /// Currency portfolio information
-#[skip_serializing_none]
 #[derive(DebugPretty, DisplaySimple, Clone, Serialize, Deserialize)]
 pub struct CurrencyPortfolio {
-    /// The account's balance reserved in other orders
-    pub additional_reserve: Option<f64>,
     /// Available funds
     pub available_funds: f64,
     /// Available withdrawal funds
     pub available_withdrawal_funds: f64,
-    /// Account balance
+    /// Balance
     pub balance: f64,
-    /// Currency symbol
+    /// Currency
     pub currency: String,
-    /// Account equity
+    /// Equity
     pub equity: f64,
-    /// Initial margin requirement
+    /// Initial margin
     pub initial_margin: f64,
-    /// Maintenance margin requirement
+    /// Locked balance
+    pub locked_balance: f64,
+    /// Maintenance margin
     pub maintenance_margin: f64,
     /// Margin balance
     pub margin_balance: f64,
-    /// The account's balance reserved in active spot orders
+    /// Spot reserve
     pub spot_reserve: f64,
+    /// Additional reserve
+    pub additional_reserve: f64,
 }
 
 /// Trading product detail
@@ -112,16 +122,31 @@ pub struct PortfolioInfo {
 
 /// Portfolio information
 #[skip_serializing_none]
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(DebugPretty, DisplaySimple, Clone, Serialize, Deserialize)]
 pub struct Portfolio {
-    /// Bitcoin portfolio information
-    pub btc: Option<CurrencyPortfolio>,
-    /// Ethereum portfolio information
-    pub eth: Option<CurrencyPortfolio>,
-    /// USDC portfolio information (if applicable)
-    pub usdc: Option<CurrencyPortfolio>,
-    /// USDT portfolio information (if applicable)
-    pub usdt: Option<CurrencyPortfolio>,
-    /// EURR portfolio information (if applicable)
-    pub eurr: Option<CurrencyPortfolio>,
+    /// Currency of the portfolio
+    pub currency: String,
+    /// Account summaries for different currencies
+    pub accounts: Vec<AccountSummaryResponse>,
+    /// Total portfolio value in USD
+    pub total_usd_value: Option<f64>,
+    /// Cross-currency margin enabled
+    pub cross_margin_enabled: bool,
+}
+
+impl Portfolio {
+    /// Create a new empty portfolio
+    pub fn new(currency: String) -> Self {
+        Self {
+            currency,
+            accounts: Vec::new(),
+            total_usd_value: None,
+            cross_margin_enabled: false,
+        }
+    }
+
+    /// Add an account summary to the portfolio
+    pub fn add_account(&mut self, account: AccountSummaryResponse) {
+        self.accounts.push(account);
+    }
 }
