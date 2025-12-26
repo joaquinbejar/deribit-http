@@ -1970,11 +1970,15 @@ impl DeribitHttpClient {
     ///
     /// * `currency` - Currency symbol (BTC, ETH, etc.)
     /// * `kind` - Instrument kind filter (optional)
-    /// * `start_seq` - Start sequence number (optional)
-    /// * `end_seq` - End sequence number (optional)
-    /// * `count` - Number of requested items (optional, default 10)
-    /// * `include_old` - Include trades older than 7 days (optional)
+    /// * `start_id` - The ID of the first trade to be returned (optional)
+    /// * `end_id` - The ID of the last trade to be returned (optional)
+    /// * `count` - Number of requested items (optional, default 10, max 1000)
+    /// * `start_timestamp` - The earliest timestamp to return results from (optional)
+    /// * `end_timestamp` - The most recent timestamp to return results from (optional)
     /// * `sorting` - Direction of results sorting (optional)
+    /// * `historical` - If true, retrieves historical records that persist indefinitely.
+    ///                  If false (default), retrieves recent records available for 24 hours.
+    /// * `subaccount_id` - The user id for the subaccount (optional)
     ///
     #[allow(clippy::too_many_arguments)]
     pub async fn get_user_trades_by_currency(
@@ -1987,20 +1991,36 @@ impl DeribitHttpClient {
             query_params.push(("kind".to_string(), kind.to_string()));
         }
 
-        if let Some(start_seq) = request.start_timestamp {
-            query_params.push(("start_seq".to_string(), start_seq.to_string()));
+        if let Some(start_id) = request.start_id {
+            query_params.push(("start_id".to_string(), start_id));
         }
 
-        if let Some(end_seq) = request.end_timestamp {
-            query_params.push(("end_seq".to_string(), end_seq.to_string()));
+        if let Some(end_id) = request.end_id {
+            query_params.push(("end_id".to_string(), end_id));
         }
 
         if let Some(count) = request.count {
             query_params.push(("count".to_string(), count.to_string()));
         }
 
+        if let Some(start_timestamp) = request.start_timestamp {
+            query_params.push(("start_timestamp".to_string(), start_timestamp.to_string()));
+        }
+
+        if let Some(end_timestamp) = request.end_timestamp {
+            query_params.push(("end_timestamp".to_string(), end_timestamp.to_string()));
+        }
+
         if let Some(sorting) = request.sorting {
             query_params.push(("sorting".to_string(), sorting.to_string()));
+        }
+
+        if let Some(historical) = request.historical {
+            query_params.push(("historical".to_string(), historical.to_string()));
+        }
+
+        if let Some(subaccount_id) = request.subaccount_id {
+            query_params.push(("subaccount_id".to_string(), subaccount_id.to_string()));
         }
 
         let query_string = query_params
@@ -2067,12 +2087,16 @@ impl DeribitHttpClient {
     /// # Arguments
     ///
     /// * `currency` - Currency symbol (BTC, ETH, etc.)
-    /// * `start_timestamp` - Start timestamp in milliseconds
-    /// * `end_timestamp` - End timestamp in milliseconds
     /// * `kind` - Instrument kind filter (optional)
-    /// * `count` - Number of requested items (optional, default 10)
-    /// * `include_old` - Include trades older than 7 days (optional)
+    /// * `start_id` - The ID of the first trade to be returned (optional)
+    /// * `end_id` - The ID of the last trade to be returned (optional)
+    /// * `count` - Number of requested items (optional, default 10, max 1000)
+    /// * `start_timestamp` - The earliest timestamp to return results from (optional)
+    /// * `end_timestamp` - The most recent timestamp to return results from (optional)
     /// * `sorting` - Direction of results sorting (optional)
+    /// * `historical` - If true, retrieves historical records that persist indefinitely.
+    ///                  If false (default), retrieves recent records available for 24 hours.
+    /// * `subaccount_id` - The user id for the subaccount (optional)
     ///
     #[allow(clippy::too_many_arguments)]
     pub async fn get_user_trades_by_currency_and_time(
@@ -2080,6 +2104,22 @@ impl DeribitHttpClient {
         request: TradesRequest,
     ) -> Result<UserTradeWithPaginationResponse, HttpError> {
         let mut query_params = vec![("currency".to_string(), request.currency.to_string())];
+
+        if let Some(kind) = request.kind {
+            query_params.push(("kind".to_string(), kind.to_string()));
+        }
+
+        if let Some(start_id) = request.start_id {
+            query_params.push(("start_id".to_string(), start_id));
+        }
+
+        if let Some(end_id) = request.end_id {
+            query_params.push(("end_id".to_string(), end_id));
+        }
+
+        if let Some(count) = request.count {
+            query_params.push(("count".to_string(), count.to_string()));
+        }
 
         if let Some(start_timestamp) = request.start_timestamp {
             query_params.push(("start_timestamp".to_string(), start_timestamp.to_string()));
@@ -2089,16 +2129,16 @@ impl DeribitHttpClient {
             query_params.push(("end_timestamp".to_string(), end_timestamp.to_string()));
         }
 
-        if let Some(kind) = request.kind {
-            query_params.push(("kind".to_string(), kind.to_string()));
-        }
-
-        if let Some(count) = request.count {
-            query_params.push(("count".to_string(), count.to_string()));
-        }
-
         if let Some(sorting) = request.sorting {
             query_params.push(("sorting".to_string(), sorting.to_string()));
+        }
+
+        if let Some(historical) = request.historical {
+            query_params.push(("historical".to_string(), historical.to_string()));
+        }
+
+        if let Some(subaccount_id) = request.subaccount_id {
+            query_params.push(("subaccount_id".to_string(), subaccount_id.to_string()));
         }
 
         let query_string = query_params
