@@ -38,7 +38,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             for currency in &currencies {
                 info!(
                     "   • {} ({}) - Fee precision: {}",
-                    currency.currency, currency.currency_long, currency.fee_precision
+                    currency.currency,
+                    currency.currency_long,
+                    currency
+                        .fee_precision
+                        .map_or("N/A".to_string(), |v| v.to_string())
                 );
 
                 if let Some(apr) = currency.apr {
