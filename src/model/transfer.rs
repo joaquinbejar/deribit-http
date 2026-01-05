@@ -10,8 +10,10 @@ use serde_with::skip_serializing_none;
 /// Transfer state enumeration
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
+#[derive(Default)]
 pub enum TransferState {
     /// Transfer is prepared but not yet confirmed
+    #[default]
     Prepared,
     /// Transfer has been confirmed
     Confirmed,
@@ -23,12 +25,6 @@ pub enum TransferState {
     InsufficientFunds,
     /// Transfer failed due to withdrawal limit
     WithdrawalLimit,
-}
-
-impl Default for TransferState {
-    fn default() -> Self {
-        Self::Prepared
-    }
 }
 
 /// Transfer information

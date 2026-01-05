@@ -44,18 +44,28 @@ pub struct CurrencyStruct {
     pub currency: String,
     /// Long currency name
     pub currency_long: String,
-    /// Withdrawal fee
-    pub fee_precision: u32,
-    /// Minimum withdrawal amount
+    /// Number of decimal places for the currency
+    pub decimals: Option<u32>,
+    /// Fee precision (decimal places)
+    pub fee_precision: Option<u32>,
+    /// Minimum confirmations required
     pub min_confirmations: u32,
     /// Minimum withdrawal fee
     pub min_withdrawal_fee: f64,
-    /// Withdrawal precision
+    /// Standard withdrawal fee
     pub withdrawal_fee: f64,
     /// Withdrawal priorities
     pub withdrawal_priorities: Vec<WithdrawalPriority>,
     /// APR for yield-generating tokens
     pub apr: Option<f64>,
+    /// Coin type identifier (e.g., "BTC", "ETH", "USDC")
+    pub coin_type: Option<String>,
+    /// Network fee
+    pub network_fee: Option<f64>,
+    /// Network currency used for fees
+    pub network_currency: Option<String>,
+    /// Whether the currency is part of the cross collateral pool
+    pub in_cross_collateral_pool: Option<bool>,
 }
 
 /// Currency information and configuration

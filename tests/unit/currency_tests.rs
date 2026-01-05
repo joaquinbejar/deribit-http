@@ -382,7 +382,8 @@ mod currency_struct_tests {
         let currency_struct = CurrencyStruct {
             currency: "BTC".to_string(),
             currency_long: "Bitcoin".to_string(),
-            fee_precision: 8,
+            decimals: Some(8),
+            fee_precision: Some(8),
             min_confirmations: 1,
             min_withdrawal_fee: 0.0005,
             withdrawal_fee: 0.001,
@@ -391,6 +392,10 @@ mod currency_struct_tests {
                 value: 1.0,
             }],
             apr: Some(0.05),
+            coin_type: Some("BTC".to_string()),
+            network_fee: Some(0.000003),
+            network_currency: Some("BTC".to_string()),
+            in_cross_collateral_pool: Some(true),
         };
 
         let json = serde_json::to_string(&currency_struct).unwrap();
@@ -420,12 +425,17 @@ mod currency_struct_tests {
         let currency_struct = CurrencyStruct {
             currency: "ETH".to_string(),
             currency_long: "Ethereum".to_string(),
-            fee_precision: 18,
+            decimals: None,
+            fee_precision: None,
             min_confirmations: 12,
             min_withdrawal_fee: 0.005,
             withdrawal_fee: 0.01,
             withdrawal_priorities: vec![],
             apr: None, // Test None case
+            coin_type: None,
+            network_fee: None,
+            network_currency: None,
+            in_cross_collateral_pool: None,
         };
 
         let json = serde_json::to_string(&currency_struct).unwrap();

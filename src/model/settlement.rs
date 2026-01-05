@@ -10,19 +10,15 @@ use serde_with::skip_serializing_none;
 /// Settlement event types
 #[derive(DebugPretty, DisplaySimple, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
+#[derive(Default)]
 pub enum SettlementType {
     /// Regular settlement event
+    #[default]
     Settlement,
     /// Delivery event for futures/options
     Delivery,
     /// Bankruptcy event
     Bankruptcy,
-}
-
-impl Default for SettlementType {
-    fn default() -> Self {
-        Self::Settlement
-    }
 }
 
 /// Settlement event information
