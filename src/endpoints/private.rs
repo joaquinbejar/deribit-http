@@ -109,20 +109,22 @@ impl DeribitHttpClient {
     ///
     /// # Arguments
     ///
-    /// * `currency` - Currency symbol (BTC, ETH, etc.)
-    /// * `start_timestamp` - Start timestamp in milliseconds (optional)
-    /// * `end_timestamp` - End timestamp in milliseconds (optional)
-    /// * `count` - Number of requested items (optional, default 10)
-    /// * `continuation` - Continuation token for pagination (optional)
+    /// * `request` - A `TransactionLogRequest` struct containing:
+    ///   * `currency` - Currency symbol (BTC, ETH, etc.)
+    ///   * `start_timestamp` - Start timestamp in milliseconds (optional)
+    ///   * `end_timestamp` - End timestamp in milliseconds (optional)
+    ///   * `count` - Number of requested items (optional, default 10)
+    ///   * `continuation` - Continuation token for pagination (optional)
     ///
     /// # Examples
     ///
     /// ```rust
     /// use deribit_http::DeribitHttpClient;
+    /// use crate::model::TransactionLogRequest;
     ///
     /// let client = DeribitHttpClient::new();
-    /// // let log = client.get_transaction_log("BTC", None, None, Some(20), None).await?;
-    /// // tracing::info!("Found {} transaction log entries", log.logs.len());
+    /// // let request = TransactionLogRequest { currency: "BTC".into(), ..Default::default() };
+    /// // let log = client.get_transaction_log(request).await?;
     /// ```
     pub async fn get_transaction_log(
         &self,
@@ -1968,17 +1970,18 @@ impl DeribitHttpClient {
     ///
     /// # Arguments
     ///
-    /// * `currency` - Currency symbol (BTC, ETH, etc.)
-    /// * `kind` - Instrument kind filter (optional)
-    /// * `start_id` - The ID of the first trade to be returned (optional)
-    /// * `end_id` - The ID of the last trade to be returned (optional)
-    /// * `count` - Number of requested items (optional, default 10, max 1000)
-    /// * `start_timestamp` - The earliest timestamp to return results from (optional)
-    /// * `end_timestamp` - The most recent timestamp to return results from (optional)
-    /// * `sorting` - Direction of results sorting (optional)
-    /// * `historical` - If true, retrieves historical records that persist indefinitely.
-    ///   If false (default), retrieves recent records available for 24 hours.
-    /// * `subaccount_id` - The user id for the subaccount (optional)
+    /// * `request` - A `TradesRequest` struct containing:
+    ///   * `currency` - Currency symbol (BTC, ETH, etc.)
+    ///   * `kind` - Instrument kind filter (optional)
+    ///   * `start_id` - The ID of the first trade to be returned (optional)
+    ///   * `end_id` - The ID of the last trade to be returned (optional)
+    ///   * `count` - Number of requested items (optional, default 10, max 1000)
+    ///   * `start_timestamp` - The earliest timestamp to return results from (optional)
+    ///   * `end_timestamp` - The most recent timestamp to return results from (optional)
+    ///   * `sorting` - Direction of results sorting (optional)
+    ///   * `historical` - If true, retrieves historical records that persist indefinitely.
+    ///     If false (default), retrieves recent records available for 24 hours.
+    ///   * `subaccount_id` - The user id for the subaccount (optional)
     ///
     #[allow(clippy::too_many_arguments)]
     pub async fn get_user_trades_by_currency(
@@ -2086,17 +2089,18 @@ impl DeribitHttpClient {
     ///
     /// # Arguments
     ///
-    /// * `currency` - Currency symbol (BTC, ETH, etc.)
-    /// * `kind` - Instrument kind filter (optional)
-    /// * `start_id` - The ID of the first trade to be returned (optional)
-    /// * `end_id` - The ID of the last trade to be returned (optional)
-    /// * `count` - Number of requested items (optional, default 10, max 1000)
-    /// * `start_timestamp` - The earliest timestamp to return results from (optional)
-    /// * `end_timestamp` - The most recent timestamp to return results from (optional)
-    /// * `sorting` - Direction of results sorting (optional)
-    /// * `historical` - If true, retrieves historical records that persist indefinitely.
-    ///   If false (default), retrieves recent records available for 24 hours.
-    /// * `subaccount_id` - The user id for the subaccount (optional)
+    /// * `request` - A `TradesRequest` struct containing:
+    ///   * `currency` - Currency symbol (BTC, ETH, etc.)
+    ///   * `kind` - Instrument kind filter (optional)
+    ///   * `start_id` - The ID of the first trade to be returned (optional)
+    ///   * `end_id` - The ID of the last trade to be returned (optional)
+    ///   * `count` - Number of requested items (optional, default 10, max 1000)
+    ///   * `start_timestamp` - The earliest timestamp to return results from (optional)
+    ///   * `end_timestamp` - The most recent timestamp to return results from (optional)
+    ///   * `sorting` - Direction of results sorting (optional)
+    ///   * `historical` - If true, retrieves historical records that persist indefinitely.
+    ///     If false (default), retrieves recent records available for 24 hours.
+    ///   * `subaccount_id` - The user id for the subaccount (optional)
     ///
     #[allow(clippy::too_many_arguments)]
     pub async fn get_user_trades_by_currency_and_time(
