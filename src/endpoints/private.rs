@@ -1977,7 +1977,7 @@ impl DeribitHttpClient {
     /// * `end_timestamp` - The most recent timestamp to return results from (optional)
     /// * `sorting` - Direction of results sorting (optional)
     /// * `historical` - If true, retrieves historical records that persist indefinitely.
-    ///                  If false (default), retrieves recent records available for 24 hours.
+    ///   If false (default), retrieves recent records available for 24 hours.
     /// * `subaccount_id` - The user id for the subaccount (optional)
     ///
     #[allow(clippy::too_many_arguments)]
@@ -2095,7 +2095,7 @@ impl DeribitHttpClient {
     /// * `end_timestamp` - The most recent timestamp to return results from (optional)
     /// * `sorting` - Direction of results sorting (optional)
     /// * `historical` - If true, retrieves historical records that persist indefinitely.
-    ///                  If false (default), retrieves recent records available for 24 hours.
+    ///   If false (default), retrieves recent records available for 24 hours.
     /// * `subaccount_id` - The user id for the subaccount (optional)
     ///
     #[allow(clippy::too_many_arguments)]
