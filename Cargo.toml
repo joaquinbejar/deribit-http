@@ -1,6 +1,6 @@
 [package]
 name = "deribit-http"
-version = "0.5.0"
+version = "0.5.1"
 edition = "2024"
 authors = ["Joaquin Bejar <jb@taunais.com>"]
 description = "HTTP REST API client for Deribit trading platform"
@@ -30,7 +30,7 @@ thiserror = { workspace = true }
 hmac = { workspace = true }
 sha2 = { workspace = true }
 urlencoding = { workspace = true }
-url = { workspace = true }
+url = { workspace = true, features = ["serde"] }
 pretty-simple-display = { workspace = true }
 dotenv = { workspace = true }
 chrono = { workspace = true }
@@ -55,7 +55,7 @@ sha2 = "0.10"
 urlencoding = "2.1"
 dotenv = "0.15"
 chrono = { version = "0.4", features = ["serde"] }
-url = "2.5"
+url = { version = "2.5", features = ["serde"] }
 pretty-simple-display = "0.1"
 tracing-subscriber = "0.3"
 serde_with = "3.14"
