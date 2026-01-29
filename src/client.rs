@@ -97,19 +97,20 @@ impl DeribitHttpClient {
         self.rate_limiter.wait_for_permission(category).await;
 
         // Get authorization header
-        let mut auth_manager = self.auth_manager.lock().await;
-        let auth_header = auth_manager
-            .get_authorization_header()
-            .await
-            .ok_or_else(|| {
-                HttpError::AuthenticationFailed(
-                    "No valid authentication token available.".to_string(),
-                )
-            })?;
+        let auth_header = {
+            let mut auth_manager = self.auth_manager.lock().await;
+            auth_manager
+                .get_authorization_header()
+                .await
+                .ok_or_else(|| {
+                    HttpError::AuthenticationFailed(
+                        "No valid authentication token available.".to_string(),
+                    )
+                })?
+        };
 
         // Debug: log the authorization header being used
         tracing::debug!("Using authorization header: {}", auth_header);
-        drop(auth_manager);
 
         // Make the authenticated request
         self.client
@@ -133,19 +134,20 @@ impl DeribitHttpClient {
         self.rate_limiter.wait_for_permission(category).await;
 
         // Get authorization header
-        let mut auth_manager = self.auth_manager.lock().await;
-        let auth_header = auth_manager
-            .get_authorization_header()
-            .await
-            .ok_or_else(|| {
-                HttpError::AuthenticationFailed(
-                    "No valid authentication token available.".to_string(),
-                )
-            })?;
+        let auth_header = {
+            let mut auth_manager = self.auth_manager.lock().await;
+            auth_manager
+                .get_authorization_header()
+                .await
+                .ok_or_else(|| {
+                    HttpError::AuthenticationFailed(
+                        "No valid authentication token available.".to_string(),
+                    )
+                })?
+        };
 
         // Debug: log the authorization header being used
         tracing::debug!("Using authorization header: {}", auth_header);
-        drop(auth_manager);
 
         // Make the authenticated POST request
         self.client
@@ -222,10 +224,6 @@ impl DeribitHttpClient {
             .map_err(|e| HttpError::InvalidResponse(format!("Failed to parse token: {}", e)))?;
 
         // Update the stored token
-        let _auth_manager = self.auth_manager.lock().await;
-        let _expires_at =
-            std::time::SystemTime::now() + std::time::Duration::from_secs(token.expires_in);
-
         self.auth_manager.lock().await.update_token(token.clone());
 
         Ok(token)
