@@ -131,12 +131,7 @@ impl RateLimiter {
             };
 
             // Wait before trying again
-            if wait_time > Duration::from_secs(0) {
-                sleep(wait_time).await;
-            } else {
-                // Small delay to prevent busy waiting
-                sleep(Duration::from_millis(10)).await;
-            }
+            sleep(wait_time.max(Duration::from_millis(10))).await;
         }
     }
 
