@@ -31,18 +31,11 @@ impl DeribitHttpClient {
 
     /// Create a new HTTP client with custom configuration
     pub fn with_config(config: HttpConfig) -> Self {
-        let opt_client = Client::builder()
+        let client = Client::builder()
             .timeout(config.timeout)
             .user_agent(&config.user_agent)
             .build()
-            .map_err(|e| HttpError::NetworkError(e.to_string()))
-            .ok();
-
-        let client = if let Some(opt_client) = &opt_client {
-            opt_client.clone()
-        } else {
-            panic!("Failed to create HTTP client");
-        };
+            .expect("Failed to create HTTP client");
 
         let auth_manager = AuthManager::new(client.clone(), config.clone());
 
