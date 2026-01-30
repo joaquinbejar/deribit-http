@@ -17,9 +17,14 @@ pub struct HttpConnection {
 impl HttpConnection {
     /// Create a new HTTP connection
     pub fn new(config: HttpConfig) -> Result<Self, HttpError> {
-        let client = Client::builder()
+        let builder = Client::builder();
+
+        #[cfg(not(target_arch = "wasm32"))]
+        let builder = builder
             .timeout(config.timeout)
-            .user_agent(&config.user_agent)
+            .user_agent(&config.user_agent);
+
+        let client = builder
             .build()
             .map_err(|e| HttpError::NetworkError(e.to_string()))?;
 

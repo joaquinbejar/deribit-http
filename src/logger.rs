@@ -1,13 +1,34 @@
-use std::env;
+//! Logger setup for the Deribit HTTP client
+//!
+//! This module provides cross-platform logging setup using tracing.
+//! - Native: Uses `tracing_subscriber::FmtSubscriber` with env var configuration
+//! - WASM: Uses `tracing-web` to route logs to browser/Worker console
+
 use std::sync::Once;
+
+#[cfg(not(target_arch = "wasm32"))]
+use std::env;
+#[cfg(not(target_arch = "wasm32"))]
 use tracing::Level;
+#[cfg(not(target_arch = "wasm32"))]
 use tracing_subscriber::FmtSubscriber;
 
+#[cfg(target_arch = "wasm32")]
+use tracing_subscriber::Layer;
+#[cfg(target_arch = "wasm32")]
+use tracing_subscriber::layer::SubscriberExt;
+#[cfg(target_arch = "wasm32")]
+use tracing_subscriber::util::SubscriberInitExt;
+#[cfg(target_arch = "wasm32")]
+use tracing_web::MakeWebConsoleWriter;
+
 static INIT: Once = Once::new();
+
 /// Sets up the logger for the application.
 ///
-/// The logger level is determined by the `DERIBIT_LOG_LEVEL` environment variable.
-/// If the variable is not set, it defaults to `INFO`.
+/// - **Native**: Log level is determined by `DERIBIT_LOG_LEVEL` env var (defaults to INFO)
+/// - **WASM**: Logs to browser/Worker console at INFO level
+#[cfg(not(target_arch = "wasm32"))]
 pub fn setup_logger() {
     INIT.call_once(|| {
         let log_level = env::var("DERIBIT_LOG_LEVEL")
@@ -31,7 +52,26 @@ pub fn setup_logger() {
     });
 }
 
-#[cfg(test)]
+/// Sets up the logger for the application.
+///
+/// - **Native**: Log level is determined by `DERIBIT_LOG_LEVEL` env var (defaults to INFO)
+/// - **WASM**: Logs to browser/Worker console at INFO level
+#[cfg(target_arch = "wasm32")]
+pub fn setup_logger() {
+    INIT.call_once(|| {
+        let fmt_layer = tracing_subscriber::fmt::layer()
+            .with_ansi(false)
+            .without_time()
+            .with_writer(MakeWebConsoleWriter::new())
+            .with_filter(tracing_subscriber::filter::LevelFilter::INFO);
+
+        tracing_subscriber::registry().with(fmt_layer).init();
+
+        tracing::debug!("WASM logger initialized");
+    });
+}
+
+#[cfg(all(test, not(target_arch = "wasm32")))]
 mod tests_setup_logger {
     use super::setup_logger;
     use std::env;
@@ -99,7 +139,7 @@ mod tests_setup_logger {
     }
 }
 
-#[cfg(test)]
+#[cfg(all(test, not(target_arch = "wasm32")))]
 mod tests_setup_logger_bis {
     use super::*;
     use std::sync::Mutex;

@@ -2,8 +2,8 @@
 
 use crate::config::HttpConfig;
 use crate::model::types::AuthToken;
+use async_lock::Mutex;
 use std::sync::Arc;
-use tokio::sync::Mutex;
 
 /// HTTP session manager
 #[derive(Debug, Clone)]

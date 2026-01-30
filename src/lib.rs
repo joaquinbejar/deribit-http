@@ -124,6 +124,8 @@ pub mod model;
 pub mod prelude;
 pub mod rate_limit;
 pub mod session;
+/// Cross-platform time utilities for native and WASM targets
+pub mod time_compat;
 
 // Constants
 /// Application constants and configuration

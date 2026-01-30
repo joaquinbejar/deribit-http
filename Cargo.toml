@@ -18,6 +18,11 @@ members = [
     "tests/integration",
 ]
 
+[features]
+default = ["native"]
+native = ["tokio", "dotenv", "tracing-subscriber"]
+wasm = ["web-time", "tracing-web", "tracing-subscriber", "getrandom"]
+
 [dependencies]
 serde = { workspace = true }
 serde_json = { workspace = true }
@@ -25,20 +30,30 @@ tracing = { workspace = true }
 rand = { workspace = true }
 base64 = { workspace = true }
 reqwest = { workspace = true }
-tokio = { workspace = true }
 thiserror = { workspace = true }
 hmac = { workspace = true }
 sha2 = { workspace = true }
 urlencoding = { workspace = true }
 url = { workspace = true, features = ["serde"] }
 pretty-simple-display = { workspace = true }
-dotenv = { workspace = true }
 chrono = { workspace = true }
-tracing-subscriber = { workspace = true }
 serde_with = { workspace = true }
+async-lock = "3.4"
+futures-timer = "3.0"
+
+# Native-only dependencies
+tokio = { workspace = true, optional = true }
+dotenv = { workspace = true, optional = true }
+tracing-subscriber = { workspace = true, optional = true }
+
+# WASM-only dependencies
+web-time = { version = "1.1", optional = true }
+tracing-web = { version = "0.1", optional = true }
+getrandom = { version = "0.3", features = ["wasm_js"], optional = true }
 
 [dev-dependencies]
 mockito = "1.7"
+tokio = { workspace = true }
 
 [workspace.dependencies]
 deribit-http = { path = "." }

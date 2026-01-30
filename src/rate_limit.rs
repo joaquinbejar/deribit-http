@@ -4,11 +4,12 @@
 //! It implements a token bucket algorithm with different limits for different
 //! endpoint categories.
 
+use crate::time_compat::Instant;
+use async_lock::Mutex;
+use futures_timer::Delay;
 use std::collections::HashMap;
 use std::sync::Arc;
-use std::time::{Duration, Instant};
-use tokio::sync::Mutex;
-use tokio::time::sleep;
+use std::time::Duration;
 
 /// Rate limiter for different endpoint categories
 #[derive(Debug, Clone)]
@@ -131,7 +132,7 @@ impl RateLimiter {
             };
 
             // Wait before trying again
-            sleep(wait_time.max(Duration::from_millis(10))).await;
+            Delay::new(wait_time.max(Duration::from_millis(10))).await;
         }
     }
 
@@ -187,10 +188,10 @@ pub fn categorize_endpoint(endpoint: &str) -> RateLimitCategory {
     }
 }
 
-#[cfg(test)]
+#[cfg(all(test, not(target_arch = "wasm32")))]
 mod tests {
     use super::*;
-    use tokio::time::{Duration, sleep};
+    use futures_timer::Delay;
 
     #[tokio::test]
     async fn test_token_bucket_basic() {
@@ -216,7 +217,7 @@ mod tests {
         assert!(!bucket.try_consume());
 
         // Wait for refill (100ms should give us 1 token at 10/sec rate)
-        sleep(Duration::from_millis(200)).await;
+        Delay::new(Duration::from_millis(200)).await;
 
         // Should have at least 1 token now
         assert!(bucket.try_consume());
