@@ -4,7 +4,6 @@ use crate::config::credentials::ApiCredentials;
 use crate::constants::{DEFAULT_TIMEOUT, MAX_RETRIES, PRODUCTION_BASE_URL, TESTNET_BASE_URL};
 use pretty_simple_display::{DebugPretty, DisplaySimple};
 use serde::{Deserialize, Serialize};
-use std::env;
 use std::time::Duration;
 use url::Url;
 
@@ -27,48 +26,35 @@ pub struct HttpConfig {
 
 impl Default for HttpConfig {
     fn default() -> Self {
-        dotenv::dotenv().ok();
-        // Credentials
-        let credentials = ApiCredentials::new().ok();
-
-        // Testnet flag
-        let testnet = env::var("DERIBIT_TESTNET")
-            .map(|val| val.to_lowercase() == "true")
-            .unwrap_or(true); // Default to testnet for safety
-
-        // Base URL
-        let base_url = if testnet {
-            Url::parse(TESTNET_BASE_URL).expect("Invalid testnet URL")
-        } else {
-            Url::parse(PRODUCTION_BASE_URL).expect("Invalid base URL")
-        };
-
-        // Maximum number of retries
-        let max_retries = env::var("DERIBIT_HTTP_MAX_RETRIES")
-            .map(|val| val.parse::<u32>().unwrap_or(MAX_RETRIES))
-            .unwrap_or(MAX_RETRIES);
-
-        // Timeout in seconds
-        let timeout_u64 = env::var("DERIBIT_HTTP_TIMEOUT")
-            .map(|val| val.parse::<u64>().unwrap_or(DEFAULT_TIMEOUT))
-            .unwrap_or(DEFAULT_TIMEOUT);
-        let timeout = Duration::from_secs(timeout_u64);
-
-        let user_agent = env::var("DERIBIT_HTTP_USER_AGENT")
-            .unwrap_or_else(|_| format!("deribit-http/{}", env!("CARGO_PKG_VERSION")));
-
-        Self {
-            base_url,
-            timeout,
-            max_retries,
-            user_agent,
-            testnet,
-            credentials,
-        }
+        Self::testnet()
     }
 }
 
 impl HttpConfig {
+    /// Create testnet configuration (works on all platforms)
+    pub fn testnet() -> Self {
+        Self {
+            base_url: Url::parse(TESTNET_BASE_URL).expect("Invalid testnet URL"),
+            timeout: Duration::from_secs(DEFAULT_TIMEOUT),
+            max_retries: MAX_RETRIES,
+            user_agent: format!("deribit-http/{}", env!("CARGO_PKG_VERSION")),
+            testnet: true,
+            credentials: None,
+        }
+    }
+
+    /// Create production configuration (works on all platforms)
+    pub fn production() -> Self {
+        Self {
+            base_url: Url::parse(PRODUCTION_BASE_URL).expect("Invalid production URL"),
+            timeout: Duration::from_secs(DEFAULT_TIMEOUT),
+            max_retries: MAX_RETRIES,
+            user_agent: format!("deribit-http/{}", env!("CARGO_PKG_VERSION")),
+            testnet: false,
+            credentials: None,
+        }
+    }
+
     /// Set the timeout for requests
     pub fn with_timeout(mut self, timeout: Duration) -> Self {
         self.timeout = timeout;
