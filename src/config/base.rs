@@ -27,10 +27,6 @@ pub struct HttpConfig {
 
 impl Default for HttpConfig {
     fn default() -> Self {
-        dotenv::dotenv().ok();
-        // Credentials
-        let credentials = ApiCredentials::new().ok();
-
         // Testnet flag
         let testnet = env::var("DERIBIT_TESTNET")
             .map(|val| val.to_lowercase() == "true")
@@ -43,7 +39,16 @@ impl Default for HttpConfig {
             Url::parse(PRODUCTION_BASE_URL).expect("Invalid base URL")
         };
 
-        // Maximum number of retries
+        Self::from_env(base_url, testnet)
+    }
+}
+
+impl HttpConfig {
+    /// Read shared configuration from environment variables.
+    fn from_env(base_url: Url, testnet: bool) -> Self {
+        dotenv::dotenv().ok();
+        let credentials = ApiCredentials::new().ok();
+
         let max_retries = env::var("DERIBIT_HTTP_MAX_RETRIES")
             .map(|val| val.parse::<u32>().unwrap_or(MAX_RETRIES))
             .unwrap_or(MAX_RETRIES);
@@ -66,9 +71,23 @@ impl Default for HttpConfig {
             credentials,
         }
     }
-}
 
-impl HttpConfig {
+    /// Create testnet configuration with shared env var settings
+    pub fn testnet() -> Self {
+        Self::from_env(
+            Url::parse(TESTNET_BASE_URL).expect("Invalid testnet URL"),
+            true,
+        )
+    }
+
+    /// Create production configuration with shared env var settings
+    pub fn production() -> Self {
+        Self::from_env(
+            Url::parse(PRODUCTION_BASE_URL).expect("Invalid production URL"),
+            false,
+        )
+    }
+
     /// Set the timeout for requests
     pub fn with_timeout(mut self, timeout: Duration) -> Self {
         self.timeout = timeout;
