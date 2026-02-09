@@ -5,9 +5,9 @@ use crate::config::HttpConfig;
 use crate::error::HttpError;
 use crate::model::types::AuthToken;
 use crate::rate_limit::{RateLimiter, categorize_endpoint};
+use crate::sync_compat::Mutex;
 use reqwest::Client;
 use std::sync::Arc;
-use tokio::sync::Mutex;
 
 /// HTTP client for Deribit REST API
 #[derive(Debug, Clone)]
@@ -31,11 +31,14 @@ impl DeribitHttpClient {
 
     /// Create a new HTTP client with custom configuration
     pub fn with_config(config: HttpConfig) -> Self {
-        let client = Client::builder()
+        let builder = Client::builder();
+
+        #[cfg(not(target_arch = "wasm32"))]
+        let builder = builder
             .timeout(config.timeout)
-            .user_agent(&config.user_agent)
-            .build()
-            .expect("Failed to create HTTP client");
+            .user_agent(&config.user_agent);
+
+        let client = builder.build().expect("Failed to create HTTP client");
 
         let auth_manager = AuthManager::new(client.clone(), config.clone());
 

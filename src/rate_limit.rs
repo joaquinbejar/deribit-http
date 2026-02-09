@@ -4,11 +4,12 @@
 //! It implements a token bucket algorithm with different limits for different
 //! endpoint categories.
 
+use crate::time_compat::Instant;
+use crate::sleep_compat::sleep;
+use crate::sync_compat::Mutex;
 use std::collections::HashMap;
 use std::sync::Arc;
-use std::time::{Duration, Instant};
-use tokio::sync::Mutex;
-use tokio::time::sleep;
+use std::time::Duration;
 
 /// Rate limiter for different endpoint categories
 #[derive(Debug, Clone)]
@@ -187,10 +188,10 @@ pub fn categorize_endpoint(endpoint: &str) -> RateLimitCategory {
     }
 }
 
-#[cfg(test)]
+#[cfg(all(test, not(target_arch = "wasm32")))]
 mod tests {
     use super::*;
-    use tokio::time::{Duration, sleep};
+    use crate::sleep_compat::sleep;
 
     #[tokio::test]
     async fn test_token_bucket_basic() {
