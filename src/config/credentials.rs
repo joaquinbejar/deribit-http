@@ -1,7 +1,10 @@
 use crate::HttpError;
 use pretty_simple_display::{DebugPretty, DisplaySimple};
 use serde::{Deserialize, Serialize};
+
+#[cfg(not(target_arch = "wasm32"))]
 use std::env;
+#[cfg(not(target_arch = "wasm32"))]
 use tracing::warn;
 
 /// API credentials for authentication
@@ -35,7 +38,9 @@ impl ApiCredentials {
     /// # Note
     /// - If the credentials are invalid or not set, a warning will be logged, and only public API endpoints
     ///   will be accessible.
+    /// - On WASM targets, this always returns an error since environment variables are not available.
     ///
+    #[cfg(not(target_arch = "wasm32"))]
     pub fn new() -> Result<Self, HttpError> {
         let creds = Self::default();
         if creds.is_valid() {
@@ -48,6 +53,20 @@ impl ApiCredentials {
                 "API credentials are not properly set in environment variables".into(),
             ))
         }
+    }
+
+    /// Creates a new instance of the struct (WASM version).
+    ///
+    /// # Returns
+    /// - `Err(HttpError::ConfigError)`: Always returns an error on WASM since environment variables
+    ///   are not available. Use `with_credentials` to set credentials manually.
+    ///
+    #[cfg(target_arch = "wasm32")]
+    pub fn new() -> Result<Self, HttpError> {
+        Err(HttpError::ConfigError(
+            "Environment variables are not available in WASM. Use with_credentials() instead."
+                .into(),
+        ))
     }
 
     /// Retrieves the client credentials (Client ID and Client Secret) required for OAuth2 authentication.
@@ -78,6 +97,7 @@ impl ApiCredentials {
 }
 
 impl Default for ApiCredentials {
+    #[cfg(not(target_arch = "wasm32"))]
     fn default() -> Self {
         dotenv::dotenv().ok();
         let client_id = env::var("DERIBIT_CLIENT_ID").ok();
@@ -85,6 +105,14 @@ impl Default for ApiCredentials {
         Self {
             client_id,
             client_secret,
+        }
+    }
+
+    #[cfg(target_arch = "wasm32")]
+    fn default() -> Self {
+        Self {
+            client_id: None,
+            client_secret: None,
         }
     }
 }

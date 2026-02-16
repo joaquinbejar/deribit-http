@@ -17,6 +17,11 @@ build:
 release:
 	cargo build --release
 
+# Build for WASM target
+.PHONY: build-wasm
+build-wasm:
+	cargo build --target wasm32-unknown-unknown --features wasm --no-default-features
+
 # Run unit tests
 .PHONY: test
 test:
@@ -44,8 +49,13 @@ lint:
 	cargo clippy --all-targets --all-features --workspace  -- -D warnings
 
 .PHONY: lint-fix
-lint-fix: 
+lint-fix:
 	cargo clippy --fix --all-targets --all-features --allow-dirty --allow-staged --workspace -- -D warnings
+
+# Run Clippy for WASM target
+.PHONY: lint-wasm
+lint-wasm:
+	cargo clippy --target wasm32-unknown-unknown --features wasm --no-default-features -- -D warnings
 
 # Clean the project
 .PHONY: clean

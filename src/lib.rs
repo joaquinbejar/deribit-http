@@ -124,6 +124,12 @@ pub mod model;
 pub mod prelude;
 pub mod rate_limit;
 pub mod session;
+/// Cross-platform async sleep for native and WASM targets
+pub mod sleep_compat;
+/// Cross-platform Mutex re-export for native and WASM targets
+pub mod sync_compat;
+/// Cross-platform time utilities for native and WASM targets
+pub mod time_compat;
 
 // Constants
 /// Application constants and configuration

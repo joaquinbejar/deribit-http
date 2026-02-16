@@ -4,6 +4,7 @@ use crate::config::credentials::ApiCredentials;
 use crate::constants::{DEFAULT_TIMEOUT, MAX_RETRIES, PRODUCTION_BASE_URL, TESTNET_BASE_URL};
 use pretty_simple_display::{DebugPretty, DisplaySimple};
 use serde::{Deserialize, Serialize};
+#[cfg(not(target_arch = "wasm32"))]
 use std::env;
 use std::time::Duration;
 use url::Url;
@@ -26,13 +27,12 @@ pub struct HttpConfig {
 }
 
 impl Default for HttpConfig {
+    #[cfg(not(target_arch = "wasm32"))]
     fn default() -> Self {
-        // Testnet flag
         let testnet = env::var("DERIBIT_TESTNET")
             .map(|val| val.to_lowercase() == "true")
             .unwrap_or(true); // Default to testnet for safety
 
-        // Base URL
         let base_url = if testnet {
             Url::parse(TESTNET_BASE_URL).expect("Invalid testnet URL")
         } else {
@@ -41,10 +41,16 @@ impl Default for HttpConfig {
 
         Self::from_env(base_url, testnet)
     }
+
+    #[cfg(target_arch = "wasm32")]
+    fn default() -> Self {
+        Self::testnet()
+    }
 }
 
 impl HttpConfig {
     /// Read shared configuration from environment variables.
+    #[cfg(not(target_arch = "wasm32"))]
     fn from_env(base_url: Url, testnet: bool) -> Self {
         dotenv::dotenv().ok();
         let credentials = ApiCredentials::new().ok();
@@ -53,7 +59,6 @@ impl HttpConfig {
             .map(|val| val.parse::<u32>().unwrap_or(MAX_RETRIES))
             .unwrap_or(MAX_RETRIES);
 
-        // Timeout in seconds
         let timeout_u64 = env::var("DERIBIT_HTTP_TIMEOUT")
             .map(|val| val.parse::<u64>().unwrap_or(DEFAULT_TIMEOUT))
             .unwrap_or(DEFAULT_TIMEOUT);
@@ -72,20 +77,37 @@ impl HttpConfig {
         }
     }
 
-    /// Create testnet configuration with shared env var settings
+    /// Create testnet configuration
     pub fn testnet() -> Self {
-        Self::from_env(
+        Self::create(
             Url::parse(TESTNET_BASE_URL).expect("Invalid testnet URL"),
             true,
         )
     }
 
-    /// Create production configuration with shared env var settings
+    /// Create production configuration
     pub fn production() -> Self {
-        Self::from_env(
+        Self::create(
             Url::parse(PRODUCTION_BASE_URL).expect("Invalid production URL"),
             false,
         )
+    }
+
+    #[cfg(not(target_arch = "wasm32"))]
+    fn create(base_url: Url, testnet: bool) -> Self {
+        Self::from_env(base_url, testnet)
+    }
+
+    #[cfg(target_arch = "wasm32")]
+    fn create(base_url: Url, testnet: bool) -> Self {
+        Self {
+            base_url,
+            timeout: Duration::from_secs(DEFAULT_TIMEOUT),
+            max_retries: MAX_RETRIES,
+            user_agent: format!("deribit-http/{}", env!("CARGO_PKG_VERSION")),
+            testnet,
+            credentials: None,
+        }
     }
 
     /// Set the timeout for requests
