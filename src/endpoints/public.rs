@@ -18,6 +18,7 @@ use crate::model::response::api_response::ApiResponse;
 use crate::model::response::other::{
     AprHistoryResponse, ContractSizeResponse, DeliveryPricesResponse, ExpirationsResponse,
     IndexNameInfo, MarkPriceHistoryPoint, SettlementsResponse, StatusResponse, TestResponse,
+    TradeVolume,
 };
 use crate::model::ticker::TickerData;
 use crate::model::trade::{Liquidity, Trade};
@@ -1483,6 +1484,81 @@ impl DeribitHttpClient {
         api_response.result.ok_or_else(|| {
             HttpError::InvalidResponse("No supported index names in response".to_string())
         })
+    }
+
+    /// Get trade volumes
+    ///
+    /// Retrieves aggregated 24-hour trade volumes for different instrument types
+    /// and currencies. Block trades and Block RFQ trades are included.
+    /// Position moves are not included.
+    ///
+    /// # Arguments
+    ///
+    /// * `extended` - If true, include 7-day and 30-day volumes
+    ///
+    /// # Returns
+    ///
+    /// Returns a vector of `TradeVolume` with volume data per currency.
+    ///
+    /// # Errors
+    ///
+    /// Returns `HttpError` if the request fails or the response cannot be parsed.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use deribit_http::DeribitHttpClient;
+    ///
+    /// let client = DeribitHttpClient::new();
+    /// // Get basic 24h volumes
+    /// // let volumes = client.get_trade_volumes(false).await?;
+    /// // for vol in volumes {
+    /// //     println!("{}: futures={}, calls={}", vol.currency, vol.futures_volume, vol.calls_volume);
+    /// // }
+    /// //
+    /// // Get extended volumes (7d, 30d)
+    /// // let extended = client.get_trade_volumes(true).await?;
+    /// ```
+    pub async fn get_trade_volumes(&self, extended: bool) -> Result<Vec<TradeVolume>, HttpError> {
+        let url = if extended {
+            format!("{}{}?extended=true", self.base_url(), GET_TRADE_VOLUMES)
+        } else {
+            format!("{}{}", self.base_url(), GET_TRADE_VOLUMES)
+        };
+
+        let response = self
+            .http_client()
+            .get(&url)
+            .send()
+            .await
+            .map_err(|e| HttpError::NetworkError(e.to_string()))?;
+
+        if !response.status().is_success() {
+            let error_text = response
+                .text()
+                .await
+                .unwrap_or_else(|_| "Unknown error".to_string());
+            return Err(HttpError::RequestFailed(format!(
+                "Get trade volumes failed: {}",
+                error_text
+            )));
+        }
+
+        let api_response: ApiResponse<Vec<TradeVolume>> = response
+            .json()
+            .await
+            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
+
+        if let Some(error) = api_response.error {
+            return Err(HttpError::RequestFailed(format!(
+                "API error: {} - {}",
+                error.code, error.message
+            )));
+        }
+
+        api_response
+            .result
+            .ok_or_else(|| HttpError::InvalidResponse("No trade volumes in response".to_string()))
     }
 
     /// Get funding chart data
