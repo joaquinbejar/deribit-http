@@ -277,6 +277,21 @@ impl From<MarkPriceHistoryPoint> for (u64, f64) {
     }
 }
 
+/// Index name information with extended details
+///
+/// Represents an index with optional combo trading availability flags.
+/// Returned by `get_supported_index_names` when `extended=true`.
+#[skip_serializing_none]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct IndexNameInfo {
+    /// Index name identifier (e.g., "btc_eth", "btc_usdc")
+    pub name: String,
+    /// Whether future combo creation is enabled for this index
+    pub future_combo_enabled: Option<bool>,
+    /// Whether option combo creation is enabled for this index
+    pub option_combo_enabled: Option<bool>,
+}
+
 /// Account summary information
 #[skip_serializing_none]
 #[derive(DebugPretty, DisplaySimple, Clone, Serialize, Deserialize)]

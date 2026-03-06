@@ -652,3 +652,136 @@ fn test_mark_price_history_point_equality() {
 
     assert_eq!(point1, point2);
 }
+
+// Tests for IndexNameInfo
+#[test]
+fn test_index_name_info_creation() {
+    let info = IndexNameInfo {
+        name: "btc_usdc".to_string(),
+        future_combo_enabled: Some(true),
+        option_combo_enabled: Some(false),
+    };
+
+    assert_eq!(info.name, "btc_usdc");
+    assert_eq!(info.future_combo_enabled, Some(true));
+    assert_eq!(info.option_combo_enabled, Some(false));
+}
+
+#[test]
+fn test_index_name_info_minimal() {
+    let info = IndexNameInfo {
+        name: "btc_eth".to_string(),
+        future_combo_enabled: None,
+        option_combo_enabled: None,
+    };
+
+    assert_eq!(info.name, "btc_eth");
+    assert!(info.future_combo_enabled.is_none());
+    assert!(info.option_combo_enabled.is_none());
+}
+
+#[test]
+fn test_index_name_info_serialization() {
+    let info = IndexNameInfo {
+        name: "eth_usdc".to_string(),
+        future_combo_enabled: Some(true),
+        option_combo_enabled: Some(true),
+    };
+
+    let serialized = serde_json::to_string(&info).unwrap();
+    assert!(serialized.contains("eth_usdc"));
+    assert!(serialized.contains("future_combo_enabled"));
+    assert!(serialized.contains("option_combo_enabled"));
+}
+
+#[test]
+fn test_index_name_info_serialization_skips_none() {
+    let info = IndexNameInfo {
+        name: "sol_usdc".to_string(),
+        future_combo_enabled: None,
+        option_combo_enabled: None,
+    };
+
+    let serialized = serde_json::to_string(&info).unwrap();
+    assert!(serialized.contains("sol_usdc"));
+    assert!(!serialized.contains("future_combo_enabled"));
+    assert!(!serialized.contains("option_combo_enabled"));
+}
+
+#[test]
+fn test_index_name_info_deserialization_full() {
+    let json = r#"{
+        "name": "btc_usdc",
+        "future_combo_enabled": true,
+        "option_combo_enabled": false
+    }"#;
+
+    let info: IndexNameInfo = serde_json::from_str(json).unwrap();
+    assert_eq!(info.name, "btc_usdc");
+    assert_eq!(info.future_combo_enabled, Some(true));
+    assert_eq!(info.option_combo_enabled, Some(false));
+}
+
+#[test]
+fn test_index_name_info_deserialization_minimal() {
+    let json = r#"{"name": "btc_eth"}"#;
+
+    let info: IndexNameInfo = serde_json::from_str(json).unwrap();
+    assert_eq!(info.name, "btc_eth");
+    assert!(info.future_combo_enabled.is_none());
+    assert!(info.option_combo_enabled.is_none());
+}
+
+#[test]
+fn test_index_name_info_vec_deserialization() {
+    let json = r#"[
+        {"name": "btc_eth", "future_combo_enabled": true, "option_combo_enabled": false},
+        {"name": "btc_usdc", "future_combo_enabled": false, "option_combo_enabled": true},
+        {"name": "eth_usdc"}
+    ]"#;
+
+    let infos: Vec<IndexNameInfo> = serde_json::from_str(json).unwrap();
+    assert_eq!(infos.len(), 3);
+    assert_eq!(infos[0].name, "btc_eth");
+    assert_eq!(infos[1].name, "btc_usdc");
+    assert_eq!(infos[2].name, "eth_usdc");
+    assert!(infos[2].future_combo_enabled.is_none());
+}
+
+#[test]
+fn test_index_name_info_clone() {
+    let info = IndexNameInfo {
+        name: "btc_usdc".to_string(),
+        future_combo_enabled: Some(true),
+        option_combo_enabled: Some(false),
+    };
+    let cloned = info.clone();
+
+    assert_eq!(info.name, cloned.name);
+    assert_eq!(info.future_combo_enabled, cloned.future_combo_enabled);
+    assert_eq!(info.option_combo_enabled, cloned.option_combo_enabled);
+}
+
+#[test]
+fn test_index_name_info_equality() {
+    let info1 = IndexNameInfo {
+        name: "btc_usdc".to_string(),
+        future_combo_enabled: Some(true),
+        option_combo_enabled: Some(false),
+    };
+    let info2 = IndexNameInfo {
+        name: "btc_usdc".to_string(),
+        future_combo_enabled: Some(true),
+        option_combo_enabled: Some(false),
+    };
+
+    assert_eq!(info1, info2);
+}
+
+#[test]
+fn test_index_name_info_empty_vec() {
+    let json = "[]";
+    let infos: Vec<IndexNameInfo> = serde_json::from_str(json).unwrap();
+
+    assert!(infos.is_empty());
+}

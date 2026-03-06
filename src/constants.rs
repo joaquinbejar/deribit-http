@@ -86,6 +86,8 @@ pub mod endpoints {
     pub const GET_ORDER_BOOK_BY_INSTRUMENT_ID: &str = "/public/get_order_book_by_instrument_id";
     /// Get mark price history
     pub const GET_MARK_PRICE_HISTORY: &str = "/public/get_mark_price_history";
+    /// Get supported index names
+    pub const GET_SUPPORTED_INDEX_NAMES: &str = "/public/get_supported_index_names";
 
     // Private trading endpoints
     /// Place a buy order
