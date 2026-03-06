@@ -327,6 +327,80 @@ pub struct TradeVolume {
     pub spot_volume_30d: Option<f64>,
 }
 
+/// A single volatility index candle
+///
+/// Represents OHLC data for a volatility index at a specific timestamp.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct VolatilityIndexCandle {
+    /// Timestamp in milliseconds since UNIX epoch
+    pub timestamp: u64,
+    /// Open value
+    pub open: f64,
+    /// High value
+    pub high: f64,
+    /// Low value
+    pub low: f64,
+    /// Close value
+    pub close: f64,
+}
+
+/// Response from get_volatility_index_data
+///
+/// Contains volatility index candles and optional continuation token.
+#[skip_serializing_none]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct VolatilityIndexData {
+    /// Candles as OHLC data
+    #[serde(deserialize_with = "deserialize_candles")]
+    pub data: Vec<VolatilityIndexCandle>,
+    /// Continuation token for pagination (use as end_timestamp for next request)
+    pub continuation: Option<u64>,
+}
+
+/// Deserialize candles from array of arrays format
+fn deserialize_candles<'de, D>(deserializer: D) -> Result<Vec<VolatilityIndexCandle>, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    use serde::de::Error;
+    let raw: Vec<Vec<serde_json::Value>> = Vec::deserialize(deserializer)?;
+    let mut candles = Vec::with_capacity(raw.len());
+
+    for arr in raw {
+        if arr.len() != 5 {
+            return Err(D::Error::custom(format!(
+                "expected 5 elements in candle array, got {}",
+                arr.len()
+            )));
+        }
+        let timestamp = arr[0]
+            .as_u64()
+            .ok_or_else(|| D::Error::custom("invalid timestamp"))?;
+        let open = arr[1]
+            .as_f64()
+            .ok_or_else(|| D::Error::custom("invalid open"))?;
+        let high = arr[2]
+            .as_f64()
+            .ok_or_else(|| D::Error::custom("invalid high"))?;
+        let low = arr[3]
+            .as_f64()
+            .ok_or_else(|| D::Error::custom("invalid low"))?;
+        let close = arr[4]
+            .as_f64()
+            .ok_or_else(|| D::Error::custom("invalid close"))?;
+
+        candles.push(VolatilityIndexCandle {
+            timestamp,
+            open,
+            high,
+            low,
+            close,
+        });
+    }
+
+    Ok(candles)
+}
+
 /// Account summary information
 #[skip_serializing_none]
 #[derive(DebugPretty, DisplaySimple, Clone, Serialize, Deserialize)]

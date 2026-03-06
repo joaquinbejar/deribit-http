@@ -991,3 +991,141 @@ fn test_trade_volume_equality() {
 
     assert_eq!(vol1, vol2);
 }
+
+// Tests for VolatilityIndexCandle and VolatilityIndexData
+#[test]
+fn test_volatility_index_candle_creation() {
+    let candle = VolatilityIndexCandle {
+        timestamp: 1598019300000,
+        open: 0.210084879,
+        high: 0.212860821,
+        low: 0.210084879,
+        close: 0.212860821,
+    };
+
+    assert_eq!(candle.timestamp, 1598019300000);
+    assert!((candle.open - 0.210084879).abs() < 1e-9);
+    assert!((candle.close - 0.212860821).abs() < 1e-9);
+}
+
+#[test]
+fn test_volatility_index_data_deserialization() {
+    let json = r#"{
+        "data": [
+            [1598019300000, 0.210084879, 0.212860821, 0.210084879, 0.212860821],
+            [1598019360000, 0.212869011, 0.212987527, 0.212869011, 0.212987527]
+        ],
+        "continuation": null
+    }"#;
+
+    let data: VolatilityIndexData = serde_json::from_str(json).unwrap();
+    assert_eq!(data.data.len(), 2);
+    assert_eq!(data.data[0].timestamp, 1598019300000);
+    assert!((data.data[0].open - 0.210084879).abs() < 1e-9);
+    assert!(data.continuation.is_none());
+}
+
+#[test]
+fn test_volatility_index_data_with_continuation() {
+    let json = r#"{
+        "data": [
+            [1598019300000, 0.21, 0.22, 0.20, 0.215]
+        ],
+        "continuation": 1598019400000
+    }"#;
+
+    let data: VolatilityIndexData = serde_json::from_str(json).unwrap();
+    assert_eq!(data.data.len(), 1);
+    assert_eq!(data.continuation, Some(1598019400000));
+}
+
+#[test]
+fn test_volatility_index_data_empty() {
+    let json = r#"{
+        "data": [],
+        "continuation": null
+    }"#;
+
+    let data: VolatilityIndexData = serde_json::from_str(json).unwrap();
+    assert!(data.data.is_empty());
+    assert!(data.continuation.is_none());
+}
+
+#[test]
+fn test_volatility_index_candle_clone() {
+    let candle = VolatilityIndexCandle {
+        timestamp: 1598019300000,
+        open: 0.21,
+        high: 0.22,
+        low: 0.20,
+        close: 0.215,
+    };
+    let cloned = candle.clone();
+
+    assert_eq!(candle.timestamp, cloned.timestamp);
+    assert_eq!(candle.close, cloned.close);
+}
+
+#[test]
+fn test_volatility_index_data_clone() {
+    let data = VolatilityIndexData {
+        data: vec![VolatilityIndexCandle {
+            timestamp: 1598019300000,
+            open: 0.21,
+            high: 0.22,
+            low: 0.20,
+            close: 0.215,
+        }],
+        continuation: Some(1598019400000),
+    };
+    let cloned = data.clone();
+
+    assert_eq!(data.data.len(), cloned.data.len());
+    assert_eq!(data.continuation, cloned.continuation);
+}
+
+#[test]
+fn test_volatility_index_candle_equality() {
+    let candle1 = VolatilityIndexCandle {
+        timestamp: 1598019300000,
+        open: 0.21,
+        high: 0.22,
+        low: 0.20,
+        close: 0.215,
+    };
+    let candle2 = VolatilityIndexCandle {
+        timestamp: 1598019300000,
+        open: 0.21,
+        high: 0.22,
+        low: 0.20,
+        close: 0.215,
+    };
+
+    assert_eq!(candle1, candle2);
+}
+
+#[test]
+fn test_volatility_index_data_equality() {
+    let data1 = VolatilityIndexData {
+        data: vec![VolatilityIndexCandle {
+            timestamp: 1598019300000,
+            open: 0.21,
+            high: 0.22,
+            low: 0.20,
+            close: 0.215,
+        }],
+        continuation: None,
+    };
+    let data2 = VolatilityIndexData {
+        data: vec![VolatilityIndexCandle {
+            timestamp: 1598019300000,
+            open: 0.21,
+            high: 0.22,
+            low: 0.20,
+            close: 0.215,
+        }],
+        continuation: None,
+    };
+
+    assert_eq!(data1, data2);
+}
