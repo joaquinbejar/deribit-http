@@ -88,6 +88,8 @@ pub mod endpoints {
     pub const GET_MARK_PRICE_HISTORY: &str = "/public/get_mark_price_history";
     /// Get supported index names
     pub const GET_SUPPORTED_INDEX_NAMES: &str = "/public/get_supported_index_names";
+    /// Get trade volumes
+    pub const GET_TRADE_VOLUMES: &str = "/public/get_trade_volumes";
 
     // Private trading endpoints
     /// Place a buy order

@@ -785,3 +785,209 @@ fn test_index_name_info_empty_vec() {
 
     assert!(infos.is_empty());
 }
+
+// Tests for TradeVolume
+#[test]
+fn test_trade_volume_basic_creation() {
+    let vol = TradeVolume {
+        currency: "BTC".to_string(),
+        calls_volume: 145.0,
+        puts_volume: 48.0,
+        futures_volume: 6.25578452,
+        spot_volume: 11.1,
+        calls_volume_7d: None,
+        puts_volume_7d: None,
+        futures_volume_7d: None,
+        spot_volume_7d: None,
+        calls_volume_30d: None,
+        puts_volume_30d: None,
+        futures_volume_30d: None,
+        spot_volume_30d: None,
+    };
+
+    assert_eq!(vol.currency, "BTC");
+    assert!((vol.calls_volume - 145.0).abs() < f64::EPSILON);
+    assert!((vol.puts_volume - 48.0).abs() < f64::EPSILON);
+    assert!((vol.futures_volume - 6.25578452).abs() < 1e-8);
+    assert!((vol.spot_volume - 11.1).abs() < f64::EPSILON);
+}
+
+#[test]
+fn test_trade_volume_extended_creation() {
+    let vol = TradeVolume {
+        currency: "ETH".to_string(),
+        calls_volume: 37.4,
+        puts_volume: 122.65,
+        futures_volume: 374.392173,
+        spot_volume: 57.7,
+        calls_volume_7d: Some(75.6),
+        puts_volume_7d: Some(356.9),
+        futures_volume_7d: Some(213.8841),
+        spot_volume_7d: Some(64.8),
+        calls_volume_30d: Some(547.3),
+        puts_volume_30d: Some(785.5),
+        futures_volume_30d: Some(998.2128),
+        spot_volume_30d: Some(310.5),
+    };
+
+    assert_eq!(vol.currency, "ETH");
+    assert_eq!(vol.calls_volume_7d, Some(75.6));
+    assert_eq!(vol.puts_volume_30d, Some(785.5));
+}
+
+#[test]
+fn test_trade_volume_deserialization_basic() {
+    let json = r#"{
+        "currency": "BTC",
+        "calls_volume": 145,
+        "puts_volume": 48,
+        "futures_volume": 6.25578452,
+        "spot_volume": 11.1
+    }"#;
+
+    let vol: TradeVolume = serde_json::from_str(json).unwrap();
+    assert_eq!(vol.currency, "BTC");
+    assert!((vol.calls_volume - 145.0).abs() < f64::EPSILON);
+    assert!(vol.calls_volume_7d.is_none());
+    assert!(vol.futures_volume_30d.is_none());
+}
+
+#[test]
+fn test_trade_volume_deserialization_extended() {
+    let json = r#"{
+        "currency": "ETH",
+        "calls_volume": 37.4,
+        "puts_volume": 122.65,
+        "futures_volume": 374.392173,
+        "spot_volume": 57.7,
+        "calls_volume_7d": 75.6,
+        "puts_volume_7d": 356.9,
+        "futures_volume_7d": 213.8841,
+        "spot_volume_7d": 64.8,
+        "calls_volume_30d": 547.3,
+        "puts_volume_30d": 785.5,
+        "futures_volume_30d": 998.2128,
+        "spot_volume_30d": 310.5
+    }"#;
+
+    let vol: TradeVolume = serde_json::from_str(json).unwrap();
+    assert_eq!(vol.currency, "ETH");
+    assert_eq!(vol.calls_volume_7d, Some(75.6));
+    assert_eq!(vol.futures_volume_30d, Some(998.2128));
+}
+
+#[test]
+fn test_trade_volume_serialization_skips_none() {
+    let vol = TradeVolume {
+        currency: "USDC".to_string(),
+        calls_volume: 10.0,
+        puts_volume: 20.0,
+        futures_volume: 30.0,
+        spot_volume: 40.0,
+        calls_volume_7d: None,
+        puts_volume_7d: None,
+        futures_volume_7d: None,
+        spot_volume_7d: None,
+        calls_volume_30d: None,
+        puts_volume_30d: None,
+        futures_volume_30d: None,
+        spot_volume_30d: None,
+    };
+
+    let serialized = serde_json::to_string(&vol).unwrap();
+    assert!(serialized.contains("USDC"));
+    assert!(!serialized.contains("calls_volume_7d"));
+    assert!(!serialized.contains("futures_volume_30d"));
+}
+
+#[test]
+fn test_trade_volume_vec_deserialization() {
+    let json = r#"[
+        {
+            "currency": "BTC",
+            "calls_volume": 145,
+            "puts_volume": 48,
+            "futures_volume": 6.25578452,
+            "spot_volume": 11.1
+        },
+        {
+            "currency": "ETH",
+            "calls_volume": 37.4,
+            "puts_volume": 122.65,
+            "futures_volume": 374.392173,
+            "spot_volume": 57.7
+        }
+    ]"#;
+
+    let volumes: Vec<TradeVolume> = serde_json::from_str(json).unwrap();
+    assert_eq!(volumes.len(), 2);
+    assert_eq!(volumes[0].currency, "BTC");
+    assert_eq!(volumes[1].currency, "ETH");
+}
+
+#[test]
+fn test_trade_volume_empty_vec() {
+    let json = "[]";
+    let volumes: Vec<TradeVolume> = serde_json::from_str(json).unwrap();
+
+    assert!(volumes.is_empty());
+}
+
+#[test]
+fn test_trade_volume_clone() {
+    let vol = TradeVolume {
+        currency: "BTC".to_string(),
+        calls_volume: 145.0,
+        puts_volume: 48.0,
+        futures_volume: 6.25578452,
+        spot_volume: 11.1,
+        calls_volume_7d: Some(75.6),
+        puts_volume_7d: None,
+        futures_volume_7d: None,
+        spot_volume_7d: None,
+        calls_volume_30d: None,
+        puts_volume_30d: None,
+        futures_volume_30d: None,
+        spot_volume_30d: None,
+    };
+    let cloned = vol.clone();
+
+    assert_eq!(vol.currency, cloned.currency);
+    assert_eq!(vol.calls_volume_7d, cloned.calls_volume_7d);
+}
+
+#[test]
+fn test_trade_volume_equality() {
+    let vol1 = TradeVolume {
+        currency: "BTC".to_string(),
+        calls_volume: 145.0,
+        puts_volume: 48.0,
+        futures_volume: 6.25578452,
+        spot_volume: 11.1,
+        calls_volume_7d: None,
+        puts_volume_7d: None,
+        futures_volume_7d: None,
+        spot_volume_7d: None,
+        calls_volume_30d: None,
+        puts_volume_30d: None,
+        futures_volume_30d: None,
+        spot_volume_30d: None,
+    };
+    let vol2 = TradeVolume {
+        currency: "BTC".to_string(),
+        calls_volume: 145.0,
+        puts_volume: 48.0,
+        futures_volume: 6.25578452,
+        spot_volume: 11.1,
+        calls_volume_7d: None,
+        puts_volume_7d: None,
+        futures_volume_7d: None,
+        spot_volume_7d: None,
+        calls_volume_30d: None,
+        puts_volume_30d: None,
+        futures_volume_30d: None,
+        spot_volume_30d: None,
+    };
+
+    assert_eq!(vol1, vol2);
+}

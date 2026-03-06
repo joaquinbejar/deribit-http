@@ -292,6 +292,41 @@ pub struct IndexNameInfo {
     pub option_combo_enabled: Option<bool>,
 }
 
+/// Aggregated trade volume by currency
+///
+/// Contains 24-hour trade volumes for different instrument types.
+/// When `extended=true`, also includes 7-day and 30-day volumes.
+#[skip_serializing_none]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct TradeVolume {
+    /// Currency (e.g., "BTC", "ETH", "USDC")
+    pub currency: String,
+    /// Total 24h trade volume for call options
+    pub calls_volume: f64,
+    /// Total 24h trade volume for put options
+    pub puts_volume: f64,
+    /// Total 24h trade volume for futures
+    pub futures_volume: f64,
+    /// Total 24h trade volume for spot
+    pub spot_volume: f64,
+    /// Total 7d trade volume for call options (extended only)
+    pub calls_volume_7d: Option<f64>,
+    /// Total 7d trade volume for put options (extended only)
+    pub puts_volume_7d: Option<f64>,
+    /// Total 7d trade volume for futures (extended only)
+    pub futures_volume_7d: Option<f64>,
+    /// Total 7d trade volume for spot (extended only)
+    pub spot_volume_7d: Option<f64>,
+    /// Total 30d trade volume for call options (extended only)
+    pub calls_volume_30d: Option<f64>,
+    /// Total 30d trade volume for put options (extended only)
+    pub puts_volume_30d: Option<f64>,
+    /// Total 30d trade volume for futures (extended only)
+    pub futures_volume_30d: Option<f64>,
+    /// Total 30d trade volume for spot (extended only)
+    pub spot_volume_30d: Option<f64>,
+}
+
 /// Account summary information
 #[skip_serializing_none]
 #[derive(DebugPretty, DisplaySimple, Clone, Serialize, Deserialize)]
