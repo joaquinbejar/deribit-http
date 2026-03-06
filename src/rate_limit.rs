@@ -4,9 +4,9 @@
 //! It implements a token bucket algorithm with different limits for different
 //! endpoint categories.
 
-use crate::time_compat::Instant;
 use crate::sleep_compat::sleep;
 use crate::sync_compat::Mutex;
+use crate::time_compat::Instant;
 use std::collections::HashMap;
 use std::sync::Arc;
 use std::time::Duration;
