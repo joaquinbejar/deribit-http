@@ -17,7 +17,7 @@ use crate::model::other::{OptionInstrument, OptionInstrumentPair};
 use crate::model::response::api_response::ApiResponse;
 use crate::model::response::other::{
     AprHistoryResponse, ContractSizeResponse, DeliveryPricesResponse, ExpirationsResponse,
-    MarkPriceHistoryPoint, SettlementsResponse, StatusResponse, TestResponse,
+    IndexNameInfo, MarkPriceHistoryPoint, SettlementsResponse, StatusResponse, TestResponse,
 };
 use crate::model::ticker::TickerData;
 use crate::model::trade::{Liquidity, Trade};
@@ -1318,6 +1318,170 @@ impl DeribitHttpClient {
 
         api_response.result.ok_or_else(|| {
             HttpError::InvalidResponse("No mark price history data in response".to_string())
+        })
+    }
+
+    /// Get supported index names
+    ///
+    /// Retrieves the identifiers (names) of all supported price indexes.
+    /// Price indexes are reference prices used for mark price calculations,
+    /// settlement, and other market operations.
+    ///
+    /// # Arguments
+    ///
+    /// * `index_type` - Optional filter by index type: "all", "spot", or "derivative"
+    ///
+    /// # Returns
+    ///
+    /// Returns a vector of index name strings (e.g., "btc_eth", "btc_usdc").
+    ///
+    /// # Errors
+    ///
+    /// Returns `HttpError` if the request fails or the response cannot be parsed.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use deribit_http::DeribitHttpClient;
+    ///
+    /// let client = DeribitHttpClient::new();
+    /// // Get all index names
+    /// // let names = client.get_supported_index_names(None).await?;
+    /// // for name in names {
+    /// //     println!("Index: {}", name);
+    /// // }
+    /// //
+    /// // Get only spot indexes
+    /// // let spot_names = client.get_supported_index_names(Some("spot")).await?;
+    /// ```
+    pub async fn get_supported_index_names(
+        &self,
+        index_type: Option<&str>,
+    ) -> Result<Vec<String>, HttpError> {
+        let url = match index_type {
+            Some(t) => format!(
+                "{}{}?type={}",
+                self.base_url(),
+                GET_SUPPORTED_INDEX_NAMES,
+                urlencoding::encode(t)
+            ),
+            None => format!("{}{}", self.base_url(), GET_SUPPORTED_INDEX_NAMES),
+        };
+
+        let response = self
+            .http_client()
+            .get(&url)
+            .send()
+            .await
+            .map_err(|e| HttpError::NetworkError(e.to_string()))?;
+
+        if !response.status().is_success() {
+            let error_text = response
+                .text()
+                .await
+                .unwrap_or_else(|_| "Unknown error".to_string());
+            return Err(HttpError::RequestFailed(format!(
+                "Get supported index names failed: {}",
+                error_text
+            )));
+        }
+
+        let api_response: ApiResponse<Vec<String>> = response
+            .json()
+            .await
+            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
+
+        if let Some(error) = api_response.error {
+            return Err(HttpError::RequestFailed(format!(
+                "API error: {} - {}",
+                error.code, error.message
+            )));
+        }
+
+        api_response.result.ok_or_else(|| {
+            HttpError::InvalidResponse("No supported index names in response".to_string())
+        })
+    }
+
+    /// Get supported index names with extended information
+    ///
+    /// Retrieves the identifiers (names) of all supported price indexes
+    /// along with combo trading availability flags.
+    ///
+    /// # Arguments
+    ///
+    /// * `index_type` - Optional filter by index type: "all", "spot", or "derivative"
+    ///
+    /// # Returns
+    ///
+    /// Returns a vector of `IndexNameInfo` containing index names and
+    /// optional combo trading flags.
+    ///
+    /// # Errors
+    ///
+    /// Returns `HttpError` if the request fails or the response cannot be parsed.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use deribit_http::DeribitHttpClient;
+    ///
+    /// let client = DeribitHttpClient::new();
+    /// // let indexes = client.get_supported_index_names_extended(None).await?;
+    /// // for idx in indexes {
+    /// //     println!("Index: {}, Future combo: {:?}", idx.name, idx.future_combo_enabled);
+    /// // }
+    /// ```
+    pub async fn get_supported_index_names_extended(
+        &self,
+        index_type: Option<&str>,
+    ) -> Result<Vec<IndexNameInfo>, HttpError> {
+        let url = match index_type {
+            Some(t) => format!(
+                "{}{}?type={}&extended=true",
+                self.base_url(),
+                GET_SUPPORTED_INDEX_NAMES,
+                urlencoding::encode(t)
+            ),
+            None => format!(
+                "{}{}?extended=true",
+                self.base_url(),
+                GET_SUPPORTED_INDEX_NAMES
+            ),
+        };
+
+        let response = self
+            .http_client()
+            .get(&url)
+            .send()
+            .await
+            .map_err(|e| HttpError::NetworkError(e.to_string()))?;
+
+        if !response.status().is_success() {
+            let error_text = response
+                .text()
+                .await
+                .unwrap_or_else(|_| "Unknown error".to_string());
+            return Err(HttpError::RequestFailed(format!(
+                "Get supported index names extended failed: {}",
+                error_text
+            )));
+        }
+
+        let api_response: ApiResponse<Vec<IndexNameInfo>> = response
+            .json()
+            .await
+            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
+
+        if let Some(error) = api_response.error {
+            return Err(HttpError::RequestFailed(format!(
+                "API error: {} - {}",
+                error.code, error.message
+            )));
+        }
+
+        api_response.result.ok_or_else(|| {
+            HttpError::InvalidResponse("No supported index names in response".to_string())
         })
     }
 
