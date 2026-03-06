@@ -21,7 +21,7 @@ members = [
 [features]
 default = ["native"]
 native = ["tokio", "dotenv", "tracing-subscriber"]
-wasm = ["async-lock", "futures-timer", "web-time", "tracing-web", "tracing-subscriber", "getrandom"]
+wasm = ["async-lock", "futures-timer", "web-time", "tracing-web", "tracing-subscriber", "getrandom", "getrandom_03"]
 
 [dependencies]
 serde = { workspace = true }
@@ -50,6 +50,7 @@ tracing-subscriber = { workspace = true, optional = true }
 web-time = { version = "1.1", optional = true }
 tracing-web = { version = "0.1", optional = true }
 getrandom = { version = "0.4", features = ["wasm_js"], optional = true }
+getrandom_03 = { package = "getrandom", version = "0.3", features = ["wasm_js"], optional = true }
 
 [dev-dependencies]
 mockito = "1.7"
