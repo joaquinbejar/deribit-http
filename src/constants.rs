@@ -90,6 +90,8 @@ pub mod endpoints {
     pub const GET_SUPPORTED_INDEX_NAMES: &str = "/public/get_supported_index_names";
     /// Get trade volumes
     pub const GET_TRADE_VOLUMES: &str = "/public/get_trade_volumes";
+    /// Get volatility index data
+    pub const GET_VOLATILITY_INDEX_DATA: &str = "/public/get_volatility_index_data";
 
     // Private trading endpoints
     /// Place a buy order

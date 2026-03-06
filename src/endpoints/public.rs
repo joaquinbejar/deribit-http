@@ -18,7 +18,7 @@ use crate::model::response::api_response::ApiResponse;
 use crate::model::response::other::{
     AprHistoryResponse, ContractSizeResponse, DeliveryPricesResponse, ExpirationsResponse,
     IndexNameInfo, MarkPriceHistoryPoint, SettlementsResponse, StatusResponse, TestResponse,
-    TradeVolume,
+    TradeVolume, VolatilityIndexData,
 };
 use crate::model::ticker::TickerData;
 use crate::model::trade::{Liquidity, Trade};
@@ -1559,6 +1559,95 @@ impl DeribitHttpClient {
         api_response
             .result
             .ok_or_else(|| HttpError::InvalidResponse("No trade volumes in response".to_string()))
+    }
+
+    /// Get volatility index data
+    ///
+    /// Retrieves volatility index (VIX) chart data formatted as OHLC candles.
+    /// Useful for risk assessment and trading strategies.
+    ///
+    /// # Arguments
+    ///
+    /// * `currency` - Currency symbol (e.g., "BTC", "ETH")
+    /// * `start_timestamp` - Start timestamp in milliseconds since UNIX epoch
+    /// * `end_timestamp` - End timestamp in milliseconds since UNIX epoch
+    /// * `resolution` - Candle interval ("1", "60", "3600", "43200", "1D")
+    ///
+    /// # Returns
+    ///
+    /// Returns `VolatilityIndexData` with candles and optional continuation token.
+    ///
+    /// # Errors
+    ///
+    /// Returns `HttpError` if the request fails or the response cannot be parsed.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use deribit_http::DeribitHttpClient;
+    ///
+    /// let client = DeribitHttpClient::new();
+    /// // Get 1-hour VIX candles for BTC
+    /// // let vix_data = client.get_volatility_index_data(
+    /// //     "BTC",
+    /// //     1599373800000,
+    /// //     1599376800000,
+    /// //     "60"
+    /// // ).await?;
+    /// // for candle in &vix_data.data {
+    /// //     println!("ts={}, close={}", candle.timestamp, candle.close);
+    /// // }
+    /// ```
+    pub async fn get_volatility_index_data(
+        &self,
+        currency: &str,
+        start_timestamp: u64,
+        end_timestamp: u64,
+        resolution: &str,
+    ) -> Result<VolatilityIndexData, HttpError> {
+        let url = format!(
+            "{}{}?currency={}&start_timestamp={}&end_timestamp={}&resolution={}",
+            self.base_url(),
+            GET_VOLATILITY_INDEX_DATA,
+            currency,
+            start_timestamp,
+            end_timestamp,
+            resolution
+        );
+
+        let response = self
+            .http_client()
+            .get(&url)
+            .send()
+            .await
+            .map_err(|e| HttpError::NetworkError(e.to_string()))?;
+
+        if !response.status().is_success() {
+            let error_text = response
+                .text()
+                .await
+                .unwrap_or_else(|_| "Unknown error".to_string());
+            return Err(HttpError::RequestFailed(format!(
+                "Get volatility index data failed: {}",
+                error_text
+            )));
+        }
+
+        let api_response: ApiResponse<VolatilityIndexData> = response
+            .json()
+            .await
+            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
+
+        if let Some(error) = api_response.error {
+            return Err(HttpError::RequestFailed(format!(
+                "API error: {} - {}",
+                error.code, error.message
+            )));
+        }
+
+        api_response.result.ok_or_else(|| {
+            HttpError::InvalidResponse("No volatility index data in response".to_string())
+        })
     }
 
     /// Get funding chart data
