@@ -17,7 +17,7 @@ use crate::model::other::{OptionInstrument, OptionInstrumentPair};
 use crate::model::response::api_response::ApiResponse;
 use crate::model::response::other::{
     AprHistoryResponse, ContractSizeResponse, DeliveryPricesResponse, ExpirationsResponse,
-    SettlementsResponse, StatusResponse, TestResponse,
+    MarkPriceHistoryPoint, SettlementsResponse, StatusResponse, TestResponse,
 };
 use crate::model::ticker::TickerData;
 use crate::model::trade::{Liquidity, Trade};
@@ -1230,6 +1230,94 @@ impl DeribitHttpClient {
 
         api_response.result.ok_or_else(|| {
             HttpError::InvalidResponse("No historical volatility data in response".to_string())
+        })
+    }
+
+    /// Get mark price history
+    ///
+    /// Retrieves 5-minute historical mark price data for an instrument.
+    /// Mark prices are used for margin calculations and position valuations.
+    ///
+    /// **Note**: Currently, mark price history is available only for a subset of options
+    /// that participate in volatility index calculations. All other instruments,
+    /// including futures and perpetuals, will return an empty list.
+    ///
+    /// # Arguments
+    ///
+    /// * `instrument_name` - Unique instrument identifier (e.g., "BTC-25JUN21-50000-C")
+    /// * `start_timestamp` - The earliest timestamp to return results from (milliseconds since Unix epoch)
+    /// * `end_timestamp` - The most recent timestamp to return results from (milliseconds since Unix epoch)
+    ///
+    /// # Returns
+    ///
+    /// Returns a vector of `MarkPriceHistoryPoint` containing timestamp and mark price pairs.
+    ///
+    /// # Errors
+    ///
+    /// Returns `HttpError` if the request fails or the response cannot be parsed.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use deribit_http::DeribitHttpClient;
+    ///
+    /// let client = DeribitHttpClient::new();
+    /// // let history = client.get_mark_price_history(
+    /// //     "BTC-25JUN21-50000-C",
+    /// //     1609376800000,
+    /// //     1609376810000
+    /// // ).await?;
+    /// // for point in history {
+    /// //     println!("Time: {}, Mark Price: {}", point.timestamp, point.mark_price);
+    /// // }
+    /// ```
+    pub async fn get_mark_price_history(
+        &self,
+        instrument_name: &str,
+        start_timestamp: u64,
+        end_timestamp: u64,
+    ) -> Result<Vec<MarkPriceHistoryPoint>, HttpError> {
+        let url = format!(
+            "{}{}?instrument_name={}&start_timestamp={}&end_timestamp={}",
+            self.base_url(),
+            GET_MARK_PRICE_HISTORY,
+            urlencoding::encode(instrument_name),
+            start_timestamp,
+            end_timestamp
+        );
+
+        let response = self
+            .http_client()
+            .get(&url)
+            .send()
+            .await
+            .map_err(|e| HttpError::NetworkError(e.to_string()))?;
+
+        if !response.status().is_success() {
+            let error_text = response
+                .text()
+                .await
+                .unwrap_or_else(|_| "Unknown error".to_string());
+            return Err(HttpError::RequestFailed(format!(
+                "Get mark price history failed: {}",
+                error_text
+            )));
+        }
+
+        let api_response: ApiResponse<Vec<MarkPriceHistoryPoint>> = response
+            .json()
+            .await
+            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
+
+        if let Some(error) = api_response.error {
+            return Err(HttpError::RequestFailed(format!(
+                "API error: {} - {}",
+                error.code, error.message
+            )));
+        }
+
+        api_response.result.ok_or_else(|| {
+            HttpError::InvalidResponse("No mark price history data in response".to_string())
         })
     }
 

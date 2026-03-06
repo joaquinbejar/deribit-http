@@ -84,6 +84,8 @@ pub mod endpoints {
         "/public/get_last_trades_by_instrument_and_time";
     /// Get order book by instrument ID
     pub const GET_ORDER_BOOK_BY_INSTRUMENT_ID: &str = "/public/get_order_book_by_instrument_id";
+    /// Get mark price history
+    pub const GET_MARK_PRICE_HISTORY: &str = "/public/get_mark_price_history";
 
     // Private trading endpoints
     /// Place a buy order

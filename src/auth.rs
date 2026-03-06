@@ -241,7 +241,7 @@ impl AuthManager {
 
     /// Generate nonce for API key authentication
     pub fn generate_nonce() -> String {
-        use rand::Rng;
+        use rand::RngExt;
         let mut rng = rand::rng();
         let chars: String = (0..16)
             .map(|_| {

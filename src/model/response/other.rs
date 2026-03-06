@@ -249,6 +249,34 @@ pub struct AccountSummaryResponse {
     pub summaries: Vec<AccountResult>,
 }
 
+/// Mark price history data point
+///
+/// Represents a single data point in mark price history.
+/// The API returns data as `[timestamp_ms, mark_price]` arrays.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(from = "(u64, f64)", into = "(u64, f64)")]
+pub struct MarkPriceHistoryPoint {
+    /// Timestamp in milliseconds since Unix epoch
+    pub timestamp: u64,
+    /// Mark price value
+    pub mark_price: f64,
+}
+
+impl From<(u64, f64)> for MarkPriceHistoryPoint {
+    fn from((timestamp, mark_price): (u64, f64)) -> Self {
+        Self {
+            timestamp,
+            mark_price,
+        }
+    }
+}
+
+impl From<MarkPriceHistoryPoint> for (u64, f64) {
+    fn from(point: MarkPriceHistoryPoint) -> Self {
+        (point.timestamp, point.mark_price)
+    }
+}
+
 /// Account summary information
 #[skip_serializing_none]
 #[derive(DebugPretty, DisplaySimple, Clone, Serialize, Deserialize)]
