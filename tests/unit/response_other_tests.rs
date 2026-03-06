@@ -549,3 +549,106 @@ fn test_account_limits_serialization() {
     assert!(serialized.contains("non_matching_engine"));
     assert!(serialized.contains("matching_engine"));
 }
+
+// Tests for MarkPriceHistoryPoint
+#[test]
+fn test_mark_price_history_point_creation() {
+    let point = MarkPriceHistoryPoint {
+        timestamp: 1608142381229,
+        mark_price: 0.5165791606037885,
+    };
+
+    assert_eq!(point.timestamp, 1608142381229);
+    assert!((point.mark_price - 0.5165791606037885).abs() < f64::EPSILON);
+}
+
+#[test]
+fn test_mark_price_history_point_from_tuple() {
+    let tuple: (u64, f64) = (1608142381229, 0.5165791606037885);
+    let point = MarkPriceHistoryPoint::from(tuple);
+
+    assert_eq!(point.timestamp, 1608142381229);
+    assert!((point.mark_price - 0.5165791606037885).abs() < f64::EPSILON);
+}
+
+#[test]
+fn test_mark_price_history_point_into_tuple() {
+    let point = MarkPriceHistoryPoint {
+        timestamp: 1608142381229,
+        mark_price: 0.5165791606037885,
+    };
+    let tuple: (u64, f64) = point.into();
+
+    assert_eq!(tuple.0, 1608142381229);
+    assert!((tuple.1 - 0.5165791606037885).abs() < f64::EPSILON);
+}
+
+#[test]
+fn test_mark_price_history_point_deserialization_from_array() {
+    let json = "[1608142381229, 0.5165791606037885]";
+    let point: MarkPriceHistoryPoint = serde_json::from_str(json).unwrap();
+
+    assert_eq!(point.timestamp, 1608142381229);
+    assert!((point.mark_price - 0.5165791606037885).abs() < f64::EPSILON);
+}
+
+#[test]
+fn test_mark_price_history_point_serialization_to_array() {
+    let point = MarkPriceHistoryPoint {
+        timestamp: 1608142381229,
+        mark_price: 0.5165791606037885,
+    };
+    let serialized = serde_json::to_string(&point).unwrap();
+
+    assert!(serialized.contains("1608142381229"));
+    assert!(serialized.contains("0.5165791606037885"));
+}
+
+#[test]
+fn test_mark_price_history_point_vec_deserialization() {
+    let json = r#"[
+        [1608142381229, 0.5165791606037885],
+        [1608142380231, 0.5165737855432504],
+        [1608142379227, 0.5165768236356326]
+    ]"#;
+    let points: Vec<MarkPriceHistoryPoint> = serde_json::from_str(json).unwrap();
+
+    assert_eq!(points.len(), 3);
+    assert_eq!(points[0].timestamp, 1608142381229);
+    assert_eq!(points[1].timestamp, 1608142380231);
+    assert_eq!(points[2].timestamp, 1608142379227);
+}
+
+#[test]
+fn test_mark_price_history_point_empty_vec_deserialization() {
+    let json = "[]";
+    let points: Vec<MarkPriceHistoryPoint> = serde_json::from_str(json).unwrap();
+
+    assert!(points.is_empty());
+}
+
+#[test]
+fn test_mark_price_history_point_clone() {
+    let point = MarkPriceHistoryPoint {
+        timestamp: 1608142381229,
+        mark_price: 0.5165791606037885,
+    };
+    let cloned = point.clone();
+
+    assert_eq!(point.timestamp, cloned.timestamp);
+    assert!((point.mark_price - cloned.mark_price).abs() < f64::EPSILON);
+}
+
+#[test]
+fn test_mark_price_history_point_equality() {
+    let point1 = MarkPriceHistoryPoint {
+        timestamp: 1608142381229,
+        mark_price: 0.5165791606037885,
+    };
+    let point2 = MarkPriceHistoryPoint {
+        timestamp: 1608142381229,
+        mark_price: 0.5165791606037885,
+    };
+
+    assert_eq!(point1, point2);
+}
