@@ -233,6 +233,18 @@ pub mod endpoints {
     pub const CHANGE_API_KEY_NAME: &str = "/private/change_api_key_name";
     /// Change API key scope
     pub const CHANGE_SCOPE_IN_API_KEY: &str = "/private/change_scope_in_api_key";
+
+    // Address Beneficiary endpoints
+    /// Save address beneficiary information
+    pub const SAVE_ADDRESS_BENEFICIARY: &str = "/private/save_address_beneficiary";
+    /// Delete address beneficiary information
+    pub const DELETE_ADDRESS_BENEFICIARY: &str = "/private/delete_address_beneficiary";
+    /// Get address beneficiary information
+    pub const GET_ADDRESS_BENEFICIARY: &str = "/private/get_address_beneficiary";
+    /// List address beneficiaries with pagination
+    pub const LIST_ADDRESS_BENEFICIARIES: &str = "/private/list_address_beneficiaries";
+    /// Set clearance originator for a deposit
+    pub const SET_CLEARANCE_ORIGINATOR: &str = "/private/set_clearance_originator";
 }
 
 /// HTTP headers

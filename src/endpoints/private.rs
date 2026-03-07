@@ -4537,4 +4537,501 @@ impl DeribitHttpClient {
             .result
             .ok_or_else(|| HttpError::InvalidResponse("No API key data in response".to_string()))
     }
+
+    // ========================================================================
+    // Address Beneficiary Endpoints
+    // ========================================================================
+
+    /// Save address beneficiary information.
+    ///
+    /// Saves beneficiary information for a cryptocurrency address,
+    /// required for travel rule compliance.
+    ///
+    /// # Arguments
+    ///
+    /// * `request` - The beneficiary information to save
+    ///
+    /// # Errors
+    ///
+    /// Returns `HttpError` if the request fails or the response is invalid.
+    ///
+    /// # Examples
+    ///
+    /// ```rust,no_run
+    /// use deribit_http::DeribitHttpClient;
+    /// use deribit_http::model::SaveAddressBeneficiaryRequest;
+    ///
+    /// # async fn example() -> Result<(), Box<dyn std::error::Error>> {
+    /// let client = DeribitHttpClient::new();
+    /// let request = SaveAddressBeneficiaryRequest {
+    ///     currency: "BTC".to_string(),
+    ///     address: "bc1qtest".to_string(),
+    ///     agreed: true,
+    ///     personal: false,
+    ///     unhosted: false,
+    ///     beneficiary_vasp_name: "Test VASP".to_string(),
+    ///     beneficiary_vasp_did: "did:test:123".to_string(),
+    ///     beneficiary_address: "Test Address".to_string(),
+    ///     ..Default::default()
+    /// };
+    /// // let beneficiary = client.save_address_beneficiary(&request).await?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub async fn save_address_beneficiary(
+        &self,
+        request: &crate::model::SaveAddressBeneficiaryRequest,
+    ) -> Result<crate::model::AddressBeneficiary, HttpError> {
+        let mut params = vec![
+            format!("currency={}", urlencoding::encode(&request.currency)),
+            format!("address={}", urlencoding::encode(&request.address)),
+            format!("agreed={}", request.agreed),
+            format!("personal={}", request.personal),
+            format!("unhosted={}", request.unhosted),
+            format!(
+                "beneficiary_vasp_name={}",
+                urlencoding::encode(&request.beneficiary_vasp_name)
+            ),
+            format!(
+                "beneficiary_vasp_did={}",
+                urlencoding::encode(&request.beneficiary_vasp_did)
+            ),
+            format!(
+                "beneficiary_address={}",
+                urlencoding::encode(&request.beneficiary_address)
+            ),
+        ];
+
+        if let Some(ref tag) = request.tag {
+            params.push(format!("tag={}", urlencoding::encode(tag)));
+        }
+        if let Some(ref website) = request.beneficiary_vasp_website {
+            params.push(format!(
+                "beneficiary_vasp_website={}",
+                urlencoding::encode(website)
+            ));
+        }
+        if let Some(ref first_name) = request.beneficiary_first_name {
+            params.push(format!(
+                "beneficiary_first_name={}",
+                urlencoding::encode(first_name)
+            ));
+        }
+        if let Some(ref last_name) = request.beneficiary_last_name {
+            params.push(format!(
+                "beneficiary_last_name={}",
+                urlencoding::encode(last_name)
+            ));
+        }
+        if let Some(ref company_name) = request.beneficiary_company_name {
+            params.push(format!(
+                "beneficiary_company_name={}",
+                urlencoding::encode(company_name)
+            ));
+        }
+
+        let url = format!(
+            "{}{}?{}",
+            self.base_url(),
+            SAVE_ADDRESS_BENEFICIARY,
+            params.join("&")
+        );
+
+        let response = self.make_authenticated_request(&url).await?;
+
+        if !response.status().is_success() {
+            let error_text = response
+                .text()
+                .await
+                .unwrap_or_else(|_| "Unknown error".to_string());
+            return Err(HttpError::RequestFailed(format!(
+                "Save address beneficiary failed: {}",
+                error_text
+            )));
+        }
+
+        let api_response: ApiResponse<crate::model::AddressBeneficiary> = response
+            .json()
+            .await
+            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
+
+        if let Some(error) = api_response.error {
+            return Err(HttpError::RequestFailed(format!(
+                "API error: {} - {}",
+                error.code, error.message
+            )));
+        }
+
+        api_response.result.ok_or_else(|| {
+            HttpError::InvalidResponse("No beneficiary data in response".to_string())
+        })
+    }
+
+    /// Delete address beneficiary information.
+    ///
+    /// Removes beneficiary information for the specified address.
+    ///
+    /// # Arguments
+    ///
+    /// * `currency` - Currency symbol (e.g., "BTC", "ETH")
+    /// * `address` - The cryptocurrency address
+    /// * `tag` - Optional tag for XRP addresses
+    ///
+    /// # Errors
+    ///
+    /// Returns `HttpError` if the request fails or the response is invalid.
+    ///
+    /// # Examples
+    ///
+    /// ```rust,no_run
+    /// use deribit_http::DeribitHttpClient;
+    ///
+    /// # async fn example() -> Result<(), Box<dyn std::error::Error>> {
+    /// let client = DeribitHttpClient::new();
+    /// // let result = client.delete_address_beneficiary("BTC", "bc1qtest", None).await?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub async fn delete_address_beneficiary(
+        &self,
+        currency: &str,
+        address: &str,
+        tag: Option<&str>,
+    ) -> Result<String, HttpError> {
+        let mut url = format!(
+            "{}{}?currency={}&address={}",
+            self.base_url(),
+            DELETE_ADDRESS_BENEFICIARY,
+            urlencoding::encode(currency),
+            urlencoding::encode(address)
+        );
+
+        if let Some(t) = tag {
+            url.push_str(&format!("&tag={}", urlencoding::encode(t)));
+        }
+
+        let response = self.make_authenticated_request(&url).await?;
+
+        if !response.status().is_success() {
+            let error_text = response
+                .text()
+                .await
+                .unwrap_or_else(|_| "Unknown error".to_string());
+            return Err(HttpError::RequestFailed(format!(
+                "Delete address beneficiary failed: {}",
+                error_text
+            )));
+        }
+
+        let api_response: ApiResponse<String> = response
+            .json()
+            .await
+            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
+
+        if let Some(error) = api_response.error {
+            return Err(HttpError::RequestFailed(format!(
+                "API error: {} - {}",
+                error.code, error.message
+            )));
+        }
+
+        api_response
+            .result
+            .ok_or_else(|| HttpError::InvalidResponse("No result in response".to_string()))
+    }
+
+    /// Get address beneficiary information.
+    ///
+    /// Retrieves beneficiary information for the specified address.
+    ///
+    /// # Arguments
+    ///
+    /// * `currency` - Currency symbol (e.g., "BTC", "ETH")
+    /// * `address` - The cryptocurrency address
+    /// * `tag` - Optional tag for XRP addresses
+    ///
+    /// # Errors
+    ///
+    /// Returns `HttpError` if the request fails or the response is invalid.
+    ///
+    /// # Examples
+    ///
+    /// ```rust,no_run
+    /// use deribit_http::DeribitHttpClient;
+    ///
+    /// # async fn example() -> Result<(), Box<dyn std::error::Error>> {
+    /// let client = DeribitHttpClient::new();
+    /// // let beneficiary = client.get_address_beneficiary("BTC", "bc1qtest", None).await?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub async fn get_address_beneficiary(
+        &self,
+        currency: &str,
+        address: &str,
+        tag: Option<&str>,
+    ) -> Result<crate::model::AddressBeneficiary, HttpError> {
+        let mut url = format!(
+            "{}{}?currency={}&address={}",
+            self.base_url(),
+            GET_ADDRESS_BENEFICIARY,
+            urlencoding::encode(currency),
+            urlencoding::encode(address)
+        );
+
+        if let Some(t) = tag {
+            url.push_str(&format!("&tag={}", urlencoding::encode(t)));
+        }
+
+        let response = self.make_authenticated_request(&url).await?;
+
+        if !response.status().is_success() {
+            let error_text = response
+                .text()
+                .await
+                .unwrap_or_else(|_| "Unknown error".to_string());
+            return Err(HttpError::RequestFailed(format!(
+                "Get address beneficiary failed: {}",
+                error_text
+            )));
+        }
+
+        let api_response: ApiResponse<crate::model::AddressBeneficiary> = response
+            .json()
+            .await
+            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
+
+        if let Some(error) = api_response.error {
+            return Err(HttpError::RequestFailed(format!(
+                "API error: {} - {}",
+                error.code, error.message
+            )));
+        }
+
+        api_response.result.ok_or_else(|| {
+            HttpError::InvalidResponse("No beneficiary data in response".to_string())
+        })
+    }
+
+    /// List address beneficiaries with filtering and pagination.
+    ///
+    /// Returns a paginated list of address beneficiaries with optional filters.
+    ///
+    /// # Arguments
+    ///
+    /// * `request` - Optional filtering and pagination parameters
+    ///
+    /// # Errors
+    ///
+    /// Returns `HttpError` if the request fails or the response is invalid.
+    ///
+    /// # Examples
+    ///
+    /// ```rust,no_run
+    /// use deribit_http::DeribitHttpClient;
+    /// use deribit_http::model::ListAddressBeneficiariesRequest;
+    ///
+    /// # async fn example() -> Result<(), Box<dyn std::error::Error>> {
+    /// let client = DeribitHttpClient::new();
+    /// let request = ListAddressBeneficiariesRequest {
+    ///     currency: Some("BTC".to_string()),
+    ///     limit: Some(10),
+    ///     ..Default::default()
+    /// };
+    /// // let response = client.list_address_beneficiaries(Some(&request)).await?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub async fn list_address_beneficiaries(
+        &self,
+        request: Option<&crate::model::ListAddressBeneficiariesRequest>,
+    ) -> Result<crate::model::ListAddressBeneficiariesResponse, HttpError> {
+        let mut params: Vec<String> = Vec::new();
+
+        if let Some(req) = request {
+            if let Some(ref currency) = req.currency {
+                params.push(format!("currency={}", urlencoding::encode(currency)));
+            }
+            if let Some(ref address) = req.address {
+                params.push(format!("address={}", urlencoding::encode(address)));
+            }
+            if let Some(ref tag) = req.tag {
+                params.push(format!("tag={}", urlencoding::encode(tag)));
+            }
+            if let Some(created_before) = req.created_before {
+                params.push(format!("created_before={}", created_before));
+            }
+            if let Some(created_after) = req.created_after {
+                params.push(format!("created_after={}", created_after));
+            }
+            if let Some(updated_before) = req.updated_before {
+                params.push(format!("updated_before={}", updated_before));
+            }
+            if let Some(updated_after) = req.updated_after {
+                params.push(format!("updated_after={}", updated_after));
+            }
+            if let Some(personal) = req.personal {
+                params.push(format!("personal={}", personal));
+            }
+            if let Some(unhosted) = req.unhosted {
+                params.push(format!("unhosted={}", unhosted));
+            }
+            if let Some(ref vasp_name) = req.beneficiary_vasp_name {
+                params.push(format!(
+                    "beneficiary_vasp_name={}",
+                    urlencoding::encode(vasp_name)
+                ));
+            }
+            if let Some(ref vasp_did) = req.beneficiary_vasp_did {
+                params.push(format!(
+                    "beneficiary_vasp_did={}",
+                    urlencoding::encode(vasp_did)
+                ));
+            }
+            if let Some(ref vasp_website) = req.beneficiary_vasp_website {
+                params.push(format!(
+                    "beneficiary_vasp_website={}",
+                    urlencoding::encode(vasp_website)
+                ));
+            }
+            if let Some(limit) = req.limit {
+                params.push(format!("limit={}", limit));
+            }
+            if let Some(ref continuation) = req.continuation {
+                params.push(format!(
+                    "continuation={}",
+                    urlencoding::encode(continuation)
+                ));
+            }
+        }
+
+        let url = if params.is_empty() {
+            format!("{}{}", self.base_url(), LIST_ADDRESS_BENEFICIARIES)
+        } else {
+            format!(
+                "{}{}?{}",
+                self.base_url(),
+                LIST_ADDRESS_BENEFICIARIES,
+                params.join("&")
+            )
+        };
+
+        let response = self.make_authenticated_request(&url).await?;
+
+        if !response.status().is_success() {
+            let error_text = response
+                .text()
+                .await
+                .unwrap_or_else(|_| "Unknown error".to_string());
+            return Err(HttpError::RequestFailed(format!(
+                "List address beneficiaries failed: {}",
+                error_text
+            )));
+        }
+
+        let api_response: ApiResponse<crate::model::ListAddressBeneficiariesResponse> = response
+            .json()
+            .await
+            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
+
+        if let Some(error) = api_response.error {
+            return Err(HttpError::RequestFailed(format!(
+                "API error: {} - {}",
+                error.code, error.message
+            )));
+        }
+
+        api_response.result.ok_or_else(|| {
+            HttpError::InvalidResponse("No beneficiaries data in response".to_string())
+        })
+    }
+
+    /// Set clearance originator for a deposit.
+    ///
+    /// Sets the originator information for a deposit transaction,
+    /// required for travel rule compliance.
+    ///
+    /// # Arguments
+    ///
+    /// * `deposit_id` - Identifier of the deposit
+    /// * `originator` - Information about the originator
+    ///
+    /// # Errors
+    ///
+    /// Returns `HttpError` if the request fails or the response is invalid.
+    ///
+    /// # Examples
+    ///
+    /// ```rust,no_run
+    /// use deribit_http::DeribitHttpClient;
+    /// use deribit_http::model::{DepositId, Originator};
+    ///
+    /// # async fn example() -> Result<(), Box<dyn std::error::Error>> {
+    /// let client = DeribitHttpClient::new();
+    /// let deposit_id = DepositId {
+    ///     currency: "BTC".to_string(),
+    ///     user_id: 123,
+    ///     address: "2NBqqD5GRJ8wHy1PYyCXTe9ke5226FhavBz".to_string(),
+    ///     tx_hash: "230669110fdaf0a0dbcdc079b6b8b43d5af29cc73683835b9bc6b3406c065fda".to_string(),
+    /// };
+    /// let originator = Originator {
+    ///     is_personal: false,
+    ///     company_name: Some("Company Name".to_string()),
+    ///     first_name: Some("First".to_string()),
+    ///     last_name: Some("Last".to_string()),
+    ///     address: "NL, Amsterdam, Street, 1".to_string(),
+    /// };
+    /// // let result = client.set_clearance_originator(&deposit_id, &originator).await?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub async fn set_clearance_originator(
+        &self,
+        deposit_id: &crate::model::DepositId,
+        originator: &crate::model::Originator,
+    ) -> Result<crate::model::ClearanceDepositResult, HttpError> {
+        let deposit_id_json = serde_json::to_string(deposit_id).map_err(|e| {
+            HttpError::InvalidResponse(format!("Failed to serialize deposit_id: {}", e))
+        })?;
+        let originator_json = serde_json::to_string(originator).map_err(|e| {
+            HttpError::InvalidResponse(format!("Failed to serialize originator: {}", e))
+        })?;
+
+        let url = format!(
+            "{}{}?deposit_id={}&originator={}",
+            self.base_url(),
+            SET_CLEARANCE_ORIGINATOR,
+            urlencoding::encode(&deposit_id_json),
+            urlencoding::encode(&originator_json)
+        );
+
+        let response = self.make_authenticated_request(&url).await?;
+
+        if !response.status().is_success() {
+            let error_text = response
+                .text()
+                .await
+                .unwrap_or_else(|_| "Unknown error".to_string());
+            return Err(HttpError::RequestFailed(format!(
+                "Set clearance originator failed: {}",
+                error_text
+            )));
+        }
+
+        let api_response: ApiResponse<crate::model::ClearanceDepositResult> = response
+            .json()
+            .await
+            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
+
+        if let Some(error) = api_response.error {
+            return Err(HttpError::RequestFailed(format!(
+                "API error: {} - {}",
+                error.code, error.message
+            )));
+        }
+
+        api_response
+            .result
+            .ok_or_else(|| HttpError::InvalidResponse("No deposit result in response".to_string()))
+    }
 }
