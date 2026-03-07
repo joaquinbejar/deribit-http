@@ -830,3 +830,168 @@ async fn test_get_margins_error() {
     mock.assert_async().await;
     assert!(result.is_err());
 }
+
+// =========================================================================
+// MMP Endpoints Tests (Issue #16)
+// =========================================================================
+
+#[tokio::test]
+async fn test_get_mmp_config_success() {
+    let mut server = mockito::Server::new_async().await;
+    let client = create_test_client(&server);
+
+    let _auth_mock = create_auth_mock(&mut server).await;
+
+    let mock_response = json!({
+        "jsonrpc": "2.0",
+        "result": [
+            {
+                "index_name": "btc_usd",
+                "mmp_group": "MassQuoteBot7",
+                "interval": 60,
+                "frozen_time": 0,
+                "quantity_limit": 0.5,
+                "delta_limit": 0.3,
+                "vega_limit": 0.1,
+                "max_quote_quantity": 0.4
+            }
+        ],
+        "id": 1
+    });
+
+    let mock = server
+        .mock("GET", "/api/v2/private/get_mmp_config?index_name=btc_usd")
+        .with_status(200)
+        .with_header("content-type", "application/json")
+        .with_body(mock_response.to_string())
+        .create_async()
+        .await;
+
+    let result = client.get_mmp_config(Some("btc_usd"), None, None).await;
+
+    mock.assert_async().await;
+    assert!(result.is_ok());
+    let configs = result.unwrap();
+    assert_eq!(configs.len(), 1);
+    assert_eq!(configs[0].index_name, "btc_usd");
+    assert_eq!(configs[0].interval, 60);
+}
+
+#[tokio::test]
+async fn test_get_mmp_status_success() {
+    let mut server = mockito::Server::new_async().await;
+    let client = create_test_client(&server);
+
+    let _auth_mock = create_auth_mock(&mut server).await;
+
+    let mock_response = json!({
+        "jsonrpc": "2.0",
+        "result": [
+            {
+                "index_name": "btc_usd",
+                "frozen_until": 1744275841861u64,
+                "mmp_group": "MassQuoteBot7"
+            }
+        ],
+        "id": 1
+    });
+
+    let mock = server
+        .mock("GET", "/api/v2/private/get_mmp_status?index_name=btc_usd")
+        .with_status(200)
+        .with_header("content-type", "application/json")
+        .with_body(mock_response.to_string())
+        .create_async()
+        .await;
+
+    let result = client.get_mmp_status(Some("btc_usd"), None, None).await;
+
+    mock.assert_async().await;
+    assert!(result.is_ok());
+    let statuses = result.unwrap();
+    assert_eq!(statuses.len(), 1);
+    assert_eq!(statuses[0].index_name, "btc_usd");
+    assert_eq!(statuses[0].frozen_until, 1744275841861);
+}
+
+#[tokio::test]
+async fn test_set_mmp_config_success() {
+    let mut server = mockito::Server::new_async().await;
+    let client = create_test_client(&server);
+
+    let _auth_mock = create_auth_mock(&mut server).await;
+
+    let mock_response = json!({
+        "jsonrpc": "2.0",
+        "result": {
+            "index_name": "btc_usd",
+            "mmp_group": "MassQuoteBot7",
+            "interval": 60,
+            "frozen_time": 0,
+            "quantity_limit": 3.0,
+            "max_quote_quantity": 2.5
+        },
+        "id": 1
+    });
+
+    let mock = server
+        .mock(
+            "GET",
+            mockito::Matcher::Regex(
+                r"/api/v2/private/set_mmp_config\?.*index_name=btc_usd.*".to_string(),
+            ),
+        )
+        .with_status(200)
+        .with_header("content-type", "application/json")
+        .with_body(mock_response.to_string())
+        .create_async()
+        .await;
+
+    let request = deribit_http::model::response::mmp::SetMmpConfigRequest {
+        index_name: "btc_usd".to_string(),
+        interval: 60,
+        frozen_time: 0,
+        quantity_limit: Some(3.0),
+        delta_limit: None,
+        vega_limit: None,
+        max_quote_quantity: Some(2.5),
+        mmp_group: Some("MassQuoteBot7".to_string()),
+        block_rfq: None,
+    };
+
+    let result = client.set_mmp_config(request).await;
+
+    mock.assert_async().await;
+    assert!(result.is_ok());
+    let config = result.unwrap();
+    assert_eq!(config.index_name, "btc_usd");
+    assert_eq!(config.interval, 60);
+}
+
+#[tokio::test]
+async fn test_reset_mmp_success() {
+    let mut server = mockito::Server::new_async().await;
+    let client = create_test_client(&server);
+
+    let _auth_mock = create_auth_mock(&mut server).await;
+
+    let mock_response = json!({
+        "jsonrpc": "2.0",
+        "result": "ok",
+        "id": 1
+    });
+
+    let mock = server
+        .mock("GET", "/api/v2/private/reset_mmp?index_name=btc_usd")
+        .with_status(200)
+        .with_header("content-type", "application/json")
+        .with_body(mock_response.to_string())
+        .create_async()
+        .await;
+
+    let result = client.reset_mmp("btc_usd", None, None).await;
+
+    mock.assert_async().await;
+    assert!(result.is_ok());
+    assert_eq!(result.unwrap(), "ok");
+}

@@ -12,6 +12,7 @@ use crate::model::response::api_response::ApiResponse;
 use crate::model::response::deposit::DepositsResponse;
 use crate::model::response::margin::MarginsResponse;
 use crate::model::response::mass_quote::MassQuoteResponse;
+use crate::model::response::mmp::{MmpConfig, MmpStatus, SetMmpConfigRequest};
 use crate::model::response::order::{OrderInfoResponse, OrderResponse};
 use crate::model::response::other::{
     AccountSummaryResponse, TransactionLogResponse, TransferResultResponse,
@@ -1597,6 +1598,348 @@ impl DeribitHttpClient {
         api_response
             .result
             .ok_or_else(|| HttpError::InvalidResponse("No margin data in response".to_string()))
+    }
+
+    /// Get MMP configuration
+    ///
+    /// Retrieves Market Maker Protection (MMP) configuration for an index.
+    /// If index_name is not provided, returns all MMP configurations.
+    ///
+    /// # Arguments
+    ///
+    /// * `index_name` - Index identifier (e.g., "btc_usd", "eth_usd"), optional
+    /// * `mmp_group` - MMP group name for Mass Quotes, optional
+    /// * `block_rfq` - If true, retrieve MMP config for Block RFQ, optional
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use deribit_http::DeribitHttpClient;
+    ///
+    /// let client = DeribitHttpClient::new();
+    /// // let configs = client.get_mmp_config(Some("btc_usd"), None, None).await?;
+    /// ```
+    pub async fn get_mmp_config(
+        &self,
+        index_name: Option<&str>,
+        mmp_group: Option<&str>,
+        block_rfq: Option<bool>,
+    ) -> Result<Vec<MmpConfig>, HttpError> {
+        let mut query_params: Vec<(String, String)> = Vec::new();
+
+        if let Some(index) = index_name {
+            query_params.push(("index_name".to_string(), index.to_string()));
+        }
+
+        if let Some(group) = mmp_group {
+            query_params.push(("mmp_group".to_string(), group.to_string()));
+        }
+
+        if let Some(rfq) = block_rfq
+            && rfq
+        {
+            query_params.push(("block_rfq".to_string(), "true".to_string()));
+        }
+
+        let url = if query_params.is_empty() {
+            format!("{}{}", self.base_url(), GET_MMP_CONFIG)
+        } else {
+            let query_string = query_params
+                .iter()
+                .map(|(k, v)| format!("{}={}", k, urlencoding::encode(v)))
+                .collect::<Vec<_>>()
+                .join("&");
+            format!("{}{}?{}", self.base_url(), GET_MMP_CONFIG, query_string)
+        };
+
+        let response = self.make_authenticated_request(&url).await?;
+
+        if !response.status().is_success() {
+            let error_text = response
+                .text()
+                .await
+                .unwrap_or_else(|_| "Unknown error".to_string());
+            return Err(HttpError::RequestFailed(format!(
+                "Get MMP config failed: {}",
+                error_text
+            )));
+        }
+
+        let api_response: ApiResponse<Vec<MmpConfig>> = response
+            .json()
+            .await
+            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
+
+        if let Some(error) = api_response.error {
+            return Err(HttpError::RequestFailed(format!(
+                "API error: {} - {}",
+                error.code, error.message
+            )));
+        }
+
+        api_response
+            .result
+            .ok_or_else(|| HttpError::InvalidResponse("No MMP config data in response".to_string()))
+    }
+
+    /// Get MMP status
+    ///
+    /// Retrieves Market Maker Protection (MMP) status for a triggered index or MMP group.
+    /// If index_name is not provided, returns all triggered MMP statuses.
+    ///
+    /// # Arguments
+    ///
+    /// * `index_name` - Index identifier (e.g., "btc_usd", "eth_usd"), optional
+    /// * `mmp_group` - MMP group name for Mass Quotes, optional
+    /// * `block_rfq` - If true, retrieve MMP status for Block RFQ, optional
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use deribit_http::DeribitHttpClient;
+    ///
+    /// let client = DeribitHttpClient::new();
+    /// // let statuses = client.get_mmp_status(Some("btc_usd"), None, None).await?;
+    /// ```
+    pub async fn get_mmp_status(
+        &self,
+        index_name: Option<&str>,
+        mmp_group: Option<&str>,
+        block_rfq: Option<bool>,
+    ) -> Result<Vec<MmpStatus>, HttpError> {
+        let mut query_params: Vec<(String, String)> = Vec::new();
+
+        if let Some(index) = index_name {
+            query_params.push(("index_name".to_string(), index.to_string()));
+        }
+
+        if let Some(group) = mmp_group {
+            query_params.push(("mmp_group".to_string(), group.to_string()));
+        }
+
+        if let Some(rfq) = block_rfq
+            && rfq
+        {
+            query_params.push(("block_rfq".to_string(), "true".to_string()));
+        }
+
+        let url = if query_params.is_empty() {
+            format!("{}{}", self.base_url(), GET_MMP_STATUS)
+        } else {
+            let query_string = query_params
+                .iter()
+                .map(|(k, v)| format!("{}={}", k, urlencoding::encode(v)))
+                .collect::<Vec<_>>()
+                .join("&");
+            format!("{}{}?{}", self.base_url(), GET_MMP_STATUS, query_string)
+        };
+
+        let response = self.make_authenticated_request(&url).await?;
+
+        if !response.status().is_success() {
+            let error_text = response
+                .text()
+                .await
+                .unwrap_or_else(|_| "Unknown error".to_string());
+            return Err(HttpError::RequestFailed(format!(
+                "Get MMP status failed: {}",
+                error_text
+            )));
+        }
+
+        let api_response: ApiResponse<Vec<MmpStatus>> = response
+            .json()
+            .await
+            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
+
+        if let Some(error) = api_response.error {
+            return Err(HttpError::RequestFailed(format!(
+                "API error: {} - {}",
+                error.code, error.message
+            )));
+        }
+
+        api_response
+            .result
+            .ok_or_else(|| HttpError::InvalidResponse("No MMP status data in response".to_string()))
+    }
+
+    /// Set MMP configuration
+    ///
+    /// Configures Market Maker Protection (MMP) for a specific index.
+    /// Set interval to 0 to remove MMP configuration.
+    ///
+    /// # Arguments
+    ///
+    /// * `request` - The MMP configuration request
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use deribit_http::DeribitHttpClient;
+    /// use deribit_http::model::response::mmp::SetMmpConfigRequest;
+    ///
+    /// let client = DeribitHttpClient::new();
+    /// // let request = SetMmpConfigRequest {
+    /// //     index_name: "btc_usd".to_string(),
+    /// //     interval: 60,
+    /// //     frozen_time: 0,
+    /// //     quantity_limit: Some(3.0),
+    /// //     max_quote_quantity: Some(2.5),
+    /// //     ..Default::default()
+    /// // };
+    /// // let config = client.set_mmp_config(request).await?;
+    /// ```
+    pub async fn set_mmp_config(
+        &self,
+        request: SetMmpConfigRequest,
+    ) -> Result<MmpConfig, HttpError> {
+        let mut query_params = vec![
+            ("index_name".to_string(), request.index_name),
+            ("interval".to_string(), request.interval.to_string()),
+            ("frozen_time".to_string(), request.frozen_time.to_string()),
+        ];
+
+        if let Some(quantity_limit) = request.quantity_limit {
+            query_params.push(("quantity_limit".to_string(), quantity_limit.to_string()));
+        }
+
+        if let Some(delta_limit) = request.delta_limit {
+            query_params.push(("delta_limit".to_string(), delta_limit.to_string()));
+        }
+
+        if let Some(vega_limit) = request.vega_limit {
+            query_params.push(("vega_limit".to_string(), vega_limit.to_string()));
+        }
+
+        if let Some(max_quote_quantity) = request.max_quote_quantity {
+            query_params.push((
+                "max_quote_quantity".to_string(),
+                max_quote_quantity.to_string(),
+            ));
+        }
+
+        if let Some(mmp_group) = request.mmp_group {
+            query_params.push(("mmp_group".to_string(), mmp_group));
+        }
+
+        if let Some(block_rfq) = request.block_rfq
+            && block_rfq
+        {
+            query_params.push(("block_rfq".to_string(), "true".to_string()));
+        }
+
+        let query_string = query_params
+            .iter()
+            .map(|(k, v)| format!("{}={}", k, urlencoding::encode(v)))
+            .collect::<Vec<_>>()
+            .join("&");
+
+        let url = format!("{}{}?{}", self.base_url(), SET_MMP_CONFIG, query_string);
+
+        let response = self.make_authenticated_request(&url).await?;
+
+        if !response.status().is_success() {
+            let error_text = response
+                .text()
+                .await
+                .unwrap_or_else(|_| "Unknown error".to_string());
+            return Err(HttpError::RequestFailed(format!(
+                "Set MMP config failed: {}",
+                error_text
+            )));
+        }
+
+        let api_response: ApiResponse<MmpConfig> = response
+            .json()
+            .await
+            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
+
+        if let Some(error) = api_response.error {
+            return Err(HttpError::RequestFailed(format!(
+                "API error: {} - {}",
+                error.code, error.message
+            )));
+        }
+
+        api_response
+            .result
+            .ok_or_else(|| HttpError::InvalidResponse("No MMP config data in response".to_string()))
+    }
+
+    /// Reset MMP limits
+    ///
+    /// Resets Market Maker Protection (MMP) limits for the specified currency pair or MMP group.
+    /// If MMP protection has been triggered and quoting is frozen, this allows manual resume.
+    ///
+    /// # Arguments
+    ///
+    /// * `index_name` - Currency pair (e.g., "btc_usd", "eth_usd")
+    /// * `mmp_group` - MMP group name for Mass Quotes, optional
+    /// * `block_rfq` - If true, reset MMP for Block RFQ, optional
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use deribit_http::DeribitHttpClient;
+    ///
+    /// let client = DeribitHttpClient::new();
+    /// // let result = client.reset_mmp("btc_usd", None, None).await?;
+    /// ```
+    pub async fn reset_mmp(
+        &self,
+        index_name: &str,
+        mmp_group: Option<&str>,
+        block_rfq: Option<bool>,
+    ) -> Result<String, HttpError> {
+        let mut query_params = vec![("index_name".to_string(), index_name.to_string())];
+
+        if let Some(group) = mmp_group {
+            query_params.push(("mmp_group".to_string(), group.to_string()));
+        }
+
+        if let Some(rfq) = block_rfq
+            && rfq
+        {
+            query_params.push(("block_rfq".to_string(), "true".to_string()));
+        }
+
+        let query_string = query_params
+            .iter()
+            .map(|(k, v)| format!("{}={}", k, urlencoding::encode(v)))
+            .collect::<Vec<_>>()
+            .join("&");
+
+        let url = format!("{}{}?{}", self.base_url(), RESET_MMP, query_string);
+
+        let response = self.make_authenticated_request(&url).await?;
+
+        if !response.status().is_success() {
+            let error_text = response
+                .text()
+                .await
+                .unwrap_or_else(|_| "Unknown error".to_string());
+            return Err(HttpError::RequestFailed(format!(
+                "Reset MMP failed: {}",
+                error_text
+            )));
+        }
+
+        let api_response: ApiResponse<String> = response
+            .json()
+            .await
+            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
+
+        if let Some(error) = api_response.error {
+            return Err(HttpError::RequestFailed(format!(
+                "API error: {} - {}",
+                error.code, error.message
+            )));
+        }
+
+        api_response
+            .result
+            .ok_or_else(|| HttpError::InvalidResponse("No result in response".to_string()))
     }
 
     /// Mass quote
