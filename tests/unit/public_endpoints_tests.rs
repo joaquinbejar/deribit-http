@@ -495,3 +495,85 @@ async fn test_get_order_book_success() {
     assert_eq!(order_book.bids.len(), 1);
     assert_eq!(order_book.asks.len(), 1);
 }
+
+#[tokio::test]
+async fn test_get_block_rfq_trades_success() {
+    let mut server = mockito::Server::new_async().await;
+    let client = create_test_client(&server);
+
+    let mock_response = json!({
+        "jsonrpc": "2.0",
+        "result": {
+            "continuation": "1739739009234:6570",
+            "block_rfqs": [
+                {
+                    "id": 6611,
+                    "timestamp": 1739803305362i64,
+                    "combo_id": "BTC-CS-28FEB25-100000_106000",
+                    "legs": [
+                        {
+                            "price": 0.1,
+                            "direction": "buy",
+                            "instrument_name": "BTC-28FEB25-100000-C",
+                            "ratio": 1
+                        }
+                    ],
+                    "amount": 12.5,
+                    "direction": "sell",
+                    "mark_price": 0.010356754
+                }
+            ]
+        },
+        "id": 1
+    });
+
+    let mock = server
+        .mock("GET", "//public/get_block_rfq_trades?currency=BTC&count=20")
+        .with_status(200)
+        .with_header("content-type", "application/json")
+        .with_body(mock_response.to_string())
+        .create_async()
+        .await;
+
+    let result = client
+        .get_block_rfq_trades(Some("BTC"), Some(20), None)
+        .await;
+
+    mock.assert_async().await;
+    assert!(result.is_ok());
+    let response = result.unwrap();
+    assert!(response.has_more());
+    assert_eq!(response.len(), 1);
+    assert_eq!(response.block_rfqs[0].id, 6611);
+}
+
+#[tokio::test]
+async fn test_get_block_rfq_trades_empty() {
+    let mut server = mockito::Server::new_async().await;
+    let client = create_test_client(&server);
+
+    let mock_response = json!({
+        "jsonrpc": "2.0",
+        "result": {
+            "continuation": null,
+            "block_rfqs": []
+        },
+        "id": 1
+    });
+
+    let mock = server
+        .mock("GET", "//public/get_block_rfq_trades")
+        .with_status(200)
+        .with_header("content-type", "application/json")
+        .with_body(mock_response.to_string())
+        .create_async()
+        .await;
+
+    let result = client.get_block_rfq_trades(None, None, None).await;
+
+    mock.assert_async().await;
+    assert!(result.is_ok());
+    let response = result.unwrap();
+    assert!(!response.has_more());
+    assert!(response.is_empty());
+}

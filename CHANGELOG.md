@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-03-07
+
+### Added
+- **Block Trade Endpoints**: Complete block trade API support (`execute_block_trade`, `verify_block_trade`, `invalidate_block_trade_signature`, `get_block_trade`, `get_last_block_trades_by_currency`, `move_block_trade_positions`)
+- **Block RFQ Endpoints**: Request for Quote functionality for block trades
+- **Combo Books Endpoints**: 5 endpoints for combo instruments (`create_combo`, `get_combo_details`, `get_combo_ids`, `verify_combo`, `execute_combo`)
+- **Wallet Endpoints**: 8 wallet management endpoints (`get_deposit_address`, `create_deposit_address`, `get_current_deposit_address`, `get_deposits`, `get_withdrawals`, `withdraw`, `cancel_withdrawal`, `cancel_withdrawal_by_id`)
+- **Transfer Endpoints**: `get_transfers`, `cancel_transfer_by_id`, `submit_transfer_between_subaccounts`
+- **Address Beneficiary Endpoints**: `add_or_update_address_beneficiary`, `get_address_beneficiary`, `remove_address_beneficiary`
+- **Subaccount Management**: 6 endpoints (`create_subaccount`, `change_subaccount_name`, `set_subaccount_email`, `toggle_subaccount_login`, `enable_cancel_on_disconnect`, `disable_cancel_on_disconnect`)
+- **API Key Management**: 9 endpoints (`create_api_key`, `remove_api_key`, `reset_api_key`, `set_api_key_as_default`, `enable_api_key`, `disable_api_key`, `list_api_keys`, `get_api_key`, `update_api_key`)
+- **Account Endpoints**: `get_account_summaries`, `get_subaccounts_details`, remaining account management endpoints
+- **Position Endpoints**: `move_positions` for position transfers between accounts
+- **Order Endpoints**: `get_trigger_order_history`, `get_order_state_by_label`, `get_order_margin_by_ids`
+- **Settlement Endpoints**: `get_settlement_history_by_instrument`, `get_settlement_history_by_currency`
+
 ## [0.5.1] - 2026-01-10
 
 ### Changed

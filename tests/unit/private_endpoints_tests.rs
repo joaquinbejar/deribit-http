@@ -2206,7 +2206,10 @@ async fn test_cancel_transfer_by_id_success() {
     });
 
     let mock = server
-        .mock("GET", "/api/v2/private/cancel_transfer_by_id?currency=BTC&id=123")
+        .mock(
+            "GET",
+            "/api/v2/private/cancel_transfer_by_id?currency=BTC&id=123",
+        )
         .with_status(200)
         .with_header("content-type", "application/json")
         .with_body(mock_response.to_string())
@@ -2363,4 +2366,201 @@ async fn test_submit_transfer_between_subaccounts_error() {
 
     mock.assert_async().await;
     assert!(result.is_err());
+}
+
+// ============================================================================
+// Block RFQ endpoint tests
+// ============================================================================
+
+#[tokio::test]
+async fn test_get_block_rfqs_success() {
+    let mut server = mockito::Server::new_async().await;
+    let client = create_test_client(&server);
+
+    let _auth_mock = create_auth_mock(&mut server).await;
+
+    let mock_response = json!({
+        "jsonrpc": "2.0",
+        "result": {
+            "continuation": null,
+            "block_rfqs": [
+                {
+                    "block_rfq_id": 508,
+                    "state": "open",
+                    "role": "maker",
+                    "amount": 40000,
+                    "combo_id": "BTC-15NOV24",
+                    "legs": [
+                        {
+                            "direction": "sell",
+                            "instrument_name": "BTC-15NOV24",
+                            "ratio": 1
+                        }
+                    ],
+                    "creation_timestamp": 1731062457741i64,
+                    "expiration_timestamp": 1731062757741i64,
+                    "taker_rating": "1-2"
+                }
+            ]
+        },
+        "id": 1
+    });
+
+    let mock = server
+        .mock(
+            "GET",
+            "/api/v2/private/get_block_rfqs?count=20&state=open&role=maker",
+        )
+        .with_status(200)
+        .with_header("content-type", "application/json")
+        .with_body(mock_response.to_string())
+        .create_async()
+        .await;
+
+    let result = client
+        .get_block_rfqs(
+            Some(20),
+            Some(deribit_http::model::response::BlockRfqState::Open),
+            Some(deribit_http::model::response::BlockRfqRole::Maker),
+            None,
+            None,
+            None,
+        )
+        .await;
+
+    mock.assert_async().await;
+    assert!(result.is_ok());
+    let response = result.unwrap();
+    assert_eq!(response.len(), 1);
+    assert_eq!(response.block_rfqs[0].block_rfq_id, 508);
+}
+
+#[tokio::test]
+async fn test_cancel_block_rfq_success() {
+    let mut server = mockito::Server::new_async().await;
+    let client = create_test_client(&server);
+
+    let _auth_mock = create_auth_mock(&mut server).await;
+
+    let mock_response = json!({
+        "jsonrpc": "2.0",
+        "result": {
+            "block_rfq_id": 366,
+            "state": "cancelled",
+            "role": "taker",
+            "amount": 100000,
+            "combo_id": "BTC-FS-1NOV24_PERP",
+            "legs": [
+                {
+                    "ratio": 1,
+                    "instrument_name": "BTC-1NOV24",
+                    "direction": "sell"
+                }
+            ],
+            "creation_timestamp": 1729855159611i64,
+            "expiration_timestamp": 1729855459611i64,
+            "bids": [],
+            "asks": [],
+            "makers": []
+        },
+        "id": 1
+    });
+
+    let mock = server
+        .mock("GET", "/api/v2/private/cancel_block_rfq?block_rfq_id=366")
+        .with_status(200)
+        .with_header("content-type", "application/json")
+        .with_body(mock_response.to_string())
+        .create_async()
+        .await;
+
+    let result = client.cancel_block_rfq(366).await;
+
+    mock.assert_async().await;
+    assert!(result.is_ok());
+    let rfq = result.unwrap();
+    assert_eq!(rfq.block_rfq_id, 366);
+    assert!(rfq.is_cancelled());
+}
+
+#[tokio::test]
+async fn test_get_block_rfq_quotes_success() {
+    let mut server = mockito::Server::new_async().await;
+    let client = create_test_client(&server);
+
+    let _auth_mock = create_auth_mock(&mut server).await;
+
+    let mock_response = json!({
+        "jsonrpc": "2.0",
+        "result": [
+            {
+                "block_rfq_quote_id": 8,
+                "block_rfq_id": 1,
+                "quote_state": "open",
+                "price": 74600,
+                "amount": 20000,
+                "direction": "buy",
+                "legs": [
+                    {
+                        "direction": "buy",
+                        "price": 74600,
+                        "instrument_name": "BTC-15NOV24",
+                        "ratio": 1
+                    }
+                ],
+                "creation_timestamp": 1731076586371i64,
+                "last_update_timestamp": 1731076638591i64,
+                "replaced": false,
+                "filled_amount": 0,
+                "execution_instruction": "all_or_none"
+            }
+        ],
+        "id": 1
+    });
+
+    let mock = server
+        .mock("GET", "/api/v2/private/get_block_rfq_quotes?block_rfq_id=1")
+        .with_status(200)
+        .with_header("content-type", "application/json")
+        .with_body(mock_response.to_string())
+        .create_async()
+        .await;
+
+    let result = client.get_block_rfq_quotes(Some(1), None, None).await;
+
+    mock.assert_async().await;
+    assert!(result.is_ok());
+    let quotes = result.unwrap();
+    assert_eq!(quotes.len(), 1);
+    assert_eq!(quotes[0].block_rfq_quote_id, 8);
+    assert!(quotes[0].is_open());
+}
+
+#[tokio::test]
+async fn test_cancel_all_block_rfq_quotes_success() {
+    let mut server = mockito::Server::new_async().await;
+    let client = create_test_client(&server);
+
+    let _auth_mock = create_auth_mock(&mut server).await;
+
+    let mock_response = json!({
+        "jsonrpc": "2.0",
+        "result": [],
+        "id": 1
+    });
+
+    let mock = server
+        .mock("GET", "/api/v2/private/cancel_all_block_rfq_quotes")
+        .with_status(200)
+        .with_header("content-type", "application/json")
+        .with_body(mock_response.to_string())
+        .create_async()
+        .await;
+
+    let result = client.cancel_all_block_rfq_quotes().await;
+
+    mock.assert_async().await;
+    assert!(result.is_ok());
+    let quotes = result.unwrap();
+    assert!(quotes.is_empty());
 }

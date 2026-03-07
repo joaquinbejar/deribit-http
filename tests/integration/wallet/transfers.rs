@@ -376,7 +376,11 @@ mod withdrawal_tests {
 
         match result {
             Ok(transfers) => {
-                info!("Got {} transfers (total: {})", transfers.len(), transfers.count);
+                info!(
+                    "Got {} transfers (total: {})",
+                    transfers.len(),
+                    transfers.count
+                );
                 for transfer in &transfers.data {
                     debug!(
                         "Transfer ID: {}, Amount: {} {}, Direction: {:?}, State: {:?}",
@@ -411,7 +415,11 @@ mod withdrawal_tests {
 
         match (page1, page2) {
             (Ok(p1), Ok(p2)) => {
-                info!("Page 1: {} transfers, Page 2: {} transfers", p1.len(), p2.len());
+                info!(
+                    "Page 1: {} transfers, Page 2: {} transfers",
+                    p1.len(),
+                    p2.len()
+                );
                 assert!(
                     p1.count == p2.count,
                     "Total count should be consistent across pages"
@@ -483,7 +491,10 @@ mod withdrawal_tests {
                 assert!(transfer.is_cancelled(), "Transfer should be cancelled");
             }
             Err(e) => {
-                warn!("Cancel transfer failed (expected for non-existent ID): {:?}", e);
+                warn!(
+                    "Cancel transfer failed (expected for non-existent ID): {:?}",
+                    e
+                );
             }
         }
 
@@ -528,8 +539,8 @@ mod withdrawal_tests {
     #[tokio::test]
     #[ignore = "Requires authentication and subaccounts"]
     #[serial_test::serial]
-    async fn test_submit_transfer_between_subaccounts_with_source(
-    ) -> Result<(), Box<dyn std::error::Error>> {
+    async fn test_submit_transfer_between_subaccounts_with_source()
+    -> Result<(), Box<dyn std::error::Error>> {
         check_env_file()?;
 
         let client = DeribitHttpClient::new();
@@ -545,10 +556,7 @@ mod withdrawal_tests {
                 assert_eq!(transfer.currency, "ETH");
             }
             Err(e) => {
-                warn!(
-                    "Submit transfer with source failed (expected): {:?}",
-                    e
-                );
+                warn!("Submit transfer with source failed (expected): {:?}", e);
             }
         }
 
@@ -587,9 +595,7 @@ mod withdrawal_tests {
 
                 // Step 4: Attempt to cancel if transfer is pending
                 if transfer.is_pending() {
-                    let cancel_result = client
-                        .cancel_transfer_by_id("BTC", transfer.id)
-                        .await;
+                    let cancel_result = client.cancel_transfer_by_id("BTC", transfer.id).await;
                     match cancel_result {
                         Ok(cancelled) => {
                             info!("Transfer cancelled: {:?}", cancelled.state);
@@ -601,7 +607,10 @@ mod withdrawal_tests {
                 }
             }
             Err(e) => {
-                warn!("Transfer workflow test: transfer creation failed (expected): {:?}", e);
+                warn!(
+                    "Transfer workflow test: transfer creation failed (expected): {:?}",
+                    e
+                );
             }
         }
 

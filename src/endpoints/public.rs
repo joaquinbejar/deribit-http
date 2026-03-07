@@ -2983,4 +2983,105 @@ impl DeribitHttpClient {
             .result
             .ok_or_else(|| HttpError::InvalidResponse("No combos data in response".to_string()))
     }
+
+    /// Retrieves a list of recent Block RFQ trades.
+    ///
+    /// This is a public method that provides market data about completed Block RFQ trades.
+    /// Can be optionally filtered by currency.
+    ///
+    /// # Arguments
+    ///
+    /// * `currency` - Optional currency filter (e.g., "BTC", "ETH")
+    /// * `count` - Optional number of trades to return (max 1000)
+    /// * `continuation` - Optional continuation token for pagination
+    ///
+    /// # Returns
+    ///
+    /// Returns a `BlockRfqTradesResponse` containing the list of trades and pagination info.
+    ///
+    /// # Errors
+    ///
+    /// Returns `HttpError` if the request fails or the response cannot be parsed.
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// use deribit_http::DeribitHttpClient;
+    ///
+    /// # async fn example() -> Result<(), Box<dyn std::error::Error>> {
+    /// let client = DeribitHttpClient::builder().testnet().build()?;
+    /// let trades = client.get_block_rfq_trades(Some("BTC"), Some(20), None).await?;
+    /// println!("Found {} Block RFQ trades", trades.len());
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub async fn get_block_rfq_trades(
+        &self,
+        currency: Option<&str>,
+        count: Option<u32>,
+        continuation: Option<&str>,
+    ) -> Result<crate::model::response::BlockRfqTradesResponse, HttpError> {
+        let mut query_params: Vec<String> = Vec::new();
+
+        if let Some(curr) = currency {
+            query_params.push(format!("currency={}", curr));
+        }
+
+        if let Some(c) = count {
+            query_params.push(format!("count={}", c));
+        }
+
+        if let Some(cont) = continuation {
+            query_params.push(format!("continuation={}", cont));
+        }
+
+        let url = if query_params.is_empty() {
+            format!(
+                "{}{}",
+                self.base_url(),
+                crate::constants::endpoints::GET_BLOCK_RFQ_TRADES
+            )
+        } else {
+            format!(
+                "{}{}?{}",
+                self.base_url(),
+                crate::constants::endpoints::GET_BLOCK_RFQ_TRADES,
+                query_params.join("&")
+            )
+        };
+
+        let response = self
+            .http_client()
+            .get(&url)
+            .send()
+            .await
+            .map_err(|e| HttpError::NetworkError(e.to_string()))?;
+
+        if !response.status().is_success() {
+            let error_text = response
+                .text()
+                .await
+                .unwrap_or_else(|_| "Unknown error".to_string());
+            return Err(HttpError::RequestFailed(format!(
+                "Get Block RFQ trades failed: {}",
+                error_text
+            )));
+        }
+
+        let api_response: ApiResponse<crate::model::response::BlockRfqTradesResponse> = response
+            .json()
+            .await
+            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
+
+        if let Some(error) = api_response.error {
+            return Err(HttpError::RequestFailed(format!(
+                "API error: {} - {}",
+                error.code, error.message
+            )));
+        }
+
+        api_response.result.ok_or_else(|| {
+            HttpError::InvalidResponse("No Block RFQ trades data in response".to_string())
+        })
+    }
 }
