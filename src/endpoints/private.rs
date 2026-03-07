@@ -15,7 +15,7 @@ use crate::model::response::mass_quote::MassQuoteResponse;
 use crate::model::response::mmp::{MmpConfig, MmpStatus, SetMmpConfigRequest};
 use crate::model::response::order::{OrderInfoResponse, OrderResponse};
 use crate::model::response::other::{
-    AccountSummaryResponse, TransactionLogResponse, TransferResultResponse,
+    AccountSummaryResponse, SettlementsResponse, TransactionLogResponse, TransferResultResponse,
 };
 use crate::model::response::withdrawal::WithdrawalsResponse;
 use crate::model::{
@@ -1741,6 +1741,184 @@ impl DeribitHttpClient {
         api_response
             .result
             .ok_or_else(|| HttpError::InvalidResponse("No order data in response".to_string()))
+    }
+
+    /// Get settlement history by currency
+    ///
+    /// Retrieves settlement, delivery, and bankruptcy events that have affected
+    /// your account for a specific currency. Settlements occur when futures or
+    /// options contracts expire and are settled at the delivery price.
+    ///
+    /// # Arguments
+    ///
+    /// * `currency` - Currency symbol (e.g., "BTC", "ETH", "USDC")
+    /// * `settlement_type` - Settlement type: "settlement", "delivery", or "bankruptcy" (optional)
+    /// * `count` - Number of items (default 20, max 1000) (optional)
+    /// * `continuation` - Pagination token (optional)
+    /// * `search_start_timestamp` - Latest timestamp to return results from in ms (optional)
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use deribit_http::DeribitHttpClient;
+    ///
+    /// let client = DeribitHttpClient::new();
+    /// // let history = client.get_settlement_history_by_currency("BTC", None, None, None, None).await?;
+    /// ```
+    pub async fn get_settlement_history_by_currency(
+        &self,
+        currency: &str,
+        settlement_type: Option<&str>,
+        count: Option<u32>,
+        continuation: Option<&str>,
+        search_start_timestamp: Option<u64>,
+    ) -> Result<SettlementsResponse, HttpError> {
+        let mut url = format!(
+            "{}{}?currency={}",
+            self.base_url(),
+            GET_SETTLEMENT_HISTORY_BY_CURRENCY,
+            urlencoding::encode(currency)
+        );
+
+        if let Some(settlement_type) = settlement_type {
+            url.push_str(&format!("&type={}", urlencoding::encode(settlement_type)));
+        }
+
+        if let Some(count) = count {
+            url.push_str(&format!("&count={}", count));
+        }
+
+        if let Some(continuation) = continuation {
+            url.push_str(&format!(
+                "&continuation={}",
+                urlencoding::encode(continuation)
+            ));
+        }
+
+        if let Some(search_start_timestamp) = search_start_timestamp {
+            url.push_str(&format!(
+                "&search_start_timestamp={}",
+                search_start_timestamp
+            ));
+        }
+
+        let response = self.make_authenticated_request(&url).await?;
+
+        if !response.status().is_success() {
+            let error_text = response
+                .text()
+                .await
+                .unwrap_or_else(|_| "Unknown error".to_string());
+            return Err(HttpError::RequestFailed(format!(
+                "Get settlement history by currency failed: {}",
+                error_text
+            )));
+        }
+
+        let api_response: ApiResponse<SettlementsResponse> = response
+            .json()
+            .await
+            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
+
+        if let Some(error) = api_response.error {
+            return Err(HttpError::RequestFailed(format!(
+                "API error: {} - {}",
+                error.code, error.message
+            )));
+        }
+
+        api_response
+            .result
+            .ok_or_else(|| HttpError::InvalidResponse("No settlement data in response".to_string()))
+    }
+
+    /// Get settlement history by instrument
+    ///
+    /// Retrieves settlement, delivery, and bankruptcy events for a specific
+    /// instrument that have affected your account. Settlements occur when futures
+    /// or options contracts expire and are settled at the delivery price.
+    ///
+    /// # Arguments
+    ///
+    /// * `instrument_name` - Instrument identifier (e.g., "BTC-PERPETUAL")
+    /// * `settlement_type` - Settlement type: "settlement", "delivery", or "bankruptcy" (optional)
+    /// * `count` - Number of items (default 20, max 1000) (optional)
+    /// * `continuation` - Pagination token (optional)
+    /// * `search_start_timestamp` - Latest timestamp to return results from in ms (optional)
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use deribit_http::DeribitHttpClient;
+    ///
+    /// let client = DeribitHttpClient::new();
+    /// // let history = client.get_settlement_history_by_instrument("BTC-PERPETUAL", None, None, None, None).await?;
+    /// ```
+    pub async fn get_settlement_history_by_instrument(
+        &self,
+        instrument_name: &str,
+        settlement_type: Option<&str>,
+        count: Option<u32>,
+        continuation: Option<&str>,
+        search_start_timestamp: Option<u64>,
+    ) -> Result<SettlementsResponse, HttpError> {
+        let mut url = format!(
+            "{}{}?instrument_name={}",
+            self.base_url(),
+            GET_SETTLEMENT_HISTORY_BY_INSTRUMENT,
+            urlencoding::encode(instrument_name)
+        );
+
+        if let Some(settlement_type) = settlement_type {
+            url.push_str(&format!("&type={}", urlencoding::encode(settlement_type)));
+        }
+
+        if let Some(count) = count {
+            url.push_str(&format!("&count={}", count));
+        }
+
+        if let Some(continuation) = continuation {
+            url.push_str(&format!(
+                "&continuation={}",
+                urlencoding::encode(continuation)
+            ));
+        }
+
+        if let Some(search_start_timestamp) = search_start_timestamp {
+            url.push_str(&format!(
+                "&search_start_timestamp={}",
+                search_start_timestamp
+            ));
+        }
+
+        let response = self.make_authenticated_request(&url).await?;
+
+        if !response.status().is_success() {
+            let error_text = response
+                .text()
+                .await
+                .unwrap_or_else(|_| "Unknown error".to_string());
+            return Err(HttpError::RequestFailed(format!(
+                "Get settlement history by instrument failed: {}",
+                error_text
+            )));
+        }
+
+        let api_response: ApiResponse<SettlementsResponse> = response
+            .json()
+            .await
+            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
+
+        if let Some(error) = api_response.error {
+            return Err(HttpError::RequestFailed(format!(
+                "API error: {} - {}",
+                error.code, error.message
+            )));
+        }
+
+        api_response
+            .result
+            .ok_or_else(|| HttpError::InvalidResponse("No settlement data in response".to_string()))
     }
 
     /// Get MMP configuration

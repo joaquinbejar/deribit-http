@@ -1154,3 +1154,120 @@ async fn test_get_order_state_by_label_empty_result() {
     let orders = result.unwrap();
     assert!(orders.is_empty());
 }
+
+// =========================================================================
+// Get Settlement History By Currency Tests (Issue #19)
+// =========================================================================
+
+#[tokio::test]
+async fn test_get_settlement_history_by_currency_success() {
+    let mut server = mockito::Server::new_async().await;
+    let client = create_test_client(&server);
+
+    let _auth_mock = create_auth_mock(&mut server).await;
+
+    let mock_response = json!({
+        "jsonrpc": "2.0",
+        "result": {
+            "settlements": [
+                {
+                    "type": "settlement",
+                    "timestamp": 1550475692526i64,
+                    "session_profit_loss": 0.038358299,
+                    "profit_loss": -0.001783937,
+                    "position": -66.0,
+                    "mark_price": 121.67,
+                    "instrument_name": "ETH-22FEB19",
+                    "index_price": 119.8
+                }
+            ],
+            "continuation": "xY7T6cusbMBNpH9SNmKb94jXSBxUPojJEdCPL4YociHBUgAhWQvEP"
+        },
+        "id": 1
+    });
+
+    let mock = server
+        .mock(
+            "GET",
+            mockito::Matcher::Regex(
+                r"/api/v2/private/get_settlement_history_by_currency\?currency=BTC.*".to_string(),
+            ),
+        )
+        .with_status(200)
+        .with_header("content-type", "application/json")
+        .with_body(mock_response.to_string())
+        .create_async()
+        .await;
+
+    let result = client
+        .get_settlement_history_by_currency("BTC", Some("settlement"), Some(1), None, None)
+        .await;
+
+    mock.assert_async().await;
+    assert!(result.is_ok());
+    let response = result.unwrap();
+    assert_eq!(response.settlements.len(), 1);
+    assert!(response.continuation.is_some());
+}
+
+// =========================================================================
+// Get Settlement History By Instrument Tests (Issue #19)
+// =========================================================================
+
+#[tokio::test]
+async fn test_get_settlement_history_by_instrument_success() {
+    let mut server = mockito::Server::new_async().await;
+    let client = create_test_client(&server);
+
+    let _auth_mock = create_auth_mock(&mut server).await;
+
+    let mock_response = json!({
+        "jsonrpc": "2.0",
+        "result": {
+            "settlements": [
+                {
+                    "type": "settlement",
+                    "timestamp": 1550475692526i64,
+                    "session_profit_loss": 0.038358299,
+                    "profit_loss": -0.001783937,
+                    "position": -66.0,
+                    "mark_price": 121.67,
+                    "instrument_name": "ETH-22FEB19",
+                    "index_price": 119.8
+                }
+            ],
+            "continuation": "xY7T6cusbMBNpH9SNmKb94jXSBxUPojJEdCPL4YociHBUgAhWQvEP"
+        },
+        "id": 1
+    });
+
+    let mock = server
+        .mock(
+            "GET",
+            mockito::Matcher::Regex(
+                r"/api/v2/private/get_settlement_history_by_instrument\?instrument_name=.*"
+                    .to_string(),
+            ),
+        )
+        .with_status(200)
+        .with_header("content-type", "application/json")
+        .with_body(mock_response.to_string())
+        .create_async()
+        .await;
+
+    let result = client
+        .get_settlement_history_by_instrument(
+            "ETH-22FEB19",
+            Some("settlement"),
+            Some(1),
+            None,
+            None,
+        )
+        .await;
+
+    mock.assert_async().await;
+    assert!(result.is_ok());
+    let response = result.unwrap();
+    assert_eq!(response.settlements.len(), 1);
+    assert!(response.continuation.is_some());
+}
