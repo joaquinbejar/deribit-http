@@ -3,10 +3,12 @@
 use crate::auth::AuthManager;
 use crate::config::HttpConfig;
 use crate::error::HttpError;
+use crate::model::response::api_response::ApiResponse;
 use crate::model::types::AuthToken;
 use crate::rate_limit::{RateLimiter, categorize_endpoint};
 use crate::sync_compat::Mutex;
 use reqwest::Client;
+use serde::de::DeserializeOwned;
 use std::sync::Arc;
 
 /// HTTP client for Deribit REST API
@@ -158,6 +160,109 @@ impl DeribitHttpClient {
     /// Get rate limiter for advanced usage
     pub fn rate_limiter(&self) -> &RateLimiter {
         &self.rate_limiter
+    }
+
+    /// Generic helper for public GET endpoints.
+    ///
+    /// Performs a rate-limited GET request to a public endpoint, parses the
+    /// API response, and extracts the result. Handles all standard error cases:
+    /// network errors, HTTP errors, API errors, and missing results.
+    ///
+    /// # Arguments
+    ///
+    /// * `endpoint` - The API endpoint path (e.g., "/public/get_currencies")
+    /// * `query` - Query string including leading "?" if non-empty, or empty string
+    ///
+    /// # Type Parameters
+    ///
+    /// * `T` - The expected result type, must implement `DeserializeOwned`
+    ///
+    /// # Errors
+    ///
+    /// Returns `HttpError` if the request fails at any stage.
+    pub async fn public_get<T>(&self, endpoint: &str, query: &str) -> Result<T, HttpError>
+    where
+        T: DeserializeOwned,
+    {
+        let url = format!("{}{}{}", self.base_url(), endpoint, query);
+
+        let response = self.make_request(&url).await?;
+
+        if !response.status().is_success() {
+            let error_text = response
+                .text()
+                .await
+                .unwrap_or_else(|_| "Unknown error".to_string());
+            return Err(HttpError::RequestFailed(error_text));
+        }
+
+        let api_response: ApiResponse<T> = response
+            .json()
+            .await
+            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
+
+        if let Some(error) = api_response.error {
+            return Err(HttpError::RequestFailed(format!(
+                "API error: {} - {}",
+                error.code, error.message
+            )));
+        }
+
+        api_response
+            .result
+            .ok_or_else(|| HttpError::InvalidResponse("No result in response".to_string()))
+    }
+
+    /// Generic helper for private GET endpoints.
+    ///
+    /// Performs a rate-limited, authenticated GET request to a private endpoint,
+    /// parses the API response, and extracts the result. Handles all standard
+    /// error cases: authentication errors, network errors, HTTP errors, API errors,
+    /// and missing results.
+    ///
+    /// # Arguments
+    ///
+    /// * `endpoint` - The API endpoint path (e.g., "/private/get_account_summary")
+    /// * `query` - Query string including leading "?" if non-empty, or empty string
+    ///
+    /// # Type Parameters
+    ///
+    /// * `T` - The expected result type, must implement `DeserializeOwned`
+    ///
+    /// # Errors
+    ///
+    /// Returns `HttpError` if the request fails at any stage.
+    pub async fn private_get<T>(&self, endpoint: &str, query: &str) -> Result<T, HttpError>
+    where
+        T: DeserializeOwned,
+    {
+        let url = format!("{}{}{}", self.base_url(), endpoint, query);
+
+        let response = self.make_authenticated_request(&url).await?;
+
+        if !response.status().is_success() {
+            let error_text = response
+                .text()
+                .await
+                .unwrap_or_else(|_| "Unknown error".to_string());
+            return Err(HttpError::RequestFailed(error_text));
+        }
+
+        let api_response: ApiResponse<T> = response
+            .json()
+            .await
+            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
+
+        if let Some(error) = api_response.error {
+            return Err(HttpError::RequestFailed(format!(
+                "API error: {} - {}",
+                error.code, error.message
+            )));
+        }
+
+        api_response
+            .result
+            .ok_or_else(|| HttpError::InvalidResponse("No result in response".to_string()))
     }
 
     /// Exchange refresh token for a new access token with different subject_id
