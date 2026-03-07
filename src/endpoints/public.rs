@@ -10,7 +10,7 @@ use crate::model::LastTradesResponse;
 use crate::model::book::{BookSummary, OrderBook};
 use crate::model::currency::CurrencyStruct;
 use crate::model::funding::{FundingChartData, FundingRateData};
-use crate::model::index::{IndexData, IndexPriceData};
+use crate::model::index::{IndexChartDataPoint, IndexData, IndexPriceData};
 use crate::model::instrument::{Instrument, OptionType};
 use crate::model::order::OrderSide;
 use crate::model::other::{OptionInstrument, OptionInstrumentPair};
@@ -249,6 +249,79 @@ impl DeribitHttpClient {
 
         api_response.result.ok_or_else(|| {
             HttpError::InvalidResponse("No index price names in response".to_string())
+        })
+    }
+
+    /// Get index chart data
+    ///
+    /// Returns historical price index chart data for the specified index name and time range.
+    /// The data is formatted for use in charting applications and shows price index values over time.
+    /// This is a public endpoint that doesn't require authentication.
+    ///
+    /// # Arguments
+    ///
+    /// * `index_name` - Index identifier (e.g., "btc_usd", "eth_usd", "sol_usdc")
+    /// * `range` - Time range for the data: "1h", "1d", "2d", "1m", "1y", or "all"
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # use deribit_http::DeribitHttpClient;
+    /// # #[tokio::main]
+    /// # async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    /// let client = DeribitHttpClient::new(); // testnet
+    /// let chart_data = client.get_index_chart_data("btc_usd", "1d").await?;
+    /// for point in chart_data {
+    ///     println!("Time: {}, Price: {}", point.timestamp, point.price);
+    /// }
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub async fn get_index_chart_data(
+        &self,
+        index_name: &str,
+        range: &str,
+    ) -> Result<Vec<IndexChartDataPoint>, HttpError> {
+        let url = format!(
+            "{}{}?index_name={}&range={}",
+            self.base_url(),
+            GET_INDEX_CHART_DATA,
+            urlencoding::encode(index_name),
+            urlencoding::encode(range)
+        );
+
+        let response = self
+            .http_client()
+            .get(&url)
+            .send()
+            .await
+            .map_err(|e| HttpError::NetworkError(e.to_string()))?;
+
+        if !response.status().is_success() {
+            let error_text = response
+                .text()
+                .await
+                .unwrap_or_else(|_| "Unknown error".to_string());
+            return Err(HttpError::RequestFailed(format!(
+                "Get index chart data failed: {}",
+                error_text
+            )));
+        }
+
+        let api_response: ApiResponse<Vec<IndexChartDataPoint>> = response
+            .json()
+            .await
+            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
+
+        if let Some(error) = api_response.error {
+            return Err(HttpError::RequestFailed(format!(
+                "API error: {} - {}",
+                error.code, error.message
+            )));
+        }
+
+        api_response.result.ok_or_else(|| {
+            HttpError::InvalidResponse("No index chart data in response".to_string())
         })
     }
 
