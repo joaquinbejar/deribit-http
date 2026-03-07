@@ -148,6 +148,8 @@ pub mod endpoints {
     // Private account endpoints
     /// Get account summary information
     pub const GET_ACCOUNT_SUMMARY: &str = "/private/get_account_summary";
+    /// Get account summaries for all currencies
+    pub const GET_ACCOUNT_SUMMARIES: &str = "/private/get_account_summaries";
     /// Get position
     pub const GET_POSITION: &str = "/private/get_position";
     /// Get current positions

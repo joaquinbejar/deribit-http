@@ -371,3 +371,55 @@ mod account_summary_tests {
         // - margin_balance >= balance
     }
 }
+
+#[cfg(test)]
+mod get_account_summaries_tests {
+    use deribit_http::DeribitHttpClient;
+    use tokio::time::{Duration, Instant};
+    use tracing::info;
+
+    /// Test get_account_summaries endpoint behavior
+    ///
+    /// Returns account summaries for all currencies at once.
+    #[tokio::test]
+    #[serial_test::serial]
+    #[ignore = "Requires authentication"]
+    async fn test_get_account_summaries() -> Result<(), Box<dyn std::error::Error>> {
+        let client = DeribitHttpClient::new();
+
+        info!("Testing get_account_summaries");
+        let start_time = Instant::now();
+
+        let result = client.get_account_summaries(None, Some(true)).await;
+        let elapsed = start_time.elapsed();
+
+        match &result {
+            Ok(response) => {
+                info!(
+                    "Get account summaries succeeded in {:?}: {} currency summaries found",
+                    elapsed,
+                    response.summaries.len()
+                );
+                info!(
+                    "Account ID: {}, Username: {}",
+                    response.id, response.username
+                );
+                for summary in &response.summaries {
+                    info!("  Currency: {}", summary.currency);
+                }
+            }
+            Err(e) => {
+                info!("Get account summaries failed in {:?}: {:?}", elapsed, e);
+            }
+        }
+
+        assert!(
+            elapsed < Duration::from_secs(30),
+            "Request took too long: {:?}",
+            elapsed
+        );
+
+        info!("test_get_account_summaries completed");
+        Ok(())
+    }
+}

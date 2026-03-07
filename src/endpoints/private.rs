@@ -1126,6 +1126,78 @@ impl DeribitHttpClient {
         })
     }
 
+    /// Get account summaries for all currencies
+    ///
+    /// Retrieves a per-currency list of account summaries for the authenticated user.
+    /// Each summary includes balance, equity, available funds, and margin information
+    /// for each currency. Unlike `get_account_summary`, this returns data for all
+    /// currencies at once.
+    ///
+    /// # Arguments
+    ///
+    /// * `subaccount_id` - Retrieve summaries for a specific subaccount (optional)
+    /// * `extended` - Include additional account details (id, username, email, type) (optional)
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use deribit_http::DeribitHttpClient;
+    ///
+    /// let client = DeribitHttpClient::new();
+    /// // let summaries = client.get_account_summaries(None, Some(true)).await?;
+    /// ```
+    pub async fn get_account_summaries(
+        &self,
+        subaccount_id: Option<i64>,
+        extended: Option<bool>,
+    ) -> Result<AccountSummaryResponse, HttpError> {
+        let mut url = format!("{}{}", self.base_url(), GET_ACCOUNT_SUMMARIES);
+
+        let mut params = Vec::new();
+
+        if let Some(subaccount_id) = subaccount_id {
+            params.push(format!("subaccount_id={}", subaccount_id));
+        }
+
+        if let Some(extended) = extended {
+            params.push(format!("extended={}", extended));
+        }
+
+        if !params.is_empty() {
+            url.push('?');
+            url.push_str(&params.join("&"));
+        }
+
+        let response = self.make_authenticated_request(&url).await?;
+
+        if !response.status().is_success() {
+            let error_text = response
+                .text()
+                .await
+                .unwrap_or_else(|_| "Unknown error".to_string());
+            return Err(HttpError::RequestFailed(format!(
+                "Get account summaries failed: {}",
+                error_text
+            )));
+        }
+
+        let api_response: ApiResponse<AccountSummaryResponse> = response
+            .json()
+            .await
+            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
+
+        if let Some(error) = api_response.error {
+            return Err(HttpError::RequestFailed(format!(
+                "API error: {} - {}",
+                error.code, error.message
+            )));
+        }
+
+        api_response.result.ok_or_else(|| {
+            HttpError::InvalidResponse("No account summaries data in response".to_string())
+        })
+    }
+
     /// Get positions
     ///
     /// Retrieves user positions for the specified currency and kind.

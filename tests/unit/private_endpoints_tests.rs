@@ -1471,3 +1471,140 @@ async fn test_move_positions_empty() {
     let results = result.unwrap();
     assert!(results.is_empty());
 }
+
+// =========================================================================
+// Get Account Summaries Tests (Issue #22)
+// =========================================================================
+
+#[tokio::test]
+async fn test_get_account_summaries_success() {
+    let mut server = mockito::Server::new_async().await;
+    let client = create_test_client(&server);
+
+    let _auth_mock = create_auth_mock(&mut server).await;
+
+    let mock_response = json!({
+        "jsonrpc": "2.0",
+        "result": {
+            "id": 10,
+            "email": "user@example.com",
+            "system_name": "user",
+            "username": "user",
+            "block_rfq_self_match_prevention": true,
+            "creation_timestamp": 1687352432143i64,
+            "type": "main",
+            "referrer_id": null,
+            "login_enabled": true,
+            "security_keys_enabled": false,
+            "mmp_enabled": false,
+            "interuser_transfers_enabled": false,
+            "self_trading_reject_mode": "cancel_maker",
+            "self_trading_extended_to_subaccounts": false,
+            "summaries": [
+                {
+                    "currency": "BTC",
+                    "balance": 302.60065765,
+                    "equity": 302.61869214,
+                    "available_funds": 301.38059622,
+                    "available_withdrawal_funds": 301.35396172,
+                    "initial_margin": 1.24669592,
+                    "maintenance_margin": 0.8857841,
+                    "margin_balance": 302.62729214
+                },
+                {
+                    "currency": "ETH",
+                    "balance": 100.0,
+                    "equity": 100.0,
+                    "available_funds": 99.999598,
+                    "available_withdrawal_funds": 99.999597,
+                    "initial_margin": 0.000402,
+                    "maintenance_margin": 0.0,
+                    "margin_balance": 100.0
+                }
+            ]
+        },
+        "id": 1
+    });
+
+    let mock = server
+        .mock(
+            "GET",
+            mockito::Matcher::Regex(r"/api/v2/private/get_account_summaries.*".to_string()),
+        )
+        .with_status(200)
+        .with_header("content-type", "application/json")
+        .with_body(mock_response.to_string())
+        .create_async()
+        .await;
+
+    let result = client.get_account_summaries(None, Some(true)).await;
+
+    mock.assert_async().await;
+    assert!(result.is_ok());
+    let response = result.unwrap();
+    assert_eq!(response.summaries.len(), 2);
+    assert_eq!(response.email, "user@example.com");
+    assert_eq!(response.username, "user");
+}
+
+#[tokio::test]
+async fn test_get_account_summaries_with_subaccount() {
+    let mut server = mockito::Server::new_async().await;
+    let client = create_test_client(&server);
+
+    let _auth_mock = create_auth_mock(&mut server).await;
+
+    let mock_response = json!({
+        "jsonrpc": "2.0",
+        "result": {
+            "id": 20,
+            "email": "subaccount@example.com",
+            "system_name": "subuser",
+            "username": "subuser",
+            "block_rfq_self_match_prevention": false,
+            "creation_timestamp": 1687352432143i64,
+            "type": "subaccount",
+            "referrer_id": null,
+            "login_enabled": false,
+            "security_keys_enabled": false,
+            "mmp_enabled": false,
+            "interuser_transfers_enabled": false,
+            "self_trading_reject_mode": "cancel_maker",
+            "self_trading_extended_to_subaccounts": false,
+            "summaries": [
+                {
+                    "currency": "BTC",
+                    "balance": 10.0,
+                    "equity": 10.0,
+                    "available_funds": 10.0,
+                    "available_withdrawal_funds": 10.0,
+                    "initial_margin": 0.0,
+                    "maintenance_margin": 0.0,
+                    "margin_balance": 10.0
+                }
+            ]
+        },
+        "id": 1
+    });
+
+    let mock = server
+        .mock(
+            "GET",
+            mockito::Matcher::Regex(
+                r"/api/v2/private/get_account_summaries\?subaccount_id=20.*".to_string(),
+            ),
+        )
+        .with_status(200)
+        .with_header("content-type", "application/json")
+        .with_body(mock_response.to_string())
+        .create_async()
+        .await;
+
+    let result = client.get_account_summaries(Some(20), None).await;
+
+    mock.assert_async().await;
+    assert!(result.is_ok());
+    let response = result.unwrap();
+    assert_eq!(response.summaries.len(), 1);
+    assert_eq!(response.account_type, "subaccount");
+}
