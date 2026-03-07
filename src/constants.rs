@@ -95,6 +95,20 @@ pub mod endpoints {
     /// Get index chart data
     pub const GET_INDEX_CHART_DATA: &str = "/public/get_index_chart_data";
 
+    // Public combo books endpoints
+    /// Get combo details by ID
+    pub const GET_COMBO_DETAILS: &str = "/public/get_combo_details";
+    /// Get list of combo IDs by currency and state
+    pub const GET_COMBO_IDS: &str = "/public/get_combo_ids";
+    /// Get all active combos by currency
+    pub const GET_COMBOS: &str = "/public/get_combos";
+
+    // Private combo books endpoints
+    /// Create or verify a combo book
+    pub const CREATE_COMBO: &str = "/private/create_combo";
+    /// Get individual leg prices for a combo structure
+    pub const GET_LEG_PRICES: &str = "/private/get_leg_prices";
+
     // Private trading endpoints
     /// Place a buy order
     pub const BUY: &str = "/private/buy";

@@ -17,6 +17,8 @@ pub mod beneficiary;
 pub mod block_trade;
 /// Order book models
 pub mod book;
+/// Combo books models for multi-leg instruments
+pub mod combo;
 /// Currency and expiration models
 pub mod currency;
 /// Custody account models
@@ -86,6 +88,7 @@ pub use api_key::*;
 pub use beneficiary::*;
 pub use block_trade::*;
 pub use book::*;
+pub use combo::*;
 pub use currency::*;
 pub use custody::*;
 pub use deposit::*;
