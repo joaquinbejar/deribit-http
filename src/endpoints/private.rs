@@ -5034,4 +5034,712 @@ impl DeribitHttpClient {
             .result
             .ok_or_else(|| HttpError::InvalidResponse("No deposit result in response".to_string()))
     }
+
+    /// Get account access log
+    ///
+    /// Retrieves the account access history showing login attempts and API access.
+    ///
+    /// # Arguments
+    ///
+    /// * `count` - Number of entries to retrieve (optional, default 10)
+    /// * `offset` - Offset for pagination (optional, default 0)
+    ///
+    pub async fn get_access_log(
+        &self,
+        count: Option<u32>,
+        offset: Option<u32>,
+    ) -> Result<crate::model::AccessLogResponse, HttpError> {
+        let mut query_params = Vec::new();
+
+        if let Some(count) = count {
+            query_params.push(format!("count={}", count));
+        }
+
+        if let Some(offset) = offset {
+            query_params.push(format!("offset={}", offset));
+        }
+
+        let query_string = if query_params.is_empty() {
+            String::new()
+        } else {
+            format!("?{}", query_params.join("&"))
+        };
+
+        let url = format!(
+            "{}{}{}",
+            self.base_url(),
+            crate::constants::endpoints::GET_ACCESS_LOG,
+            query_string
+        );
+
+        let response = self.make_authenticated_request(&url).await?;
+
+        if !response.status().is_success() {
+            let error_text = response
+                .text()
+                .await
+                .unwrap_or_else(|_| "Unknown error".to_string());
+            return Err(HttpError::RequestFailed(format!(
+                "Get access log failed: {}",
+                error_text
+            )));
+        }
+
+        let api_response: ApiResponse<crate::model::AccessLogResponse> = response
+            .json()
+            .await
+            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
+
+        if let Some(error) = api_response.error {
+            return Err(HttpError::RequestFailed(format!(
+                "API error: {} - {}",
+                error.code, error.message
+            )));
+        }
+
+        api_response
+            .result
+            .ok_or_else(|| HttpError::InvalidResponse("No access log data in response".to_string()))
+    }
+
+    /// Get user account locks
+    ///
+    /// Retrieves information about any locks on the user's account.
+    ///
+    pub async fn get_user_locks(&self) -> Result<Vec<crate::model::UserLock>, HttpError> {
+        let url = format!(
+            "{}{}",
+            self.base_url(),
+            crate::constants::endpoints::GET_USER_LOCKS
+        );
+
+        let response = self.make_authenticated_request(&url).await?;
+
+        if !response.status().is_success() {
+            let error_text = response
+                .text()
+                .await
+                .unwrap_or_else(|_| "Unknown error".to_string());
+            return Err(HttpError::RequestFailed(format!(
+                "Get user locks failed: {}",
+                error_text
+            )));
+        }
+
+        let api_response: ApiResponse<Vec<crate::model::UserLock>> = response
+            .json()
+            .await
+            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
+
+        if let Some(error) = api_response.error {
+            return Err(HttpError::RequestFailed(format!(
+                "API error: {} - {}",
+                error.code, error.message
+            )));
+        }
+
+        api_response
+            .result
+            .ok_or_else(|| HttpError::InvalidResponse("No user locks data in response".to_string()))
+    }
+
+    /// List custody accounts
+    ///
+    /// Retrieves the list of custody accounts for the specified currency.
+    ///
+    /// # Arguments
+    ///
+    /// * `currency` - Currency symbol (BTC, ETH, etc.)
+    ///
+    pub async fn list_custody_accounts(
+        &self,
+        currency: &str,
+    ) -> Result<Vec<crate::model::CustodyAccount>, HttpError> {
+        let url = format!(
+            "{}{}?currency={}",
+            self.base_url(),
+            crate::constants::endpoints::LIST_CUSTODY_ACCOUNTS,
+            urlencoding::encode(currency)
+        );
+
+        let response = self.make_authenticated_request(&url).await?;
+
+        if !response.status().is_success() {
+            let error_text = response
+                .text()
+                .await
+                .unwrap_or_else(|_| "Unknown error".to_string());
+            return Err(HttpError::RequestFailed(format!(
+                "List custody accounts failed: {}",
+                error_text
+            )));
+        }
+
+        let api_response: ApiResponse<Vec<crate::model::CustodyAccount>> = response
+            .json()
+            .await
+            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
+
+        if let Some(error) = api_response.error {
+            return Err(HttpError::RequestFailed(format!(
+                "API error: {} - {}",
+                error.code, error.message
+            )));
+        }
+
+        api_response.result.ok_or_else(|| {
+            HttpError::InvalidResponse("No custody accounts data in response".to_string())
+        })
+    }
+
+    /// Simulate portfolio margin
+    ///
+    /// Simulates portfolio margin for hypothetical positions.
+    ///
+    /// # Arguments
+    ///
+    /// * `request` - Simulation request parameters
+    ///
+    pub async fn simulate_portfolio(
+        &self,
+        request: crate::model::SimulatePortfolioRequest,
+    ) -> Result<crate::model::SimulatePortfolioResponse, HttpError> {
+        let mut query_params = vec![format!(
+            "currency={}",
+            urlencoding::encode(&request.currency)
+        )];
+
+        if let Some(add_positions) = request.add_positions {
+            query_params.push(format!("add_positions={}", add_positions));
+        }
+
+        if let Some(ref positions) = request.simulated_positions {
+            let positions_json = serde_json::to_string(positions)
+                .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
+            query_params.push(format!(
+                "simulated_positions={}",
+                urlencoding::encode(&positions_json)
+            ));
+        }
+
+        let url = format!(
+            "{}{}?{}",
+            self.base_url(),
+            crate::constants::endpoints::SIMULATE_PORTFOLIO,
+            query_params.join("&")
+        );
+
+        let response = self.make_authenticated_request(&url).await?;
+
+        if !response.status().is_success() {
+            let error_text = response
+                .text()
+                .await
+                .unwrap_or_else(|_| "Unknown error".to_string());
+            return Err(HttpError::RequestFailed(format!(
+                "Simulate portfolio failed: {}",
+                error_text
+            )));
+        }
+
+        let api_response: ApiResponse<crate::model::SimulatePortfolioResponse> = response
+            .json()
+            .await
+            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
+
+        if let Some(error) = api_response.error {
+            return Err(HttpError::RequestFailed(format!(
+                "API error: {} - {}",
+                error.code, error.message
+            )));
+        }
+
+        api_response.result.ok_or_else(|| {
+            HttpError::InvalidResponse("No portfolio simulation data in response".to_string())
+        })
+    }
+
+    /// PME margin simulation
+    ///
+    /// Simulates Portfolio Margin Engine (PME) margin for the specified currency.
+    ///
+    /// # Arguments
+    ///
+    /// * `currency` - Currency symbol (BTC, ETH, etc.)
+    ///
+    pub async fn pme_simulate(
+        &self,
+        currency: &str,
+    ) -> Result<crate::model::PmeSimulateResponse, HttpError> {
+        let url = format!(
+            "{}{}?currency={}",
+            self.base_url(),
+            crate::constants::endpoints::PME_SIMULATE,
+            urlencoding::encode(currency)
+        );
+
+        let response = self.make_authenticated_request(&url).await?;
+
+        if !response.status().is_success() {
+            let error_text = response
+                .text()
+                .await
+                .unwrap_or_else(|_| "Unknown error".to_string());
+            return Err(HttpError::RequestFailed(format!(
+                "PME simulate failed: {}",
+                error_text
+            )));
+        }
+
+        let api_response: ApiResponse<crate::model::PmeSimulateResponse> = response
+            .json()
+            .await
+            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
+
+        if let Some(error) = api_response.error {
+            return Err(HttpError::RequestFailed(format!(
+                "API error: {} - {}",
+                error.code, error.message
+            )));
+        }
+
+        api_response.result.ok_or_else(|| {
+            HttpError::InvalidResponse("No PME simulation data in response".to_string())
+        })
+    }
+
+    /// Change margin model
+    ///
+    /// Changes the margin model for the account or a specific user.
+    ///
+    /// # Arguments
+    ///
+    /// * `margin_model` - The new margin model to set
+    /// * `user_id` - Optional user ID (for main account operating on subaccounts)
+    /// * `dry_run` - Optional flag to simulate the change without applying it
+    ///
+    pub async fn change_margin_model(
+        &self,
+        margin_model: crate::model::MarginModel,
+        user_id: Option<u64>,
+        dry_run: Option<bool>,
+    ) -> Result<crate::model::ChangeMarginModelResponse, HttpError> {
+        let mut query_params = vec![format!("margin_model={}", margin_model.as_str())];
+
+        if let Some(user_id) = user_id {
+            query_params.push(format!("user_id={}", user_id));
+        }
+
+        if let Some(dry_run) = dry_run {
+            query_params.push(format!("dry_run={}", dry_run));
+        }
+
+        let url = format!(
+            "{}{}?{}",
+            self.base_url(),
+            crate::constants::endpoints::CHANGE_MARGIN_MODEL,
+            query_params.join("&")
+        );
+
+        let response = self.make_authenticated_request(&url).await?;
+
+        if !response.status().is_success() {
+            let error_text = response
+                .text()
+                .await
+                .unwrap_or_else(|_| "Unknown error".to_string());
+            return Err(HttpError::RequestFailed(format!(
+                "Change margin model failed: {}",
+                error_text
+            )));
+        }
+
+        let api_response: ApiResponse<crate::model::ChangeMarginModelResponse> = response
+            .json()
+            .await
+            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
+
+        if let Some(error) = api_response.error {
+            return Err(HttpError::RequestFailed(format!(
+                "API error: {} - {}",
+                error.code, error.message
+            )));
+        }
+
+        api_response.result.ok_or_else(|| {
+            HttpError::InvalidResponse("No margin model change data in response".to_string())
+        })
+    }
+
+    /// Set self-trading configuration
+    ///
+    /// Configures self-trading prevention settings for the account.
+    ///
+    /// # Arguments
+    ///
+    /// * `mode` - Self-trading prevention mode
+    /// * `extended_to_subaccounts` - Whether to extend the config to subaccounts
+    /// * `block_rfq_self_match_prevention` - Optional RFQ self-match prevention setting
+    ///
+    pub async fn set_self_trading_config(
+        &self,
+        mode: crate::model::SelfTradingMode,
+        extended_to_subaccounts: bool,
+        block_rfq_self_match_prevention: Option<bool>,
+    ) -> Result<bool, HttpError> {
+        let mut query_params = vec![
+            format!("mode={}", mode.as_str()),
+            format!("extended_to_subaccounts={}", extended_to_subaccounts),
+        ];
+
+        if let Some(block_rfq) = block_rfq_self_match_prevention {
+            query_params.push(format!("block_rfq_self_match_prevention={}", block_rfq));
+        }
+
+        let url = format!(
+            "{}{}?{}",
+            self.base_url(),
+            crate::constants::endpoints::SET_SELF_TRADING_CONFIG,
+            query_params.join("&")
+        );
+
+        let response = self.make_authenticated_request(&url).await?;
+
+        if !response.status().is_success() {
+            let error_text = response
+                .text()
+                .await
+                .unwrap_or_else(|_| "Unknown error".to_string());
+            return Err(HttpError::RequestFailed(format!(
+                "Set self trading config failed: {}",
+                error_text
+            )));
+        }
+
+        let api_response: ApiResponse<String> = response
+            .json()
+            .await
+            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
+
+        if let Some(error) = api_response.error {
+            return Err(HttpError::RequestFailed(format!(
+                "API error: {} - {}",
+                error.code, error.message
+            )));
+        }
+
+        Ok(api_response.result.map(|s| s == "ok").unwrap_or(true))
+    }
+
+    /// Set disabled trading products
+    ///
+    /// Disables specific trading products for a user.
+    ///
+    /// # Arguments
+    ///
+    /// * `trading_products` - List of trading products to disable
+    /// * `user_id` - User ID to apply the setting to
+    ///
+    pub async fn set_disabled_trading_products(
+        &self,
+        trading_products: &[crate::model::TradingProduct],
+        user_id: u64,
+    ) -> Result<bool, HttpError> {
+        let products: Vec<&str> = trading_products.iter().map(|p| p.as_str()).collect();
+        let products_json = serde_json::to_string(&products)
+            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
+
+        let url = format!(
+            "{}{}?trading_products={}&user_id={}",
+            self.base_url(),
+            crate::constants::endpoints::SET_DISABLED_TRADING_PRODUCTS,
+            urlencoding::encode(&products_json),
+            user_id
+        );
+
+        let response = self.make_authenticated_request(&url).await?;
+
+        if !response.status().is_success() {
+            let error_text = response
+                .text()
+                .await
+                .unwrap_or_else(|_| "Unknown error".to_string());
+            return Err(HttpError::RequestFailed(format!(
+                "Set disabled trading products failed: {}",
+                error_text
+            )));
+        }
+
+        let api_response: ApiResponse<String> = response
+            .json()
+            .await
+            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
+
+        if let Some(error) = api_response.error {
+            return Err(HttpError::RequestFailed(format!(
+                "API error: {} - {}",
+                error.code, error.message
+            )));
+        }
+
+        Ok(api_response.result.map(|s| s == "ok").unwrap_or(true))
+    }
+
+    /// Get new (unread) announcements
+    ///
+    /// Retrieves announcements that have not been marked as read.
+    ///
+    pub async fn get_new_announcements(
+        &self,
+    ) -> Result<Vec<crate::model::Announcement>, HttpError> {
+        let url = format!(
+            "{}{}",
+            self.base_url(),
+            crate::constants::endpoints::GET_NEW_ANNOUNCEMENTS
+        );
+
+        let response = self.make_authenticated_request(&url).await?;
+
+        if !response.status().is_success() {
+            let error_text = response
+                .text()
+                .await
+                .unwrap_or_else(|_| "Unknown error".to_string());
+            return Err(HttpError::RequestFailed(format!(
+                "Get new announcements failed: {}",
+                error_text
+            )));
+        }
+
+        let api_response: ApiResponse<Vec<crate::model::Announcement>> = response
+            .json()
+            .await
+            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
+
+        if let Some(error) = api_response.error {
+            return Err(HttpError::RequestFailed(format!(
+                "API error: {} - {}",
+                error.code, error.message
+            )));
+        }
+
+        api_response.result.ok_or_else(|| {
+            HttpError::InvalidResponse("No new announcements data in response".to_string())
+        })
+    }
+
+    /// Mark announcement as read
+    ///
+    /// Marks a specific announcement as read so it won't appear in new announcements.
+    ///
+    /// # Arguments
+    ///
+    /// * `announcement_id` - ID of the announcement to mark as read
+    ///
+    pub async fn set_announcement_as_read(&self, announcement_id: u64) -> Result<bool, HttpError> {
+        let url = format!(
+            "{}{}?announcement_id={}",
+            self.base_url(),
+            crate::constants::endpoints::SET_ANNOUNCEMENT_AS_READ,
+            announcement_id
+        );
+
+        let response = self.make_authenticated_request(&url).await?;
+
+        if !response.status().is_success() {
+            let error_text = response
+                .text()
+                .await
+                .unwrap_or_else(|_| "Unknown error".to_string());
+            return Err(HttpError::RequestFailed(format!(
+                "Set announcement as read failed: {}",
+                error_text
+            )));
+        }
+
+        let api_response: ApiResponse<String> = response
+            .json()
+            .await
+            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
+
+        if let Some(error) = api_response.error {
+            return Err(HttpError::RequestFailed(format!(
+                "API error: {} - {}",
+                error.code, error.message
+            )));
+        }
+
+        Ok(api_response.result.map(|s| s == "ok").unwrap_or(true))
+    }
+
+    /// Enable affiliate program
+    ///
+    /// Enables the affiliate program for the user's account.
+    ///
+    pub async fn enable_affiliate_program(&self) -> Result<bool, HttpError> {
+        let url = format!(
+            "{}{}",
+            self.base_url(),
+            crate::constants::endpoints::ENABLE_AFFILIATE_PROGRAM
+        );
+
+        let response = self.make_authenticated_request(&url).await?;
+
+        if !response.status().is_success() {
+            let error_text = response
+                .text()
+                .await
+                .unwrap_or_else(|_| "Unknown error".to_string());
+            return Err(HttpError::RequestFailed(format!(
+                "Enable affiliate program failed: {}",
+                error_text
+            )));
+        }
+
+        let api_response: ApiResponse<String> = response
+            .json()
+            .await
+            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
+
+        if let Some(error) = api_response.error {
+            return Err(HttpError::RequestFailed(format!(
+                "API error: {} - {}",
+                error.code, error.message
+            )));
+        }
+
+        Ok(api_response.result.map(|s| s == "ok").unwrap_or(true))
+    }
+
+    /// Get affiliate program information
+    ///
+    /// Retrieves information about the user's affiliate program status.
+    ///
+    pub async fn get_affiliate_program_info(
+        &self,
+    ) -> Result<crate::model::AffiliateProgramInfo, HttpError> {
+        let url = format!(
+            "{}{}",
+            self.base_url(),
+            crate::constants::endpoints::GET_AFFILIATE_PROGRAM_INFO
+        );
+
+        let response = self.make_authenticated_request(&url).await?;
+
+        if !response.status().is_success() {
+            let error_text = response
+                .text()
+                .await
+                .unwrap_or_else(|_| "Unknown error".to_string());
+            return Err(HttpError::RequestFailed(format!(
+                "Get affiliate program info failed: {}",
+                error_text
+            )));
+        }
+
+        let api_response: ApiResponse<crate::model::AffiliateProgramInfo> =
+            response
+                .json()
+                .await
+                .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
+
+        if let Some(error) = api_response.error {
+            return Err(HttpError::RequestFailed(format!(
+                "API error: {} - {}",
+                error.code, error.message
+            )));
+        }
+
+        api_response.result.ok_or_else(|| {
+            HttpError::InvalidResponse("No affiliate program info in response".to_string())
+        })
+    }
+
+    /// Set email language preference
+    ///
+    /// Sets the preferred language for email communications.
+    ///
+    /// # Arguments
+    ///
+    /// * `language` - The language to set for emails
+    ///
+    pub async fn set_email_language(
+        &self,
+        language: crate::model::EmailLanguage,
+    ) -> Result<bool, HttpError> {
+        let url = format!(
+            "{}{}?language={}",
+            self.base_url(),
+            crate::constants::endpoints::SET_EMAIL_LANGUAGE,
+            language.as_str()
+        );
+
+        let response = self.make_authenticated_request(&url).await?;
+
+        if !response.status().is_success() {
+            let error_text = response
+                .text()
+                .await
+                .unwrap_or_else(|_| "Unknown error".to_string());
+            return Err(HttpError::RequestFailed(format!(
+                "Set email language failed: {}",
+                error_text
+            )));
+        }
+
+        let api_response: ApiResponse<String> = response
+            .json()
+            .await
+            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
+
+        if let Some(error) = api_response.error {
+            return Err(HttpError::RequestFailed(format!(
+                "API error: {} - {}",
+                error.code, error.message
+            )));
+        }
+
+        Ok(api_response.result.map(|s| s == "ok").unwrap_or(true))
+    }
+
+    /// Get email language preference
+    ///
+    /// Retrieves the current email language preference.
+    ///
+    pub async fn get_email_language(&self) -> Result<String, HttpError> {
+        let url = format!(
+            "{}{}",
+            self.base_url(),
+            crate::constants::endpoints::GET_EMAIL_LANGUAGE
+        );
+
+        let response = self.make_authenticated_request(&url).await?;
+
+        if !response.status().is_success() {
+            let error_text = response
+                .text()
+                .await
+                .unwrap_or_else(|_| "Unknown error".to_string());
+            return Err(HttpError::RequestFailed(format!(
+                "Get email language failed: {}",
+                error_text
+            )));
+        }
+
+        let api_response: ApiResponse<String> = response
+            .json()
+            .await
+            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
+
+        if let Some(error) = api_response.error {
+            return Err(HttpError::RequestFailed(format!(
+                "API error: {} - {}",
+                error.code, error.message
+            )));
+        }
+
+        api_response
+            .result
+            .ok_or_else(|| HttpError::InvalidResponse("No email language in response".to_string()))
+    }
 }
