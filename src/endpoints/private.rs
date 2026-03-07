@@ -19,9 +19,9 @@ use crate::model::response::order::{OrderInfoResponse, OrderResponse};
 use crate::model::response::other::{
     AccountSummaryResponse, SettlementsResponse, TransactionLogResponse, TransferResultResponse,
 };
-use crate::model::response::transfer::{InternalTransfer, TransfersResponse};
 use crate::model::response::position::MovePositionResult;
 use crate::model::response::subaccount::SubaccountDetails;
+use crate::model::response::transfer::{InternalTransfer, TransfersResponse};
 use crate::model::response::trigger::TriggerOrderHistoryResponse;
 use crate::model::response::withdrawal::WithdrawalsResponse;
 use crate::model::{
@@ -6567,5 +6567,751 @@ impl DeribitHttpClient {
         api_response.result.ok_or_else(|| {
             HttpError::InvalidResponse("No address book data in response".to_string())
         })
+    }
+
+    // ========================================================================
+    // Block Trade Endpoints
+    // ========================================================================
+
+    /// Approve a pending block trade
+    ///
+    /// Used to approve a pending block trade. The `nonce` and `timestamp` identify
+    /// the block trade while `role` should be opposite to the trading counterparty.
+    ///
+    /// To use block trade approval, the API key must have `enabled_features: block_trade_approval`.
+    ///
+    /// # Arguments
+    ///
+    /// * `timestamp` - Timestamp shared with other party, in milliseconds since UNIX epoch
+    /// * `nonce` - Nonce shared with other party
+    /// * `role` - Role in the trade (maker or taker)
+    ///
+    /// # Returns
+    ///
+    /// Returns `true` if the block trade was successfully approved.
+    ///
+    /// # Errors
+    ///
+    /// Returns `HttpError` if the request fails or the block trade cannot be approved.
+    pub async fn approve_block_trade(
+        &self,
+        timestamp: u64,
+        nonce: &str,
+        role: crate::model::block_trade::BlockTradeRole,
+    ) -> Result<bool, HttpError> {
+        let query_params = [
+            ("timestamp".to_string(), timestamp.to_string()),
+            ("nonce".to_string(), nonce.to_string()),
+            ("role".to_string(), role.to_string()),
+        ];
+
+        let query_string = query_params
+            .iter()
+            .map(|(k, v)| format!("{}={}", k, urlencoding::encode(v)))
+            .collect::<Vec<_>>()
+            .join("&");
+
+        let url = format!(
+            "{}{}?{}",
+            self.base_url(),
+            APPROVE_BLOCK_TRADE,
+            query_string
+        );
+
+        let response = self.make_authenticated_request(&url).await?;
+
+        if !response.status().is_success() {
+            let error_text = response
+                .text()
+                .await
+                .unwrap_or_else(|_| "Unknown error".to_string());
+            return Err(HttpError::RequestFailed(format!(
+                "Approve block trade failed: {}",
+                error_text
+            )));
+        }
+
+        let api_response: ApiResponse<String> = response
+            .json()
+            .await
+            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
+
+        if let Some(error) = api_response.error {
+            return Err(HttpError::RequestFailed(format!(
+                "API error: {} - {}",
+                error.code, error.message
+            )));
+        }
+
+        Ok(api_response.result.map(|s| s == "ok").unwrap_or(false))
+    }
+
+    /// Execute a block trade
+    ///
+    /// Creates and executes a block trade with the counterparty signature.
+    /// Both parties must agree on the same timestamp, nonce, and trades fields.
+    /// The server ensures that roles are different between the two parties.
+    ///
+    /// # Arguments
+    ///
+    /// * `request` - The execute block trade request containing all required parameters
+    ///
+    /// # Returns
+    ///
+    /// Returns the block trade result with trade details.
+    ///
+    /// # Errors
+    ///
+    /// Returns `HttpError` if the request fails or the block trade cannot be executed.
+    pub async fn execute_block_trade(
+        &self,
+        request: &crate::model::block_trade::ExecuteBlockTradeRequest,
+    ) -> Result<crate::model::block_trade::BlockTradeResult, HttpError> {
+        let trades_json = serde_json::to_string(&request.trades).map_err(|e| {
+            HttpError::InvalidResponse(format!("Failed to serialize trades: {}", e))
+        })?;
+
+        let query_params = [
+            ("timestamp".to_string(), request.timestamp.to_string()),
+            ("nonce".to_string(), request.nonce.clone()),
+            ("role".to_string(), request.role.to_string()),
+            ("trades".to_string(), trades_json),
+            (
+                "counterparty_signature".to_string(),
+                request.counterparty_signature.clone(),
+            ),
+        ];
+
+        let query_string = query_params
+            .iter()
+            .map(|(k, v)| format!("{}={}", k, urlencoding::encode(v)))
+            .collect::<Vec<_>>()
+            .join("&");
+
+        let url = format!(
+            "{}{}?{}",
+            self.base_url(),
+            EXECUTE_BLOCK_TRADE,
+            query_string
+        );
+
+        let response = self.make_authenticated_request(&url).await?;
+
+        if !response.status().is_success() {
+            let error_text = response
+                .text()
+                .await
+                .unwrap_or_else(|_| "Unknown error".to_string());
+            return Err(HttpError::RequestFailed(format!(
+                "Execute block trade failed: {}",
+                error_text
+            )));
+        }
+
+        let api_response: ApiResponse<crate::model::block_trade::BlockTradeResult> = response
+            .json()
+            .await
+            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
+
+        if let Some(error) = api_response.error {
+            return Err(HttpError::RequestFailed(format!(
+                "API error: {} - {}",
+                error.code, error.message
+            )));
+        }
+
+        api_response.result.ok_or_else(|| {
+            HttpError::InvalidResponse("No block trade result in response".to_string())
+        })
+    }
+
+    /// Get a specific block trade by ID
+    ///
+    /// Returns information about a user's block trade.
+    ///
+    /// # Arguments
+    ///
+    /// * `id` - Block trade ID
+    ///
+    /// # Returns
+    ///
+    /// Returns the block trade details.
+    ///
+    /// # Errors
+    ///
+    /// Returns `HttpError` if the request fails or the block trade is not found.
+    pub async fn get_block_trade(
+        &self,
+        id: &str,
+    ) -> Result<crate::model::block_trade::BlockTrade, HttpError> {
+        let query_string = format!("id={}", urlencoding::encode(id));
+        let url = format!("{}{}?{}", self.base_url(), GET_BLOCK_TRADE, query_string);
+
+        let response = self.make_authenticated_request(&url).await?;
+
+        if !response.status().is_success() {
+            let error_text = response
+                .text()
+                .await
+                .unwrap_or_else(|_| "Unknown error".to_string());
+            return Err(HttpError::RequestFailed(format!(
+                "Get block trade failed: {}",
+                error_text
+            )));
+        }
+
+        let api_response: ApiResponse<crate::model::block_trade::BlockTrade> = response
+            .json()
+            .await
+            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
+
+        if let Some(error) = api_response.error {
+            return Err(HttpError::RequestFailed(format!(
+                "API error: {} - {}",
+                error.code, error.message
+            )));
+        }
+
+        api_response.result.ok_or_else(|| {
+            HttpError::InvalidResponse("No block trade data in response".to_string())
+        })
+    }
+
+    /// Get pending block trade requests
+    ///
+    /// Provides a list of pending block trade approvals.
+    /// The `timestamp` and `nonce` received in response can be used to
+    /// approve or reject the pending block trade.
+    ///
+    /// # Arguments
+    ///
+    /// * `broker_code` - Optional broker code to filter by
+    ///
+    /// # Returns
+    ///
+    /// Returns a list of pending block trade requests.
+    ///
+    /// # Errors
+    ///
+    /// Returns `HttpError` if the request fails.
+    pub async fn get_block_trade_requests(
+        &self,
+        broker_code: Option<&str>,
+    ) -> Result<Vec<crate::model::block_trade::BlockTradeRequest>, HttpError> {
+        let mut query_params = Vec::new();
+
+        if let Some(code) = broker_code {
+            query_params.push(("broker_code".to_string(), code.to_string()));
+        }
+
+        let query_string = if query_params.is_empty() {
+            String::new()
+        } else {
+            format!(
+                "?{}",
+                query_params
+                    .iter()
+                    .map(|(k, v)| format!("{}={}", k, urlencoding::encode(v)))
+                    .collect::<Vec<_>>()
+                    .join("&")
+            )
+        };
+
+        let url = format!(
+            "{}{}{}",
+            self.base_url(),
+            GET_BLOCK_TRADE_REQUESTS,
+            query_string
+        );
+
+        let response = self.make_authenticated_request(&url).await?;
+
+        if !response.status().is_success() {
+            let error_text = response
+                .text()
+                .await
+                .unwrap_or_else(|_| "Unknown error".to_string());
+            return Err(HttpError::RequestFailed(format!(
+                "Get block trade requests failed: {}",
+                error_text
+            )));
+        }
+
+        let api_response: ApiResponse<Vec<crate::model::block_trade::BlockTradeRequest>> = response
+            .json()
+            .await
+            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
+
+        if let Some(error) = api_response.error {
+            return Err(HttpError::RequestFailed(format!(
+                "API error: {} - {}",
+                error.code, error.message
+            )));
+        }
+
+        Ok(api_response.result.unwrap_or_default())
+    }
+
+    /// Get block trades with optional filters
+    ///
+    /// Returns a list of block trades for the user.
+    ///
+    /// # Arguments
+    ///
+    /// * `request` - Request parameters with optional filters
+    ///
+    /// # Returns
+    ///
+    /// Returns a list of block trades.
+    ///
+    /// # Errors
+    ///
+    /// Returns `HttpError` if the request fails.
+    pub async fn get_block_trades(
+        &self,
+        request: &crate::model::block_trade::GetBlockTradesRequest,
+    ) -> Result<Vec<crate::model::block_trade::BlockTrade>, HttpError> {
+        let mut query_params = Vec::new();
+
+        if let Some(ref currency) = request.currency {
+            query_params.push(("currency".to_string(), currency.clone()));
+        }
+        if let Some(count) = request.count {
+            query_params.push(("count".to_string(), count.to_string()));
+        }
+        if let Some(ref continuation) = request.continuation {
+            query_params.push(("continuation".to_string(), continuation.clone()));
+        }
+        if let Some(start_ts) = request.start_timestamp {
+            query_params.push(("start_timestamp".to_string(), start_ts.to_string()));
+        }
+        if let Some(end_ts) = request.end_timestamp {
+            query_params.push(("end_timestamp".to_string(), end_ts.to_string()));
+        }
+
+        let query_string = if query_params.is_empty() {
+            String::new()
+        } else {
+            format!(
+                "?{}",
+                query_params
+                    .iter()
+                    .map(|(k, v)| format!("{}={}", k, urlencoding::encode(v)))
+                    .collect::<Vec<_>>()
+                    .join("&")
+            )
+        };
+
+        let url = format!("{}{}{}", self.base_url(), GET_BLOCK_TRADES, query_string);
+
+        let response = self.make_authenticated_request(&url).await?;
+
+        if !response.status().is_success() {
+            let error_text = response
+                .text()
+                .await
+                .unwrap_or_else(|_| "Unknown error".to_string());
+            return Err(HttpError::RequestFailed(format!(
+                "Get block trades failed: {}",
+                error_text
+            )));
+        }
+
+        let api_response: ApiResponse<Vec<crate::model::block_trade::BlockTrade>> = response
+            .json()
+            .await
+            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
+
+        if let Some(error) = api_response.error {
+            return Err(HttpError::RequestFailed(format!(
+                "API error: {} - {}",
+                error.code, error.message
+            )));
+        }
+
+        Ok(api_response.result.unwrap_or_default())
+    }
+
+    /// Get broker trade requests
+    ///
+    /// Provides a list of pending broker trade requests.
+    ///
+    /// # Returns
+    ///
+    /// Returns a list of broker trade requests.
+    ///
+    /// # Errors
+    ///
+    /// Returns `HttpError` if the request fails.
+    pub async fn get_broker_trade_requests(
+        &self,
+    ) -> Result<Vec<crate::model::block_trade::BlockTradeRequest>, HttpError> {
+        let url = format!("{}{}", self.base_url(), GET_BROKER_TRADE_REQUESTS);
+
+        let response = self.make_authenticated_request(&url).await?;
+
+        if !response.status().is_success() {
+            let error_text = response
+                .text()
+                .await
+                .unwrap_or_else(|_| "Unknown error".to_string());
+            return Err(HttpError::RequestFailed(format!(
+                "Get broker trade requests failed: {}",
+                error_text
+            )));
+        }
+
+        let api_response: ApiResponse<Vec<crate::model::block_trade::BlockTradeRequest>> = response
+            .json()
+            .await
+            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
+
+        if let Some(error) = api_response.error {
+            return Err(HttpError::RequestFailed(format!(
+                "API error: {} - {}",
+                error.code, error.message
+            )));
+        }
+
+        Ok(api_response.result.unwrap_or_default())
+    }
+
+    /// Get broker trades with optional filters
+    ///
+    /// Returns a list of broker trades.
+    ///
+    /// # Arguments
+    ///
+    /// * `request` - Request parameters with optional filters
+    ///
+    /// # Returns
+    ///
+    /// Returns a list of broker trades.
+    ///
+    /// # Errors
+    ///
+    /// Returns `HttpError` if the request fails.
+    pub async fn get_broker_trades(
+        &self,
+        request: &crate::model::block_trade::GetBlockTradesRequest,
+    ) -> Result<Vec<crate::model::block_trade::BlockTrade>, HttpError> {
+        let mut query_params = Vec::new();
+
+        if let Some(ref currency) = request.currency {
+            query_params.push(("currency".to_string(), currency.clone()));
+        }
+        if let Some(count) = request.count {
+            query_params.push(("count".to_string(), count.to_string()));
+        }
+        if let Some(ref continuation) = request.continuation {
+            query_params.push(("continuation".to_string(), continuation.clone()));
+        }
+        if let Some(start_ts) = request.start_timestamp {
+            query_params.push(("start_timestamp".to_string(), start_ts.to_string()));
+        }
+        if let Some(end_ts) = request.end_timestamp {
+            query_params.push(("end_timestamp".to_string(), end_ts.to_string()));
+        }
+
+        let query_string = if query_params.is_empty() {
+            String::new()
+        } else {
+            format!(
+                "?{}",
+                query_params
+                    .iter()
+                    .map(|(k, v)| format!("{}={}", k, urlencoding::encode(v)))
+                    .collect::<Vec<_>>()
+                    .join("&")
+            )
+        };
+
+        let url = format!("{}{}{}", self.base_url(), GET_BROKER_TRADES, query_string);
+
+        let response = self.make_authenticated_request(&url).await?;
+
+        if !response.status().is_success() {
+            let error_text = response
+                .text()
+                .await
+                .unwrap_or_else(|_| "Unknown error".to_string());
+            return Err(HttpError::RequestFailed(format!(
+                "Get broker trades failed: {}",
+                error_text
+            )));
+        }
+
+        let api_response: ApiResponse<Vec<crate::model::block_trade::BlockTrade>> = response
+            .json()
+            .await
+            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
+
+        if let Some(error) = api_response.error {
+            return Err(HttpError::RequestFailed(format!(
+                "API error: {} - {}",
+                error.code, error.message
+            )));
+        }
+
+        Ok(api_response.result.unwrap_or_default())
+    }
+
+    /// Invalidate a block trade signature
+    ///
+    /// Invalidates a previously generated block trade signature.
+    ///
+    /// # Arguments
+    ///
+    /// * `signature` - The signature to invalidate
+    ///
+    /// # Returns
+    ///
+    /// Returns `true` if the signature was successfully invalidated.
+    ///
+    /// # Errors
+    ///
+    /// Returns `HttpError` if the request fails.
+    pub async fn invalidate_block_trade_signature(
+        &self,
+        signature: &str,
+    ) -> Result<bool, HttpError> {
+        let query_string = format!("signature={}", urlencoding::encode(signature));
+        let url = format!(
+            "{}{}?{}",
+            self.base_url(),
+            INVALIDATE_BLOCK_TRADE_SIGNATURE,
+            query_string
+        );
+
+        let response = self.make_authenticated_request(&url).await?;
+
+        if !response.status().is_success() {
+            let error_text = response
+                .text()
+                .await
+                .unwrap_or_else(|_| "Unknown error".to_string());
+            return Err(HttpError::RequestFailed(format!(
+                "Invalidate block trade signature failed: {}",
+                error_text
+            )));
+        }
+
+        let api_response: ApiResponse<String> = response
+            .json()
+            .await
+            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
+
+        if let Some(error) = api_response.error {
+            return Err(HttpError::RequestFailed(format!(
+                "API error: {} - {}",
+                error.code, error.message
+            )));
+        }
+
+        Ok(api_response.result.map(|s| s == "ok").unwrap_or(false))
+    }
+
+    /// Reject a pending block trade
+    ///
+    /// Used to reject a pending block trade.
+    ///
+    /// # Arguments
+    ///
+    /// * `timestamp` - Timestamp shared with other party, in milliseconds since UNIX epoch
+    /// * `nonce` - Nonce shared with other party
+    /// * `role` - Role in the trade (maker or taker)
+    ///
+    /// # Returns
+    ///
+    /// Returns `true` if the block trade was successfully rejected.
+    ///
+    /// # Errors
+    ///
+    /// Returns `HttpError` if the request fails.
+    pub async fn reject_block_trade(
+        &self,
+        timestamp: u64,
+        nonce: &str,
+        role: crate::model::block_trade::BlockTradeRole,
+    ) -> Result<bool, HttpError> {
+        let query_params = [
+            ("timestamp".to_string(), timestamp.to_string()),
+            ("nonce".to_string(), nonce.to_string()),
+            ("role".to_string(), role.to_string()),
+        ];
+
+        let query_string = query_params
+            .iter()
+            .map(|(k, v)| format!("{}={}", k, urlencoding::encode(v)))
+            .collect::<Vec<_>>()
+            .join("&");
+
+        let url = format!("{}{}?{}", self.base_url(), REJECT_BLOCK_TRADE, query_string);
+
+        let response = self.make_authenticated_request(&url).await?;
+
+        if !response.status().is_success() {
+            let error_text = response
+                .text()
+                .await
+                .unwrap_or_else(|_| "Unknown error".to_string());
+            return Err(HttpError::RequestFailed(format!(
+                "Reject block trade failed: {}",
+                error_text
+            )));
+        }
+
+        let api_response: ApiResponse<String> = response
+            .json()
+            .await
+            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
+
+        if let Some(error) = api_response.error {
+            return Err(HttpError::RequestFailed(format!(
+                "API error: {} - {}",
+                error.code, error.message
+            )));
+        }
+
+        Ok(api_response.result.map(|s| s == "ok").unwrap_or(false))
+    }
+
+    /// Simulate a block trade
+    ///
+    /// Checks if a block trade can be executed.
+    ///
+    /// # Arguments
+    ///
+    /// * `request` - The simulation request containing trades and optional role
+    ///
+    /// # Returns
+    ///
+    /// Returns `true` if the block trade can be executed, `false` otherwise.
+    ///
+    /// # Errors
+    ///
+    /// Returns `HttpError` if the request fails.
+    pub async fn simulate_block_trade(
+        &self,
+        request: &crate::model::block_trade::SimulateBlockTradeRequest,
+    ) -> Result<bool, HttpError> {
+        let trades_json = serde_json::to_string(&request.trades).map_err(|e| {
+            HttpError::InvalidResponse(format!("Failed to serialize trades: {}", e))
+        })?;
+
+        let mut query_params = vec![("trades".to_string(), trades_json)];
+
+        if let Some(ref role) = request.role {
+            query_params.push(("role".to_string(), role.to_string()));
+        }
+
+        let query_string = query_params
+            .iter()
+            .map(|(k, v)| format!("{}={}", k, urlencoding::encode(v)))
+            .collect::<Vec<_>>()
+            .join("&");
+
+        let url = format!(
+            "{}{}?{}",
+            self.base_url(),
+            SIMULATE_BLOCK_TRADE,
+            query_string
+        );
+
+        let response = self.make_authenticated_request(&url).await?;
+
+        if !response.status().is_success() {
+            let error_text = response
+                .text()
+                .await
+                .unwrap_or_else(|_| "Unknown error".to_string());
+            return Err(HttpError::RequestFailed(format!(
+                "Simulate block trade failed: {}",
+                error_text
+            )));
+        }
+
+        let api_response: ApiResponse<bool> = response
+            .json()
+            .await
+            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
+
+        if let Some(error) = api_response.error {
+            return Err(HttpError::RequestFailed(format!(
+                "API error: {} - {}",
+                error.code, error.message
+            )));
+        }
+
+        Ok(api_response.result.unwrap_or(false))
+    }
+
+    /// Verify and create a block trade signature
+    ///
+    /// Verifies the block trade parameters and creates a signature.
+    /// The signature is valid for 5 minutes around the given timestamp.
+    ///
+    /// # Arguments
+    ///
+    /// * `request` - The verify block trade request containing all required parameters
+    ///
+    /// # Returns
+    ///
+    /// Returns the block trade signature.
+    ///
+    /// # Errors
+    ///
+    /// Returns `HttpError` if the request fails or verification fails.
+    pub async fn verify_block_trade(
+        &self,
+        request: &crate::model::block_trade::VerifyBlockTradeRequest,
+    ) -> Result<crate::model::block_trade::BlockTradeSignature, HttpError> {
+        let trades_json = serde_json::to_string(&request.trades).map_err(|e| {
+            HttpError::InvalidResponse(format!("Failed to serialize trades: {}", e))
+        })?;
+
+        let query_params = [
+            ("timestamp".to_string(), request.timestamp.to_string()),
+            ("nonce".to_string(), request.nonce.clone()),
+            ("role".to_string(), request.role.to_string()),
+            ("trades".to_string(), trades_json),
+        ];
+
+        let query_string = query_params
+            .iter()
+            .map(|(k, v)| format!("{}={}", k, urlencoding::encode(v)))
+            .collect::<Vec<_>>()
+            .join("&");
+
+        let url = format!("{}{}?{}", self.base_url(), VERIFY_BLOCK_TRADE, query_string);
+
+        let response = self.make_authenticated_request(&url).await?;
+
+        if !response.status().is_success() {
+            let error_text = response
+                .text()
+                .await
+                .unwrap_or_else(|_| "Unknown error".to_string());
+            return Err(HttpError::RequestFailed(format!(
+                "Verify block trade failed: {}",
+                error_text
+            )));
+        }
+
+        let api_response: ApiResponse<crate::model::block_trade::BlockTradeSignature> = response
+            .json()
+            .await
+            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
+
+        if let Some(error) = api_response.error {
+            return Err(HttpError::RequestFailed(format!(
+                "API error: {} - {}",
+                error.code, error.message
+            )));
+        }
+
+        api_response
+            .result
+            .ok_or_else(|| HttpError::InvalidResponse("No signature in response".to_string()))
     }
 }

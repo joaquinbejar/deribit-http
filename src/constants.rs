@@ -302,6 +302,30 @@ pub mod endpoints {
     pub const SET_EMAIL_LANGUAGE: &str = "/private/set_email_language";
     /// Get email language preference
     pub const GET_EMAIL_LANGUAGE: &str = "/private/get_email_language";
+
+    // Block Trade endpoints
+    /// Approve a pending block trade
+    pub const APPROVE_BLOCK_TRADE: &str = "/private/approve_block_trade";
+    /// Execute a block trade with counterparty signature
+    pub const EXECUTE_BLOCK_TRADE: &str = "/private/execute_block_trade";
+    /// Get a specific block trade by ID
+    pub const GET_BLOCK_TRADE: &str = "/private/get_block_trade";
+    /// Get pending block trade requests
+    pub const GET_BLOCK_TRADE_REQUESTS: &str = "/private/get_block_trade_requests";
+    /// List block trades with optional filters
+    pub const GET_BLOCK_TRADES: &str = "/private/get_block_trades";
+    /// Get broker trade requests
+    pub const GET_BROKER_TRADE_REQUESTS: &str = "/private/get_broker_trade_requests";
+    /// List broker trades
+    pub const GET_BROKER_TRADES: &str = "/private/get_broker_trades";
+    /// Invalidate a block trade signature
+    pub const INVALIDATE_BLOCK_TRADE_SIGNATURE: &str = "/private/invalidate_block_trade_signature";
+    /// Reject a pending block trade
+    pub const REJECT_BLOCK_TRADE: &str = "/private/reject_block_trade";
+    /// Simulate if a block trade can be executed
+    pub const SIMULATE_BLOCK_TRADE: &str = "/private/simulate_block_trade";
+    /// Verify and create a block trade signature
+    pub const VERIFY_BLOCK_TRADE: &str = "/private/verify_block_trade";
 }
 
 /// HTTP headers
