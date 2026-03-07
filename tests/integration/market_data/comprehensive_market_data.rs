@@ -577,4 +577,217 @@ mod comprehensive_market_data_tests {
         info!("Market data edge cases test completed successfully");
         Ok(())
     }
+
+    // =========================================================================
+    // Index Chart Data Tests (Issue #12)
+    // =========================================================================
+
+    #[tokio::test]
+    #[serial_test::serial]
+    async fn test_get_index_chart_data_btc_1d() -> Result<(), Box<dyn std::error::Error>> {
+        let client = DeribitHttpClient::new();
+
+        info!("Testing get_index_chart_data for btc_usd with 1d range");
+        let start_time = Instant::now();
+        let result = client.get_index_chart_data("btc_usd", "1d").await;
+        let elapsed = start_time.elapsed();
+
+        match &result {
+            Ok(data) => {
+                info!(
+                    "Successfully retrieved {} data points in {:?}",
+                    data.len(),
+                    elapsed
+                );
+
+                // Validate we got data
+                assert!(!data.is_empty(), "Should return at least one data point");
+
+                // Validate data structure
+                for point in data.iter() {
+                    // Timestamp should be reasonable (after 2020, before 2035)
+                    assert!(
+                        point.timestamp > 1_577_836_800_000,
+                        "Timestamp should be after 2020: {}",
+                        point.timestamp
+                    );
+                    assert!(
+                        point.timestamp < 2_051_222_400_000,
+                        "Timestamp should be before 2035: {}",
+                        point.timestamp
+                    );
+
+                    // Price should be positive and reasonable for BTC
+                    assert!(point.price > 0.0, "Price should be positive: {}", point.price);
+                    assert!(
+                        point.price < 10_000_000.0,
+                        "Price should be reasonable: {}",
+                        point.price
+                    );
+                }
+
+                // Validate timestamps are in order (ascending)
+                for i in 1..data.len() {
+                    assert!(
+                        data[i].timestamp >= data[i - 1].timestamp,
+                        "Timestamps should be in ascending order: {} >= {}",
+                        data[i].timestamp,
+                        data[i - 1].timestamp
+                    );
+                }
+            }
+            Err(e) => {
+                warn!("get_index_chart_data failed in {:?}: {:?}", elapsed, e);
+                return Err(format!("get_index_chart_data failed: {:?}", e).into());
+            }
+        }
+
+        assert!(
+            elapsed < Duration::from_secs(30),
+            "Request took too long: {:?}",
+            elapsed
+        );
+
+        info!("test_get_index_chart_data_btc_1d completed successfully");
+        Ok(())
+    }
+
+    #[tokio::test]
+    #[serial_test::serial]
+    async fn test_get_index_chart_data_multiple_ranges() -> Result<(), Box<dyn std::error::Error>> {
+        let client = DeribitHttpClient::new();
+
+        let ranges = ["1h", "1d", "2d", "1m", "1y"];
+
+        for range in ranges.iter() {
+            info!("Testing get_index_chart_data for btc_usd with {} range", range);
+            let start_time = Instant::now();
+            let result = client.get_index_chart_data("btc_usd", range).await;
+            let elapsed = start_time.elapsed();
+
+            match &result {
+                Ok(data) => {
+                    info!(
+                        "Range '{}': {} data points in {:?}",
+                        range,
+                        data.len(),
+                        elapsed
+                    );
+
+                    // All ranges should return data
+                    assert!(
+                        !data.is_empty(),
+                        "Range '{}' should return at least one data point",
+                        range
+                    );
+
+                    // Validate first and last points have valid data
+                    if let Some(first) = data.first() {
+                        assert!(first.price > 0.0, "First point price should be positive");
+                        assert!(
+                            first.timestamp > 1_577_836_800_000,
+                            "First point timestamp should be valid"
+                        );
+                    }
+                    if let Some(last) = data.last() {
+                        assert!(last.price > 0.0, "Last point price should be positive");
+                        assert!(
+                            last.timestamp > 1_577_836_800_000,
+                            "Last point timestamp should be valid"
+                        );
+                    }
+                }
+                Err(e) => {
+                    warn!(
+                        "Range '{}' failed in {:?}: {:?}",
+                        range, elapsed, e
+                    );
+                    return Err(format!("Range '{}' failed: {:?}", range, e).into());
+                }
+            }
+
+            // Small delay between requests to avoid rate limiting
+            sleep(Duration::from_millis(200)).await;
+        }
+
+        info!("test_get_index_chart_data_multiple_ranges completed successfully");
+        Ok(())
+    }
+
+    #[tokio::test]
+    #[serial_test::serial]
+    async fn test_get_index_chart_data_eth() -> Result<(), Box<dyn std::error::Error>> {
+        let client = DeribitHttpClient::new();
+
+        info!("Testing get_index_chart_data for eth_usd with 1d range");
+        let start_time = Instant::now();
+        let result = client.get_index_chart_data("eth_usd", "1d").await;
+        let elapsed = start_time.elapsed();
+
+        match &result {
+            Ok(data) => {
+                info!(
+                    "Successfully retrieved {} ETH data points in {:?}",
+                    data.len(),
+                    elapsed
+                );
+
+                assert!(!data.is_empty(), "Should return at least one data point for ETH");
+
+                // Validate ETH price range (different from BTC)
+                for point in data.iter() {
+                    assert!(point.price > 0.0, "ETH price should be positive");
+                    assert!(
+                        point.price < 100_000.0,
+                        "ETH price should be reasonable: {}",
+                        point.price
+                    );
+                }
+            }
+            Err(e) => {
+                warn!("ETH index chart data failed in {:?}: {:?}", elapsed, e);
+                return Err(format!("ETH index chart data failed: {:?}", e).into());
+            }
+        }
+
+        info!("test_get_index_chart_data_eth completed successfully");
+        Ok(())
+    }
+
+    #[tokio::test]
+    #[serial_test::serial]
+    async fn test_get_index_chart_data_invalid_index() -> Result<(), Box<dyn std::error::Error>> {
+        let client = DeribitHttpClient::new();
+
+        info!("Testing get_index_chart_data with invalid index name");
+        let start_time = Instant::now();
+        let result = client.get_index_chart_data("invalid_index_name", "1d").await;
+        let elapsed = start_time.elapsed();
+
+        match result {
+            Ok(data) => {
+                // API might return empty data or error for invalid index
+                info!(
+                    "Invalid index returned {} points in {:?} (may be empty or error)",
+                    data.len(),
+                    elapsed
+                );
+            }
+            Err(e) => {
+                info!(
+                    "Invalid index correctly returned error in {:?}: {:?}",
+                    elapsed, e
+                );
+            }
+        }
+
+        assert!(
+            elapsed < Duration::from_secs(30),
+            "Invalid index request took too long: {:?}",
+            elapsed
+        );
+
+        info!("test_get_index_chart_data_invalid_index completed successfully");
+        Ok(())
+    }
 }

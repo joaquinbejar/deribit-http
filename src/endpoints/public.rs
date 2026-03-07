@@ -10,7 +10,7 @@ use crate::model::LastTradesResponse;
 use crate::model::book::{BookSummary, OrderBook};
 use crate::model::currency::CurrencyStruct;
 use crate::model::funding::{FundingChartData, FundingRateData};
-use crate::model::index::{IndexData, IndexPriceData};
+use crate::model::index::{IndexChartDataPoint, IndexData, IndexPriceData};
 use crate::model::instrument::{Instrument, OptionType};
 use crate::model::order::OrderSide;
 use crate::model::other::{OptionInstrument, OptionInstrumentPair};
