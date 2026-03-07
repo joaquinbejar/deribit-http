@@ -17,6 +17,7 @@ use crate::model::response::order::{OrderInfoResponse, OrderResponse};
 use crate::model::response::other::{
     AccountSummaryResponse, SettlementsResponse, TransactionLogResponse, TransferResultResponse,
 };
+use crate::model::response::trigger::TriggerOrderHistoryResponse;
 use crate::model::response::withdrawal::WithdrawalsResponse;
 use crate::model::{
     TransactionLogRequest, UserTradeResponseByOrder, UserTradeWithPaginationResponse,
@@ -1919,6 +1920,89 @@ impl DeribitHttpClient {
         api_response
             .result
             .ok_or_else(|| HttpError::InvalidResponse("No settlement data in response".to_string()))
+    }
+
+    /// Get trigger order history
+    ///
+    /// Retrieves a detailed log of all trigger orders (stop orders, take-profit orders, etc.)
+    /// for the authenticated account. The log includes trigger order creation, activation,
+    /// execution, and cancellation events.
+    ///
+    /// # Arguments
+    ///
+    /// * `currency` - Currency symbol (e.g., "BTC", "ETH", "USDC")
+    /// * `instrument_name` - Filter by specific instrument (optional)
+    /// * `count` - Number of items (default 20, max 1000) (optional)
+    /// * `continuation` - Pagination token (optional)
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use deribit_http::DeribitHttpClient;
+    ///
+    /// let client = DeribitHttpClient::new();
+    /// // let history = client.get_trigger_order_history("BTC", None, None, None).await?;
+    /// ```
+    pub async fn get_trigger_order_history(
+        &self,
+        currency: &str,
+        instrument_name: Option<&str>,
+        count: Option<u32>,
+        continuation: Option<&str>,
+    ) -> Result<TriggerOrderHistoryResponse, HttpError> {
+        let mut url = format!(
+            "{}{}?currency={}",
+            self.base_url(),
+            GET_TRIGGER_ORDER_HISTORY,
+            urlencoding::encode(currency)
+        );
+
+        if let Some(instrument_name) = instrument_name {
+            url.push_str(&format!(
+                "&instrument_name={}",
+                urlencoding::encode(instrument_name)
+            ));
+        }
+
+        if let Some(count) = count {
+            url.push_str(&format!("&count={}", count));
+        }
+
+        if let Some(continuation) = continuation {
+            url.push_str(&format!(
+                "&continuation={}",
+                urlencoding::encode(continuation)
+            ));
+        }
+
+        let response = self.make_authenticated_request(&url).await?;
+
+        if !response.status().is_success() {
+            let error_text = response
+                .text()
+                .await
+                .unwrap_or_else(|_| "Unknown error".to_string());
+            return Err(HttpError::RequestFailed(format!(
+                "Get trigger order history failed: {}",
+                error_text
+            )));
+        }
+
+        let api_response: ApiResponse<TriggerOrderHistoryResponse> = response
+            .json()
+            .await
+            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
+
+        if let Some(error) = api_response.error {
+            return Err(HttpError::RequestFailed(format!(
+                "API error: {} - {}",
+                error.code, error.message
+            )));
+        }
+
+        api_response.result.ok_or_else(|| {
+            HttpError::InvalidResponse("No trigger order history data in response".to_string())
+        })
     }
 
     /// Get MMP configuration

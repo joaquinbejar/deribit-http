@@ -1271,3 +1271,102 @@ async fn test_get_settlement_history_by_instrument_success() {
     assert_eq!(response.settlements.len(), 1);
     assert!(response.continuation.is_some());
 }
+
+// =========================================================================
+// Get Trigger Order History Tests (Issue #20)
+// =========================================================================
+
+#[tokio::test]
+async fn test_get_trigger_order_history_success() {
+    let mut server = mockito::Server::new_async().await;
+    let client = create_test_client(&server);
+
+    let _auth_mock = create_auth_mock(&mut server).await;
+
+    let mock_response = json!({
+        "jsonrpc": "2.0",
+        "result": {
+            "entries": [
+                {
+                    "timestamp": 1555918941451i64,
+                    "trigger": "index_price",
+                    "trigger_price": 5285.0,
+                    "trigger_order_id": "SLIS-103",
+                    "order_id": "671473",
+                    "order_state": "triggered",
+                    "instrument_name": "BTC-PERPETUAL",
+                    "request": "trigger:order",
+                    "direction": "buy",
+                    "price": 5179.28,
+                    "amount": 10.0
+                }
+            ],
+            "continuation": "1555918941451.SLIS-103"
+        },
+        "id": 1
+    });
+
+    let mock = server
+        .mock(
+            "GET",
+            mockito::Matcher::Regex(
+                r"/api/v2/private/get_trigger_order_history\?currency=BTC.*".to_string(),
+            ),
+        )
+        .with_status(200)
+        .with_header("content-type", "application/json")
+        .with_body(mock_response.to_string())
+        .create_async()
+        .await;
+
+    let result = client
+        .get_trigger_order_history("BTC", None, Some(10), None)
+        .await;
+
+    mock.assert_async().await;
+    assert!(result.is_ok());
+    let response = result.unwrap();
+    assert_eq!(response.entries.len(), 1);
+    assert!(response.continuation.is_some());
+    assert_eq!(response.entries[0].trigger_order_id, "SLIS-103");
+    assert_eq!(response.entries[0].direction, "buy");
+}
+
+#[tokio::test]
+async fn test_get_trigger_order_history_empty() {
+    let mut server = mockito::Server::new_async().await;
+    let client = create_test_client(&server);
+
+    let _auth_mock = create_auth_mock(&mut server).await;
+
+    let mock_response = json!({
+        "jsonrpc": "2.0",
+        "result": {
+            "entries": []
+        },
+        "id": 1
+    });
+
+    let mock = server
+        .mock(
+            "GET",
+            mockito::Matcher::Regex(
+                r"/api/v2/private/get_trigger_order_history\?currency=ETH.*".to_string(),
+            ),
+        )
+        .with_status(200)
+        .with_header("content-type", "application/json")
+        .with_body(mock_response.to_string())
+        .create_async()
+        .await;
+
+    let result = client
+        .get_trigger_order_history("ETH", Some("ETH-PERPETUAL"), None, None)
+        .await;
+
+    mock.assert_async().await;
+    assert!(result.is_ok());
+    let response = result.unwrap();
+    assert!(response.entries.is_empty());
+    assert!(response.continuation.is_none());
+}
