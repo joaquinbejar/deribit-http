@@ -1608,3 +1608,131 @@ async fn test_get_account_summaries_with_subaccount() {
     assert_eq!(response.summaries.len(), 1);
     assert_eq!(response.account_type, "subaccount");
 }
+
+// =========================================================================
+// Get Subaccounts Details Tests (Issue #23)
+// =========================================================================
+
+#[tokio::test]
+async fn test_get_subaccounts_details_success() {
+    let mut server = mockito::Server::new_async().await;
+    let client = create_test_client(&server);
+
+    let _auth_mock = create_auth_mock(&mut server).await;
+
+    let mock_response = json!({
+        "jsonrpc": "2.0",
+        "result": [
+            {
+                "uid": 3,
+                "positions": [
+                    {
+                        "total_profit_loss": -0.000118183,
+                        "size_currency": 0.004152776,
+                        "size": 200,
+                        "settlement_price": 48150.36,
+                        "realized_profit_loss": -8.79e-7,
+                        "realized_funding": -8.8e-7,
+                        "open_orders_margin": 0,
+                        "mark_price": 48160.55,
+                        "maintenance_margin": 0.000089286,
+                        "leverage": 34,
+                        "kind": "future",
+                        "instrument_name": "BTC-PERPETUAL",
+                        "initial_margin": 0.000122508,
+                        "index_price": 47897.12,
+                        "floating_profit_loss": -0.00003451,
+                        "estimated_liquidation_price": 2.33,
+                        "direction": "buy",
+                        "delta": 0.004152776,
+                        "average_price": 49571.3
+                    }
+                ]
+            },
+            {
+                "uid": 10,
+                "positions": [
+                    {
+                        "total_profit_loss": 0.000037333,
+                        "size_currency": -0.001308984,
+                        "size": -60,
+                        "settlement_price": 47886.98,
+                        "realized_profit_loss": 0,
+                        "open_orders_margin": 0,
+                        "mark_price": 45837.07,
+                        "maintenance_margin": 0.000028143,
+                        "leverage": 34,
+                        "kind": "future",
+                        "instrument_name": "BTC-3SEP21",
+                        "initial_margin": 0.000038615,
+                        "index_price": 47897.12,
+                        "floating_profit_loss": 0.000037333,
+                        "estimated_liquidation_price": null,
+                        "direction": "sell",
+                        "delta": -0.001308984,
+                        "average_price": 47182.76
+                    }
+                ]
+            }
+        ],
+        "id": 1
+    });
+
+    let mock = server
+        .mock(
+            "GET",
+            mockito::Matcher::Regex(
+                r"/api/v2/private/get_subaccounts_details\?currency=BTC.*".to_string(),
+            ),
+        )
+        .with_status(200)
+        .with_header("content-type", "application/json")
+        .with_body(mock_response.to_string())
+        .create_async()
+        .await;
+
+    let result = client.get_subaccounts_details("BTC", None).await;
+
+    mock.assert_async().await;
+    assert!(result.is_ok());
+    let details = result.unwrap();
+    assert_eq!(details.len(), 2);
+    assert_eq!(details[0].uid, 3);
+    assert_eq!(details[0].positions.len(), 1);
+    assert_eq!(details[0].positions[0].instrument_name, "BTC-PERPETUAL");
+    assert_eq!(details[1].uid, 10);
+}
+
+#[tokio::test]
+async fn test_get_subaccounts_details_empty() {
+    let mut server = mockito::Server::new_async().await;
+    let client = create_test_client(&server);
+
+    let _auth_mock = create_auth_mock(&mut server).await;
+
+    let mock_response = json!({
+        "jsonrpc": "2.0",
+        "result": [],
+        "id": 1
+    });
+
+    let mock = server
+        .mock(
+            "GET",
+            mockito::Matcher::Regex(
+                r"/api/v2/private/get_subaccounts_details\?currency=ETH.*".to_string(),
+            ),
+        )
+        .with_status(200)
+        .with_header("content-type", "application/json")
+        .with_body(mock_response.to_string())
+        .create_async()
+        .await;
+
+    let result = client.get_subaccounts_details("ETH", Some(true)).await;
+
+    mock.assert_async().await;
+    assert!(result.is_ok());
+    let details = result.unwrap();
+    assert!(details.is_empty());
+}

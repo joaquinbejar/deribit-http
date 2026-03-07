@@ -19,6 +19,8 @@ pub mod order;
 pub mod other;
 /// Position response models
 pub mod position;
+/// Subaccount response models
+pub mod subaccount;
 /// Trade response models and types
 pub mod trade;
 /// Trigger order response models
@@ -34,6 +36,7 @@ pub use mmp::*;
 pub use order::*;
 pub use other::*;
 pub use position::*;
+pub use subaccount::*;
 pub use trade::*;
 pub use trigger::*;
 pub use withdrawal::*;

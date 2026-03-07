@@ -19,6 +19,7 @@ use crate::model::response::other::{
     AccountSummaryResponse, SettlementsResponse, TransactionLogResponse, TransferResultResponse,
 };
 use crate::model::response::position::MovePositionResult;
+use crate::model::response::subaccount::SubaccountDetails;
 use crate::model::response::trigger::TriggerOrderHistoryResponse;
 use crate::model::response::withdrawal::WithdrawalsResponse;
 use crate::model::{
@@ -105,6 +106,71 @@ impl DeribitHttpClient {
 
         api_response.result.ok_or_else(|| {
             HttpError::InvalidResponse("No subaccounts data in response".to_string())
+        })
+    }
+
+    /// Get subaccounts details with positions
+    ///
+    /// Retrieves position details for all subaccounts for a specific currency.
+    /// Returns positions aggregated across all subaccounts, including size,
+    /// average entry price, mark price, and P&L information.
+    ///
+    /// # Arguments
+    ///
+    /// * `currency` - Currency symbol (BTC, ETH, USDC, etc.)
+    /// * `with_open_orders` - Include open orders for each subaccount (optional)
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use deribit_http::DeribitHttpClient;
+    ///
+    /// let client = DeribitHttpClient::new();
+    /// // let details = client.get_subaccounts_details("BTC", Some(true)).await?;
+    /// ```
+    pub async fn get_subaccounts_details(
+        &self,
+        currency: &str,
+        with_open_orders: Option<bool>,
+    ) -> Result<Vec<SubaccountDetails>, HttpError> {
+        let mut url = format!(
+            "{}{}?currency={}",
+            self.base_url(),
+            GET_SUBACCOUNTS_DETAILS,
+            urlencoding::encode(currency)
+        );
+
+        if let Some(with_open_orders) = with_open_orders {
+            url.push_str(&format!("&with_open_orders={}", with_open_orders));
+        }
+
+        let response = self.make_authenticated_request(&url).await?;
+
+        if !response.status().is_success() {
+            let error_text = response
+                .text()
+                .await
+                .unwrap_or_else(|_| "Unknown error".to_string());
+            return Err(HttpError::RequestFailed(format!(
+                "Get subaccounts details failed: {}",
+                error_text
+            )));
+        }
+
+        let api_response: ApiResponse<Vec<SubaccountDetails>> = response
+            .json()
+            .await
+            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
+
+        if let Some(error) = api_response.error {
+            return Err(HttpError::RequestFailed(format!(
+                "API error: {} - {}",
+                error.code, error.message
+            )));
+        }
+
+        api_response.result.ok_or_else(|| {
+            HttpError::InvalidResponse("No subaccounts details data in response".to_string())
         })
     }
 
