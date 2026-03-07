@@ -4,6 +4,7 @@
    Date: 16/8/25
 ******************************************************************************/
 
+pub mod account_tests;
 pub mod api_key_tests;
 pub mod beneficiary_tests;
 pub mod block_trade_tests;
@@ -11,11 +12,16 @@ pub mod book_tests;
 pub mod builder_tests;
 pub mod client_tests;
 pub mod combo_tests;
+pub mod config_tests;
 pub mod connection_tests;
 pub mod currency_tests;
+pub mod email_settings_tests;
 pub mod funding_tests;
+pub mod index_tests;
 pub mod instrument_tests;
+pub mod margin_model_tests;
 pub mod message_tests;
+pub mod option_tests;
 pub mod order_tests;
 pub mod other_model_tests;
 pub mod other_tests;
@@ -23,11 +29,14 @@ pub mod private_endpoints_tests;
 pub mod public_endpoints_tests;
 pub mod response_other_tests;
 pub mod response_tests;
+pub mod self_trading_tests;
 pub mod session_tests;
 pub mod ticker_tests;
 pub mod trade_tests;
+pub mod trading_products_tests;
 pub mod tradingview_tests;
 pub mod transfer_tests;
+pub mod types_tests;
 pub mod utils_tests;
 pub mod wallet_tests;
 pub mod withdrawal_tests;
