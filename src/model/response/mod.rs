@@ -25,6 +25,8 @@ pub mod subaccount;
 pub mod trade;
 /// Trigger order response models
 pub mod trigger;
+/// Wallet response models for address book operations
+pub mod wallet;
 /// Withdrawal response models
 pub mod withdrawal;
 
@@ -39,4 +41,5 @@ pub use position::*;
 pub use subaccount::*;
 pub use trade::*;
 pub use trigger::*;
+pub use wallet::*;
 pub use withdrawal::*;

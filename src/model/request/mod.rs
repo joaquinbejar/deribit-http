@@ -14,8 +14,11 @@ pub mod order;
 pub mod position;
 /// Trade request models and structures
 pub mod trade;
+/// Wallet request models for withdrawals and address book
+pub mod wallet;
 
 pub use api_request::*;
 pub use mass_quote::*;
 pub use order::*;
 pub use position::*;
+pub use wallet::*;

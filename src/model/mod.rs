@@ -71,6 +71,8 @@ pub mod trigger;
 pub mod types;
 /// User lock models
 pub mod user_lock;
+/// Wallet models for deposit addresses and address book
+pub mod wallet;
 /// Withdrawal models
 pub mod withdrawal;
 
@@ -109,4 +111,5 @@ pub use transfer::*;
 pub use trigger::*;
 pub use types::*;
 pub use user_lock::*;
+pub use wallet::*;
 pub use withdrawal::*;

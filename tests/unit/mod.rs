@@ -27,4 +27,5 @@ pub mod trade_tests;
 pub mod tradingview_tests;
 pub mod transfer_tests;
 pub mod utils_tests;
+pub mod wallet_tests;
 pub mod withdrawal_tests;

@@ -5742,4 +5742,581 @@ impl DeribitHttpClient {
             .result
             .ok_or_else(|| HttpError::InvalidResponse("No email language in response".to_string()))
     }
+
+    // ========================================================================
+    // Wallet Endpoints
+    // ========================================================================
+
+    /// Create a withdrawal request
+    ///
+    /// Creates a new withdrawal request for the specified currency and amount.
+    /// The destination address must be in the address book.
+    ///
+    /// # Arguments
+    ///
+    /// * `currency` - Currency symbol (BTC, ETH, USDC, etc.)
+    /// * `address` - Withdrawal address (must be in address book)
+    /// * `amount` - Amount to withdraw
+    /// * `priority` - Optional withdrawal priority level
+    ///
+    /// # Returns
+    ///
+    /// Returns the withdrawal details including ID, state, and fee.
+    ///
+    /// # Errors
+    ///
+    /// Returns `HttpError` if the request fails or the address is not in the address book.
+    pub async fn withdraw(
+        &self,
+        currency: &str,
+        address: &str,
+        amount: f64,
+        priority: Option<crate::model::wallet::WithdrawalPriorityLevel>,
+    ) -> Result<crate::model::Withdrawal, HttpError> {
+        let mut query_params = vec![
+            ("currency".to_string(), currency.to_string()),
+            ("address".to_string(), address.to_string()),
+            ("amount".to_string(), amount.to_string()),
+        ];
+
+        if let Some(p) = priority {
+            query_params.push(("priority".to_string(), p.as_str().to_string()));
+        }
+
+        let query_string = query_params
+            .iter()
+            .map(|(k, v)| format!("{}={}", k, urlencoding::encode(v)))
+            .collect::<Vec<_>>()
+            .join("&");
+
+        let url = format!("{}{}?{}", self.base_url(), WITHDRAW, query_string);
+
+        let response = self.make_authenticated_request(&url).await?;
+
+        if !response.status().is_success() {
+            let error_text = response
+                .text()
+                .await
+                .unwrap_or_else(|_| "Unknown error".to_string());
+            return Err(HttpError::RequestFailed(format!(
+                "Withdraw failed: {}",
+                error_text
+            )));
+        }
+
+        let api_response: ApiResponse<crate::model::Withdrawal> = response
+            .json()
+            .await
+            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
+
+        if let Some(error) = api_response.error {
+            return Err(HttpError::RequestFailed(format!(
+                "API error: {} - {}",
+                error.code, error.message
+            )));
+        }
+
+        api_response
+            .result
+            .ok_or_else(|| HttpError::InvalidResponse("No withdrawal data in response".to_string()))
+    }
+
+    /// Cancel a pending withdrawal
+    ///
+    /// Cancels a withdrawal request that has not yet been processed.
+    ///
+    /// # Arguments
+    ///
+    /// * `currency` - Currency symbol (BTC, ETH, USDC, etc.)
+    /// * `id` - Withdrawal ID to cancel
+    ///
+    /// # Returns
+    ///
+    /// Returns the cancelled withdrawal details.
+    ///
+    /// # Errors
+    ///
+    /// Returns `HttpError` if the withdrawal cannot be cancelled or does not exist.
+    pub async fn cancel_withdrawal(
+        &self,
+        currency: &str,
+        id: u64,
+    ) -> Result<crate::model::Withdrawal, HttpError> {
+        let query_params = [
+            ("currency".to_string(), currency.to_string()),
+            ("id".to_string(), id.to_string()),
+        ];
+
+        let query_string = query_params
+            .iter()
+            .map(|(k, v)| format!("{}={}", k, urlencoding::encode(v)))
+            .collect::<Vec<_>>()
+            .join("&");
+
+        let url = format!("{}{}?{}", self.base_url(), CANCEL_WITHDRAWAL, query_string);
+
+        let response = self.make_authenticated_request(&url).await?;
+
+        if !response.status().is_success() {
+            let error_text = response
+                .text()
+                .await
+                .unwrap_or_else(|_| "Unknown error".to_string());
+            return Err(HttpError::RequestFailed(format!(
+                "Cancel withdrawal failed: {}",
+                error_text
+            )));
+        }
+
+        let api_response: ApiResponse<crate::model::Withdrawal> = response
+            .json()
+            .await
+            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
+
+        if let Some(error) = api_response.error {
+            return Err(HttpError::RequestFailed(format!(
+                "API error: {} - {}",
+                error.code, error.message
+            )));
+        }
+
+        api_response
+            .result
+            .ok_or_else(|| HttpError::InvalidResponse("No withdrawal data in response".to_string()))
+    }
+
+    /// Create a new deposit address
+    ///
+    /// Generates a new deposit address for the specified currency.
+    ///
+    /// # Arguments
+    ///
+    /// * `currency` - Currency symbol (BTC, ETH, USDC, etc.)
+    ///
+    /// # Returns
+    ///
+    /// Returns the newly created deposit address.
+    ///
+    /// # Errors
+    ///
+    /// Returns `HttpError` if address creation fails.
+    pub async fn create_deposit_address(
+        &self,
+        currency: &str,
+    ) -> Result<crate::model::wallet::DepositAddress, HttpError> {
+        let url = format!(
+            "{}{}?currency={}",
+            self.base_url(),
+            CREATE_DEPOSIT_ADDRESS,
+            urlencoding::encode(currency)
+        );
+
+        let response = self.make_authenticated_request(&url).await?;
+
+        if !response.status().is_success() {
+            let error_text = response
+                .text()
+                .await
+                .unwrap_or_else(|_| "Unknown error".to_string());
+            return Err(HttpError::RequestFailed(format!(
+                "Create deposit address failed: {}",
+                error_text
+            )));
+        }
+
+        let api_response: ApiResponse<crate::model::wallet::DepositAddress> = response
+            .json()
+            .await
+            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
+
+        if let Some(error) = api_response.error {
+            return Err(HttpError::RequestFailed(format!(
+                "API error: {} - {}",
+                error.code, error.message
+            )));
+        }
+
+        api_response.result.ok_or_else(|| {
+            HttpError::InvalidResponse("No deposit address data in response".to_string())
+        })
+    }
+
+    /// Get the current deposit address
+    ///
+    /// Retrieves the current deposit address for the specified currency.
+    ///
+    /// # Arguments
+    ///
+    /// * `currency` - Currency symbol (BTC, ETH, USDC, etc.)
+    ///
+    /// # Returns
+    ///
+    /// Returns the current deposit address.
+    ///
+    /// # Errors
+    ///
+    /// Returns `HttpError` if no address exists or the request fails.
+    pub async fn get_current_deposit_address(
+        &self,
+        currency: &str,
+    ) -> Result<crate::model::wallet::DepositAddress, HttpError> {
+        let url = format!(
+            "{}{}?currency={}",
+            self.base_url(),
+            GET_CURRENT_DEPOSIT_ADDRESS,
+            urlencoding::encode(currency)
+        );
+
+        let response = self.make_authenticated_request(&url).await?;
+
+        if !response.status().is_success() {
+            let error_text = response
+                .text()
+                .await
+                .unwrap_or_else(|_| "Unknown error".to_string());
+            return Err(HttpError::RequestFailed(format!(
+                "Get current deposit address failed: {}",
+                error_text
+            )));
+        }
+
+        let api_response: ApiResponse<crate::model::wallet::DepositAddress> = response
+            .json()
+            .await
+            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
+
+        if let Some(error) = api_response.error {
+            return Err(HttpError::RequestFailed(format!(
+                "API error: {} - {}",
+                error.code, error.message
+            )));
+        }
+
+        api_response.result.ok_or_else(|| {
+            HttpError::InvalidResponse("No deposit address data in response".to_string())
+        })
+    }
+
+    /// Add an address to the address book
+    ///
+    /// Adds a new address entry to the address book.
+    ///
+    /// # Arguments
+    ///
+    /// * `currency` - Currency symbol (BTC, ETH, USDC, etc.)
+    /// * `address_type` - Type of address book entry
+    /// * `address` - The cryptocurrency address
+    /// * `label` - Optional label for the address
+    /// * `tag` - Optional tag for XRP addresses
+    ///
+    /// # Returns
+    ///
+    /// Returns the created address book entry.
+    ///
+    /// # Errors
+    ///
+    /// Returns `HttpError` if the address is invalid or already exists.
+    pub async fn add_to_address_book(
+        &self,
+        currency: &str,
+        address_type: crate::model::wallet::AddressBookType,
+        address: &str,
+        label: Option<&str>,
+        tag: Option<&str>,
+    ) -> Result<crate::model::wallet::AddressBookEntry, HttpError> {
+        let mut query_params = vec![
+            ("currency".to_string(), currency.to_string()),
+            ("type".to_string(), address_type.as_str().to_string()),
+            ("address".to_string(), address.to_string()),
+        ];
+
+        if let Some(l) = label {
+            query_params.push(("label".to_string(), l.to_string()));
+        }
+
+        if let Some(t) = tag {
+            query_params.push(("tag".to_string(), t.to_string()));
+        }
+
+        let query_string = query_params
+            .iter()
+            .map(|(k, v)| format!("{}={}", k, urlencoding::encode(v)))
+            .collect::<Vec<_>>()
+            .join("&");
+
+        let url = format!(
+            "{}{}?{}",
+            self.base_url(),
+            ADD_TO_ADDRESS_BOOK,
+            query_string
+        );
+
+        let response = self.make_authenticated_request(&url).await?;
+
+        if !response.status().is_success() {
+            let error_text = response
+                .text()
+                .await
+                .unwrap_or_else(|_| "Unknown error".to_string());
+            return Err(HttpError::RequestFailed(format!(
+                "Add to address book failed: {}",
+                error_text
+            )));
+        }
+
+        let api_response: ApiResponse<crate::model::wallet::AddressBookEntry> = response
+            .json()
+            .await
+            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
+
+        if let Some(error) = api_response.error {
+            return Err(HttpError::RequestFailed(format!(
+                "API error: {} - {}",
+                error.code, error.message
+            )));
+        }
+
+        api_response.result.ok_or_else(|| {
+            HttpError::InvalidResponse("No address book entry in response".to_string())
+        })
+    }
+
+    /// Remove an address from the address book
+    ///
+    /// Removes an address entry from the address book.
+    ///
+    /// # Arguments
+    ///
+    /// * `currency` - Currency symbol (BTC, ETH, USDC, etc.)
+    /// * `address_type` - Type of address book entry
+    /// * `address` - The cryptocurrency address to remove
+    ///
+    /// # Returns
+    ///
+    /// Returns `true` if the address was successfully removed.
+    ///
+    /// # Errors
+    ///
+    /// Returns `HttpError` if the address does not exist or cannot be removed.
+    pub async fn remove_from_address_book(
+        &self,
+        currency: &str,
+        address_type: crate::model::wallet::AddressBookType,
+        address: &str,
+    ) -> Result<bool, HttpError> {
+        let query_params = [
+            ("currency".to_string(), currency.to_string()),
+            ("type".to_string(), address_type.as_str().to_string()),
+            ("address".to_string(), address.to_string()),
+        ];
+
+        let query_string = query_params
+            .iter()
+            .map(|(k, v)| format!("{}={}", k, urlencoding::encode(v)))
+            .collect::<Vec<_>>()
+            .join("&");
+
+        let url = format!(
+            "{}{}?{}",
+            self.base_url(),
+            REMOVE_FROM_ADDRESS_BOOK,
+            query_string
+        );
+
+        let response = self.make_authenticated_request(&url).await?;
+
+        if !response.status().is_success() {
+            let error_text = response
+                .text()
+                .await
+                .unwrap_or_else(|_| "Unknown error".to_string());
+            return Err(HttpError::RequestFailed(format!(
+                "Remove from address book failed: {}",
+                error_text
+            )));
+        }
+
+        let api_response: ApiResponse<String> = response
+            .json()
+            .await
+            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
+
+        if let Some(error) = api_response.error {
+            return Err(HttpError::RequestFailed(format!(
+                "API error: {} - {}",
+                error.code, error.message
+            )));
+        }
+
+        Ok(api_response.result.map(|s| s == "ok").unwrap_or(true))
+    }
+
+    /// Update an address in the address book
+    ///
+    /// Updates beneficiary information for an existing address book entry.
+    /// This is used for travel rule compliance.
+    ///
+    /// # Arguments
+    ///
+    /// * `request` - The update request containing all required fields
+    ///
+    /// # Returns
+    ///
+    /// Returns `true` if the address was successfully updated.
+    ///
+    /// # Errors
+    ///
+    /// Returns `HttpError` if the address does not exist or validation fails.
+    pub async fn update_in_address_book(
+        &self,
+        request: &crate::model::request::wallet::UpdateInAddressBookRequest,
+    ) -> Result<bool, HttpError> {
+        let mut query_params = vec![
+            ("currency".to_string(), request.currency.clone()),
+            (
+                "type".to_string(),
+                request.address_type.as_str().to_string(),
+            ),
+            ("address".to_string(), request.address.clone()),
+            ("label".to_string(), request.label.clone()),
+            ("agreed".to_string(), request.agreed.to_string()),
+            ("personal".to_string(), request.personal.to_string()),
+            (
+                "beneficiary_vasp_name".to_string(),
+                request.beneficiary_vasp_name.clone(),
+            ),
+            (
+                "beneficiary_vasp_did".to_string(),
+                request.beneficiary_vasp_did.clone(),
+            ),
+            (
+                "beneficiary_address".to_string(),
+                request.beneficiary_address.clone(),
+            ),
+        ];
+
+        if let Some(ref website) = request.beneficiary_vasp_website {
+            query_params.push(("beneficiary_vasp_website".to_string(), website.clone()));
+        }
+
+        if let Some(ref first_name) = request.beneficiary_first_name {
+            query_params.push(("beneficiary_first_name".to_string(), first_name.clone()));
+        }
+
+        if let Some(ref last_name) = request.beneficiary_last_name {
+            query_params.push(("beneficiary_last_name".to_string(), last_name.clone()));
+        }
+
+        if let Some(ref company_name) = request.beneficiary_company_name {
+            query_params.push(("beneficiary_company_name".to_string(), company_name.clone()));
+        }
+
+        if let Some(ref tag) = request.tag {
+            query_params.push(("tag".to_string(), tag.clone()));
+        }
+
+        let query_string = query_params
+            .iter()
+            .map(|(k, v)| format!("{}={}", k, urlencoding::encode(v)))
+            .collect::<Vec<_>>()
+            .join("&");
+
+        let url = format!(
+            "{}{}?{}",
+            self.base_url(),
+            UPDATE_IN_ADDRESS_BOOK,
+            query_string
+        );
+
+        let response = self.make_authenticated_request(&url).await?;
+
+        if !response.status().is_success() {
+            let error_text = response
+                .text()
+                .await
+                .unwrap_or_else(|_| "Unknown error".to_string());
+            return Err(HttpError::RequestFailed(format!(
+                "Update in address book failed: {}",
+                error_text
+            )));
+        }
+
+        let api_response: ApiResponse<String> = response
+            .json()
+            .await
+            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
+
+        if let Some(error) = api_response.error {
+            return Err(HttpError::RequestFailed(format!(
+                "API error: {} - {}",
+                error.code, error.message
+            )));
+        }
+
+        Ok(api_response.result.map(|s| s == "ok").unwrap_or(true))
+    }
+
+    /// Get addresses from the address book
+    ///
+    /// Retrieves address book entries for a specific currency and type.
+    ///
+    /// # Arguments
+    ///
+    /// * `currency` - Currency symbol (BTC, ETH, USDC, etc.)
+    /// * `address_type` - Type of address book entries to retrieve
+    ///
+    /// # Returns
+    ///
+    /// Returns a list of address book entries.
+    ///
+    /// # Errors
+    ///
+    /// Returns `HttpError` if the request fails.
+    pub async fn get_address_book(
+        &self,
+        currency: &str,
+        address_type: crate::model::wallet::AddressBookType,
+    ) -> Result<Vec<crate::model::wallet::AddressBookEntry>, HttpError> {
+        let query_params = [
+            ("currency".to_string(), currency.to_string()),
+            ("type".to_string(), address_type.as_str().to_string()),
+        ];
+
+        let query_string = query_params
+            .iter()
+            .map(|(k, v)| format!("{}={}", k, urlencoding::encode(v)))
+            .collect::<Vec<_>>()
+            .join("&");
+
+        let url = format!("{}{}?{}", self.base_url(), GET_ADDRESS_BOOK, query_string);
+
+        let response = self.make_authenticated_request(&url).await?;
+
+        if !response.status().is_success() {
+            let error_text = response
+                .text()
+                .await
+                .unwrap_or_else(|_| "Unknown error".to_string());
+            return Err(HttpError::RequestFailed(format!(
+                "Get address book failed: {}",
+                error_text
+            )));
+        }
+
+        let api_response: ApiResponse<Vec<crate::model::wallet::AddressBookEntry>> = response
+            .json()
+            .await
+            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
+
+        if let Some(error) = api_response.error {
+            return Err(HttpError::RequestFailed(format!(
+                "API error: {} - {}",
+                error.code, error.message
+            )));
+        }
+
+        api_response.result.ok_or_else(|| {
+            HttpError::InvalidResponse("No address book data in response".to_string())
+        })
+    }
 }

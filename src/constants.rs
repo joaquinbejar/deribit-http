@@ -246,6 +246,24 @@ pub mod endpoints {
     /// Set clearance originator for a deposit
     pub const SET_CLEARANCE_ORIGINATOR: &str = "/private/set_clearance_originator";
 
+    // Wallet endpoints
+    /// Create a new withdrawal request
+    pub const WITHDRAW: &str = "/private/withdraw";
+    /// Cancel a pending withdrawal
+    pub const CANCEL_WITHDRAWAL: &str = "/private/cancel_withdrawal";
+    /// Create a new deposit address
+    pub const CREATE_DEPOSIT_ADDRESS: &str = "/private/create_deposit_address";
+    /// Get the current deposit address
+    pub const GET_CURRENT_DEPOSIT_ADDRESS: &str = "/private/get_current_deposit_address";
+    /// Add an address to the address book
+    pub const ADD_TO_ADDRESS_BOOK: &str = "/private/add_to_address_book";
+    /// Remove an address from the address book
+    pub const REMOVE_FROM_ADDRESS_BOOK: &str = "/private/remove_from_address_book";
+    /// Update an address in the address book
+    pub const UPDATE_IN_ADDRESS_BOOK: &str = "/private/update_in_address_book";
+    /// Get addresses from the address book
+    pub const GET_ADDRESS_BOOK: &str = "/private/get_address_book";
+
     // Remaining account endpoints
     /// Get account access log
     pub const GET_ACCESS_LOG: &str = "/private/get_access_log";
