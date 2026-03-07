@@ -134,6 +134,8 @@ pub mod endpoints {
     pub const RESET_MMP: &str = "/private/reset_mmp";
     /// Get order margin by IDs
     pub const GET_ORDER_MARGIN_BY_IDS: &str = "/private/get_order_margin_by_ids";
+    /// Get order state by label
+    pub const GET_ORDER_STATE_BY_LABEL: &str = "/private/get_order_state_by_label";
 
     // Private account endpoints
     /// Get account summary information

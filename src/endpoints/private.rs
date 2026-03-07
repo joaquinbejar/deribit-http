@@ -1670,6 +1670,79 @@ impl DeribitHttpClient {
         })
     }
 
+    /// Get order state by label
+    ///
+    /// Retrieves the state of recent orders that have a specific label.
+    /// Results are filtered by currency and label. The response includes
+    /// order details such as status, filled amount, remaining amount, and
+    /// other order properties for all orders with the specified label.
+    ///
+    /// # Arguments
+    ///
+    /// * `currency` - Currency symbol (e.g., "BTC", "ETH", "USDC")
+    /// * `label` - User-defined label (max 64 characters)
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use deribit_http::DeribitHttpClient;
+    ///
+    /// let client = DeribitHttpClient::new();
+    /// // let orders = client.get_order_state_by_label("ETH", "myLabel").await?;
+    /// ```
+    pub async fn get_order_state_by_label(
+        &self,
+        currency: &str,
+        label: &str,
+    ) -> Result<Vec<OrderInfoResponse>, HttpError> {
+        let query_params = [
+            ("currency".to_string(), currency.to_string()),
+            ("label".to_string(), label.to_string()),
+        ];
+
+        let query_string = query_params
+            .iter()
+            .map(|(k, v)| format!("{}={}", k, urlencoding::encode(v)))
+            .collect::<Vec<_>>()
+            .join("&");
+
+        let url = format!(
+            "{}{}?{}",
+            self.base_url(),
+            GET_ORDER_STATE_BY_LABEL,
+            query_string
+        );
+
+        let response = self.make_authenticated_request(&url).await?;
+
+        if !response.status().is_success() {
+            let error_text = response
+                .text()
+                .await
+                .unwrap_or_else(|_| "Unknown error".to_string());
+            return Err(HttpError::RequestFailed(format!(
+                "Get order state by label failed: {}",
+                error_text
+            )));
+        }
+
+        let api_response: ApiResponse<Vec<OrderInfoResponse>> = response
+            .json()
+            .await
+            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
+
+        if let Some(error) = api_response.error {
+            return Err(HttpError::RequestFailed(format!(
+                "API error: {} - {}",
+                error.code, error.message
+            )));
+        }
+
+        api_response
+            .result
+            .ok_or_else(|| HttpError::InvalidResponse("No order data in response".to_string()))
+    }
+
     /// Get MMP configuration
     ///
     /// Retrieves Market Maker Protection (MMP) configuration for an index.

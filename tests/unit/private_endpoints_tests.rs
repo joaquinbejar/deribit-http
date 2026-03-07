@@ -1059,3 +1059,98 @@ async fn test_get_order_margin_by_ids_empty_ids_error() {
     let err = result.unwrap_err();
     assert!(err.to_string().contains("ids array cannot be empty"));
 }
+
+// =========================================================================
+// Get Order State By Label Tests (Issue #18)
+// =========================================================================
+
+#[tokio::test]
+async fn test_get_order_state_by_label_success() {
+    let mut server = mockito::Server::new_async().await;
+    let client = create_test_client(&server);
+
+    let _auth_mock = create_auth_mock(&mut server).await;
+
+    let mock_response = json!({
+        "jsonrpc": "2.0",
+        "result": [
+            {
+                "time_in_force": "good_til_cancelled",
+                "reduce_only": false,
+                "price": 118.94,
+                "post_only": false,
+                "order_type": "limit",
+                "order_state": "filled",
+                "order_id": "ETH-331562",
+                "max_show": 37.0,
+                "last_update_timestamp": 1550219810944u64,
+                "label": "fooBar",
+                "is_liquidation": false,
+                "instrument_name": "ETH-PERPETUAL",
+                "filled_amount": 37.0,
+                "direction": "sell",
+                "creation_timestamp": 1550219749176u64,
+                "average_price": 118.94,
+                "api": false,
+                "amount": 37.0,
+                "replaced": false,
+                "risk_reducing": false,
+                "web": false
+            }
+        ],
+        "id": 1
+    });
+
+    let mock = server
+        .mock(
+            "GET",
+            "/api/v2/private/get_order_state_by_label?currency=ETH&label=fooBar",
+        )
+        .with_status(200)
+        .with_header("content-type", "application/json")
+        .with_body(mock_response.to_string())
+        .create_async()
+        .await;
+
+    let result = client.get_order_state_by_label("ETH", "fooBar").await;
+
+    mock.assert_async().await;
+    assert!(result.is_ok());
+    let orders = result.unwrap();
+    assert_eq!(orders.len(), 1);
+    assert_eq!(orders[0].order_id, "ETH-331562");
+    assert_eq!(orders[0].order_state, "filled");
+    assert_eq!(orders[0].label, "fooBar");
+}
+
+#[tokio::test]
+async fn test_get_order_state_by_label_empty_result() {
+    let mut server = mockito::Server::new_async().await;
+    let client = create_test_client(&server);
+
+    let _auth_mock = create_auth_mock(&mut server).await;
+
+    let mock_response = json!({
+        "jsonrpc": "2.0",
+        "result": [],
+        "id": 1
+    });
+
+    let mock = server
+        .mock(
+            "GET",
+            "/api/v2/private/get_order_state_by_label?currency=BTC&label=nonexistent",
+        )
+        .with_status(200)
+        .with_header("content-type", "application/json")
+        .with_body(mock_response.to_string())
+        .create_async()
+        .await;
+
+    let result = client.get_order_state_by_label("BTC", "nonexistent").await;
+
+    mock.assert_async().await;
+    assert!(result.is_ok());
+    let orders = result.unwrap();
+    assert!(orders.is_empty());
+}
