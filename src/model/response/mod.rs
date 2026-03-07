@@ -7,6 +7,8 @@
 pub mod api_response;
 /// Deposit response models
 pub mod deposit;
+/// Margin response models
+pub mod margin;
 /// Mass quote response models
 pub mod mass_quote;
 /// Order response models and types
@@ -20,6 +22,7 @@ pub mod withdrawal;
 
 pub use api_response::*;
 pub use deposit::*;
+pub use margin::*;
 pub use mass_quote::*;
 pub use order::*;
 pub use other::*;

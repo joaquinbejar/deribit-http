@@ -748,3 +748,85 @@ async fn test_edit_order_by_label_no_order_error() {
     mock.assert_async().await;
     assert!(result.is_err());
 }
+
+// =========================================================================
+// Get Margins Tests (Issue #15)
+// =========================================================================
+
+#[tokio::test]
+async fn test_get_margins_success() {
+    let mut server = mockito::Server::new_async().await;
+    let client = create_test_client(&server);
+
+    // Mock the OAuth2 authentication endpoint
+    let _auth_mock = create_auth_mock(&mut server).await;
+
+    let mock_response = json!({
+        "jsonrpc": "2.0",
+        "result": {
+            "buy": 0.0219949,
+            "sell": 0.0,
+            "min_price": 3684.8,
+            "max_price": 3759.24
+        },
+        "id": 1
+    });
+
+    let mock = server
+        .mock(
+            "GET",
+            "/api/v2/private/get_margins?instrument_name=BTC-PERPETUAL&amount=10000&price=3725",
+        )
+        .with_status(200)
+        .with_header("content-type", "application/json")
+        .with_body(mock_response.to_string())
+        .create_async()
+        .await;
+
+    let result = client.get_margins("BTC-PERPETUAL", 10000.0, 3725.0).await;
+
+    mock.assert_async().await;
+    if let Err(e) = &result {
+        println!("Error in test_get_margins_success: {:?}", e);
+    }
+    assert!(result.is_ok());
+    let margins = result.unwrap();
+    assert!((margins.buy - 0.0219949).abs() < 0.0001);
+    assert!((margins.sell - 0.0).abs() < 0.0001);
+    assert!((margins.min_price - 3684.8).abs() < 0.1);
+    assert!((margins.max_price - 3759.24).abs() < 0.1);
+}
+
+#[tokio::test]
+async fn test_get_margins_error() {
+    let mut server = mockito::Server::new_async().await;
+    let client = create_test_client(&server);
+
+    // Mock the OAuth2 authentication endpoint
+    let _auth_mock = create_auth_mock(&mut server).await;
+
+    let mock = server
+        .mock(
+            "GET",
+            "/api/v2/private/get_margins?instrument_name=INVALID&amount=10000&price=3725",
+        )
+        .with_status(400)
+        .with_header("content-type", "application/json")
+        .with_body(
+            r#"{
+            "jsonrpc": "2.0",
+            "id": 1,
+            "error": {
+                "code": 10001,
+                "message": "instrument_not_found"
+            }
+        }"#,
+        )
+        .create_async()
+        .await;
+
+    let result = client.get_margins("INVALID", 10000.0, 3725.0).await;
+
+    mock.assert_async().await;
+    assert!(result.is_err());
+}

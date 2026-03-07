@@ -10,6 +10,7 @@ use crate::model::request::order::OrderRequest;
 use crate::model::request::trade::TradesRequest;
 use crate::model::response::api_response::ApiResponse;
 use crate::model::response::deposit::DepositsResponse;
+use crate::model::response::margin::MarginsResponse;
 use crate::model::response::mass_quote::MassQuoteResponse;
 use crate::model::response::order::{OrderInfoResponse, OrderResponse};
 use crate::model::response::other::{
@@ -1525,6 +1526,77 @@ impl DeribitHttpClient {
         api_response
             .result
             .ok_or_else(|| HttpError::InvalidResponse("No order data in response".to_string()))
+    }
+
+    /// Get margin requirements
+    ///
+    /// Calculates margin requirements for a hypothetical order on a given instrument.
+    /// Returns initial margin and maintenance margin for the specified instrument,
+    /// quantity, and price.
+    ///
+    /// # Arguments
+    ///
+    /// * `instrument_name` - Instrument identifier (e.g., "BTC-PERPETUAL")
+    /// * `amount` - Order size (USD for perpetual/inverse, base currency for options/linear)
+    /// * `price` - Order price
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use deribit_http::DeribitHttpClient;
+    ///
+    /// let client = DeribitHttpClient::new();
+    /// // let margins = client.get_margins("BTC-PERPETUAL", 10000.0, 50000.0).await?;
+    /// // println!("Buy margin: {}, Sell margin: {}", margins.buy, margins.sell);
+    /// ```
+    pub async fn get_margins(
+        &self,
+        instrument_name: &str,
+        amount: f64,
+        price: f64,
+    ) -> Result<MarginsResponse, HttpError> {
+        let query_params = [
+            ("instrument_name".to_string(), instrument_name.to_string()),
+            ("amount".to_string(), amount.to_string()),
+            ("price".to_string(), price.to_string()),
+        ];
+
+        let query_string = query_params
+            .iter()
+            .map(|(k, v)| format!("{}={}", k, urlencoding::encode(v)))
+            .collect::<Vec<_>>()
+            .join("&");
+
+        let url = format!("{}{}?{}", self.base_url(), GET_MARGINS, query_string);
+
+        let response = self.make_authenticated_request(&url).await?;
+
+        if !response.status().is_success() {
+            let error_text = response
+                .text()
+                .await
+                .unwrap_or_else(|_| "Unknown error".to_string());
+            return Err(HttpError::RequestFailed(format!(
+                "Get margins failed: {}",
+                error_text
+            )));
+        }
+
+        let api_response: ApiResponse<MarginsResponse> = response
+            .json()
+            .await
+            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
+
+        if let Some(error) = api_response.error {
+            return Err(HttpError::RequestFailed(format!(
+                "API error: {} - {}",
+                error.code, error.message
+            )));
+        }
+
+        api_response
+            .result
+            .ok_or_else(|| HttpError::InvalidResponse("No margin data in response".to_string()))
     }
 
     /// Mass quote
