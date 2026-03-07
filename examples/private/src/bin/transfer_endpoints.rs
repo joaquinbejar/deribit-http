@@ -49,11 +49,9 @@ async fn main() -> Result<(), HttpError> {
                 info!("      🆔 ID: {}", transfer.id);
                 info!("      💱 Currency: {}", transfer.currency);
                 info!("      💰 Amount: {}", transfer.amount);
-                info!("      📊 State: {}", transfer.state);
-                info!("      🔄 Direction: {}", transfer.direction);
-                if let Some(ref other) = transfer.other_side {
-                    info!("      👤 Other side: {}", other);
-                }
+                info!("      📊 State: {:?}", transfer.state);
+                info!("      🔄 Direction: {:?}", transfer.direction);
+                info!("      👤 Other side: {}", transfer.other_side);
                 println!();
             }
 

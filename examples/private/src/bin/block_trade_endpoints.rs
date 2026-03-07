@@ -1,7 +1,7 @@
 //! Block Trade Endpoints Example
 //!
 //! This example demonstrates the block trade endpoints added in v0.6.0:
-//! - `/private/get_last_block_trades_by_currency` - Get recent block trades
+//! - `/private/get_block_trades` - Get block trades
 //! - `/private/get_block_trade` - Get specific block trade
 //! - `/private/execute_block_trade` - Execute a block trade
 //! - `/private/verify_block_trade` - Verify block trade signature
@@ -18,6 +18,7 @@
 //!
 //! Then run: cargo run --bin block_trade_endpoints
 
+use deribit_http::model::block_trade::GetBlockTradesRequest;
 use deribit_http::prelude::setup_logger;
 use deribit_http::{DeribitHttpClient, HttpError};
 use tracing::{info, warn};
@@ -35,32 +36,37 @@ async fn main() -> Result<(), HttpError> {
     println!();
 
     // =================================================================
-    // 1. GET LAST BLOCK TRADES BY CURRENCY (BTC)
+    // 1. GET BLOCK TRADES (BTC)
     // =================================================================
-    info!("📋 1. GET LAST BTC BLOCK TRADES");
-    info!("--------------------------------");
+    info!("📋 1. GET BTC BLOCK TRADES");
+    info!("---------------------------");
 
-    match client
-        .get_last_block_trades_by_currency("BTC", None, None, None, None)
-        .await
-    {
-        Ok(trades) => {
+    let request = GetBlockTradesRequest {
+        currency: Some("BTC".to_string()),
+        ..Default::default()
+    };
+
+    match client.get_block_trades(&request).await {
+        Ok(block_trades) => {
             info!("✅ Retrieved BTC block trades");
-            info!("   📊 Total trades: {}", trades.len());
+            info!("   📊 Total block trades: {}", block_trades.len());
 
-            for (i, trade) in trades.iter().take(5).enumerate() {
+            for (i, block_trade) in block_trades.iter().take(5).enumerate() {
                 info!("   📦 Block Trade {}:", i + 1);
-                info!("      🆔 Trade ID: {}", trade.trade_id);
-                info!("      📈 Instrument: {}", trade.instrument_name);
-                info!("      💰 Amount: {}", trade.amount);
-                info!("      💵 Price: {}", trade.price);
-                info!("      📊 Direction: {}", trade.direction);
-                info!("      🕐 Timestamp: {}", trade.timestamp);
+                info!("      🆔 ID: {}", block_trade.id);
+                info!("      � Timestamp: {}", block_trade.timestamp);
+                info!("      � Legs: {}", block_trade.trades.len());
+                for leg in block_trade.trades.iter().take(3) {
+                    info!(
+                        "         � {}: {} @ {}",
+                        leg.instrument_name, leg.amount, leg.price
+                    );
+                }
                 println!();
             }
 
-            if trades.len() > 5 {
-                info!("   ... and {} more block trades", trades.len() - 5);
+            if block_trades.len() > 5 {
+                info!("   ... and {} more block trades", block_trades.len() - 5);
             }
         }
         Err(e) => {
@@ -71,21 +77,23 @@ async fn main() -> Result<(), HttpError> {
     println!();
 
     // =================================================================
-    // 2. GET LAST BLOCK TRADES BY CURRENCY (ETH)
+    // 2. GET RECENT BLOCK TRADES
     // =================================================================
-    info!("📋 2. GET LAST ETH BLOCK TRADES");
-    info!("--------------------------------");
+    info!("📋 2. GET RECENT BLOCK TRADES");
+    info!("------------------------------");
 
-    match client
-        .get_last_block_trades_by_currency("ETH", Some("future"), None, None, None)
-        .await
-    {
-        Ok(trades) => {
-            info!("✅ Retrieved ETH futures block trades");
-            info!("   📊 Total trades: {}", trades.len());
+    let recent_request = GetBlockTradesRequest {
+        count: Some(10),
+        ..Default::default()
+    };
+
+    match client.get_block_trades(&recent_request).await {
+        Ok(block_trades) => {
+            info!("✅ Retrieved recent block trades");
+            info!("   📊 Total: {}", block_trades.len());
         }
         Err(e) => {
-            warn!("⚠️  Could not get ETH block trades: {}", e);
+            warn!("⚠️  Could not get recent block trades: {}", e);
         }
     }
     println!();
