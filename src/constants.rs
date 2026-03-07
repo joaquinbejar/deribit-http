@@ -122,6 +122,8 @@ pub mod endpoints {
     pub const CANCEL_QUOTES: &str = "/private/cancel_quotes";
     /// Close an existing position
     pub const CLOSE_POSITION: &str = "/private/close_position";
+    /// Get margin requirements
+    pub const GET_MARGINS: &str = "/private/get_margins";
 
     // Private account endpoints
     /// Get account summary information

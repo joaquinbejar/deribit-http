@@ -179,3 +179,58 @@ mod edit_order_by_label_tests {
         Ok(())
     }
 }
+
+#[cfg(test)]
+mod get_margins_tests {
+    use deribit_http::DeribitHttpClient;
+    use tokio::time::{Duration, Instant};
+    use tracing::info;
+
+    /// Test get_margins endpoint behavior
+    ///
+    /// Returns margin requirements for a hypothetical order on a given instrument.
+    #[tokio::test]
+    #[serial_test::serial]
+    #[ignore = "Requires authentication"]
+    async fn test_get_margins() -> Result<(), Box<dyn std::error::Error>> {
+        let client = DeribitHttpClient::new();
+
+        info!("Testing get_margins");
+        let start_time = Instant::now();
+
+        let result = client.get_margins("BTC-PERPETUAL", 10000.0, 50000.0).await;
+        let elapsed = start_time.elapsed();
+
+        match &result {
+            Ok(margins) => {
+                info!(
+                    "Get margins succeeded in {:?}: buy={}, sell={}, min_price={}, max_price={}",
+                    elapsed, margins.buy, margins.sell, margins.min_price, margins.max_price
+                );
+                assert!(margins.buy >= 0.0, "Buy margin should be non-negative");
+                assert!(margins.sell >= 0.0, "Sell margin should be non-negative");
+                assert!(
+                    margins.min_price > 0.0,
+                    "Min price should be positive for BTC-PERPETUAL"
+                );
+                assert!(
+                    margins.max_price > margins.min_price,
+                    "Max price should be greater than min price"
+                );
+            }
+            Err(e) => {
+                info!("Get margins failed in {:?}: {:?}", elapsed, e);
+                return Err(e.to_string().into());
+            }
+        }
+
+        assert!(
+            elapsed < Duration::from_secs(30),
+            "Request took too long: {:?}",
+            elapsed
+        );
+
+        info!("test_get_margins completed");
+        Ok(())
+    }
+}
