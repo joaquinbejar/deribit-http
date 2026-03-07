@@ -158,6 +158,19 @@ pub mod endpoints {
     pub const GET_SUBACCOUNTS: &str = "/private/get_subaccounts";
     /// Get subaccounts details with positions
     pub const GET_SUBACCOUNTS_DETAILS: &str = "/private/get_subaccounts_details";
+    /// Create a new subaccount
+    pub const CREATE_SUBACCOUNT: &str = "/private/create_subaccount";
+    /// Remove an empty subaccount
+    pub const REMOVE_SUBACCOUNT: &str = "/private/remove_subaccount";
+    /// Change the name of a subaccount
+    pub const CHANGE_SUBACCOUNT_NAME: &str = "/private/change_subaccount_name";
+    /// Enable or disable login for a subaccount
+    pub const TOGGLE_SUBACCOUNT_LOGIN: &str = "/private/toggle_subaccount_login";
+    /// Set email address for a subaccount
+    pub const SET_EMAIL_FOR_SUBACCOUNT: &str = "/private/set_email_for_subaccount";
+    /// Enable or disable notifications for a subaccount
+    pub const TOGGLE_NOTIFICATIONS_FROM_SUBACCOUNT: &str =
+        "/private/toggle_notifications_from_subaccount";
     /// Get transaction log
     pub const GET_TRANSACTION_LOG: &str = "/private/get_transaction_log";
     /// Get deposits
