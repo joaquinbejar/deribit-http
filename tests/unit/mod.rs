@@ -10,6 +10,7 @@ pub mod block_trade_tests;
 pub mod book_tests;
 pub mod builder_tests;
 pub mod client_tests;
+pub mod combo_tests;
 pub mod connection_tests;
 pub mod currency_tests;
 pub mod funding_tests;

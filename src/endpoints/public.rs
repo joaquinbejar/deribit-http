@@ -2761,4 +2761,226 @@ impl DeribitHttpClient {
             .result
             .ok_or_else(|| HttpError::InvalidResponse("No announcements in response".to_string()))
     }
+
+    // ========================================================================
+    // Combo Books Endpoints
+    // ========================================================================
+
+    /// Get combo details by ID
+    ///
+    /// Retrieves information about a specific combo instrument.
+    /// This is a public endpoint that doesn't require authentication.
+    ///
+    /// # Arguments
+    ///
+    /// * `combo_id` - The combo identifier (e.g., "BTC-FS-29APR22_PERP")
+    ///
+    /// # Errors
+    ///
+    /// Returns `HttpError` if the request fails or the response is invalid.
+    ///
+    /// # Examples
+    ///
+    /// ```rust,no_run
+    /// use deribit_http::DeribitHttpClient;
+    ///
+    /// # async fn example() -> Result<(), Box<dyn std::error::Error>> {
+    /// let client = DeribitHttpClient::new();
+    /// let combo = client.get_combo_details("BTC-FS-29APR22_PERP").await?;
+    /// println!("Combo {} has {} legs", combo.id, combo.legs.len());
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub async fn get_combo_details(
+        &self,
+        combo_id: &str,
+    ) -> Result<crate::model::Combo, HttpError> {
+        let url = format!(
+            "{}{}?combo_id={}",
+            self.base_url(),
+            GET_COMBO_DETAILS,
+            urlencoding::encode(combo_id)
+        );
+
+        let response = self
+            .http_client()
+            .get(&url)
+            .send()
+            .await
+            .map_err(|e| HttpError::NetworkError(e.to_string()))?;
+
+        if !response.status().is_success() {
+            let error_text = response
+                .text()
+                .await
+                .unwrap_or_else(|_| "Unknown error".to_string());
+            return Err(HttpError::RequestFailed(format!(
+                "Get combo details failed: {}",
+                error_text
+            )));
+        }
+
+        let api_response: ApiResponse<crate::model::Combo> = response
+            .json()
+            .await
+            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
+
+        if let Some(error) = api_response.error {
+            return Err(HttpError::RequestFailed(format!(
+                "API error: {} - {}",
+                error.code, error.message
+            )));
+        }
+
+        api_response
+            .result
+            .ok_or_else(|| HttpError::InvalidResponse("No combo data in response".to_string()))
+    }
+
+    /// Get combo IDs by currency
+    ///
+    /// Retrieves the list of available combo IDs for the specified currency.
+    /// This is a public endpoint that doesn't require authentication.
+    ///
+    /// # Arguments
+    ///
+    /// * `currency` - The currency symbol (BTC, ETH, USDC, USDT, EURR)
+    /// * `state` - Optional combo state filter (rfq, active, inactive)
+    ///
+    /// # Errors
+    ///
+    /// Returns `HttpError` if the request fails or the response is invalid.
+    ///
+    /// # Examples
+    ///
+    /// ```rust,no_run
+    /// use deribit_http::DeribitHttpClient;
+    ///
+    /// # async fn example() -> Result<(), Box<dyn std::error::Error>> {
+    /// let client = DeribitHttpClient::new();
+    /// let combo_ids = client.get_combo_ids("BTC", Some("active")).await?;
+    /// println!("Found {} active combos", combo_ids.len());
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub async fn get_combo_ids(
+        &self,
+        currency: &str,
+        state: Option<&str>,
+    ) -> Result<Vec<String>, HttpError> {
+        let mut url = format!(
+            "{}{}?currency={}",
+            self.base_url(),
+            GET_COMBO_IDS,
+            urlencoding::encode(currency)
+        );
+
+        if let Some(s) = state {
+            url.push_str(&format!("&state={}", urlencoding::encode(s)));
+        }
+
+        let response = self
+            .http_client()
+            .get(&url)
+            .send()
+            .await
+            .map_err(|e| HttpError::NetworkError(e.to_string()))?;
+
+        if !response.status().is_success() {
+            let error_text = response
+                .text()
+                .await
+                .unwrap_or_else(|_| "Unknown error".to_string());
+            return Err(HttpError::RequestFailed(format!(
+                "Get combo IDs failed: {}",
+                error_text
+            )));
+        }
+
+        let api_response: ApiResponse<Vec<String>> = response
+            .json()
+            .await
+            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
+
+        if let Some(error) = api_response.error {
+            return Err(HttpError::RequestFailed(format!(
+                "API error: {} - {}",
+                error.code, error.message
+            )));
+        }
+
+        api_response
+            .result
+            .ok_or_else(|| HttpError::InvalidResponse("No combo IDs in response".to_string()))
+    }
+
+    /// Get all active combos by currency
+    ///
+    /// Retrieves information about all active combo instruments for a currency.
+    /// This is a public endpoint that doesn't require authentication.
+    ///
+    /// # Arguments
+    ///
+    /// * `currency` - The currency symbol (BTC, ETH, USDC, USDT, EURR, or "any" for all)
+    ///
+    /// # Errors
+    ///
+    /// Returns `HttpError` if the request fails or the response is invalid.
+    ///
+    /// # Examples
+    ///
+    /// ```rust,no_run
+    /// use deribit_http::DeribitHttpClient;
+    ///
+    /// # async fn example() -> Result<(), Box<dyn std::error::Error>> {
+    /// let client = DeribitHttpClient::new();
+    /// let combos = client.get_combos("BTC").await?;
+    /// for combo in combos {
+    ///     println!("Combo: {} ({:?})", combo.id, combo.state);
+    /// }
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub async fn get_combos(&self, currency: &str) -> Result<Vec<crate::model::Combo>, HttpError> {
+        let url = format!(
+            "{}{}?currency={}",
+            self.base_url(),
+            GET_COMBOS,
+            urlencoding::encode(currency)
+        );
+
+        let response = self
+            .http_client()
+            .get(&url)
+            .send()
+            .await
+            .map_err(|e| HttpError::NetworkError(e.to_string()))?;
+
+        if !response.status().is_success() {
+            let error_text = response
+                .text()
+                .await
+                .unwrap_or_else(|_| "Unknown error".to_string());
+            return Err(HttpError::RequestFailed(format!(
+                "Get combos failed: {}",
+                error_text
+            )));
+        }
+
+        let api_response: ApiResponse<Vec<crate::model::Combo>> = response
+            .json()
+            .await
+            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
+
+        if let Some(error) = api_response.error {
+            return Err(HttpError::RequestFailed(format!(
+                "API error: {} - {}",
+                error.code, error.message
+            )));
+        }
+
+        api_response
+            .result
+            .ok_or_else(|| HttpError::InvalidResponse("No combos data in response".to_string()))
+    }
 }

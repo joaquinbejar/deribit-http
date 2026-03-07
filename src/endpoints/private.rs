@@ -7314,4 +7314,159 @@ impl DeribitHttpClient {
             .result
             .ok_or_else(|| HttpError::InvalidResponse("No signature in response".to_string()))
     }
+
+    // ========================================================================
+    // Combo Books Endpoints
+    // ========================================================================
+
+    /// Create a combo book
+    ///
+    /// Verifies and creates a combo book or returns an existing combo
+    /// matching the given trades.
+    ///
+    /// # Arguments
+    ///
+    /// * `trades` - List of trades used to create a combo
+    ///
+    /// # Errors
+    ///
+    /// Returns `HttpError` if the request fails or the response is invalid.
+    ///
+    /// # Examples
+    ///
+    /// ```rust,no_run
+    /// use deribit_http::DeribitHttpClient;
+    /// use deribit_http::model::ComboTrade;
+    ///
+    /// # async fn example() -> Result<(), Box<dyn std::error::Error>> {
+    /// let client = DeribitHttpClient::new();
+    /// let trades = vec![
+    ///     ComboTrade::buy("BTC-29APR22-37500-C", Some(1.0)),
+    ///     ComboTrade::sell("BTC-29APR22-37500-P", Some(1.0)),
+    /// ];
+    /// // let combo = client.create_combo(&trades).await?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub async fn create_combo(
+        &self,
+        trades: &[crate::model::ComboTrade],
+    ) -> Result<crate::model::Combo, HttpError> {
+        let trades_json = serde_json::to_string(trades).map_err(|e| {
+            HttpError::InvalidResponse(format!("Failed to serialize trades: {}", e))
+        })?;
+
+        let url = format!(
+            "{}{}?trades={}",
+            self.base_url(),
+            CREATE_COMBO,
+            urlencoding::encode(&trades_json)
+        );
+
+        let response = self.make_authenticated_request(&url).await?;
+
+        if !response.status().is_success() {
+            let error_text = response
+                .text()
+                .await
+                .unwrap_or_else(|_| "Unknown error".to_string());
+            return Err(HttpError::RequestFailed(format!(
+                "Create combo failed: {}",
+                error_text
+            )));
+        }
+
+        let api_response: ApiResponse<crate::model::Combo> = response
+            .json()
+            .await
+            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
+
+        if let Some(error) = api_response.error {
+            return Err(HttpError::RequestFailed(format!(
+                "API error: {} - {}",
+                error.code, error.message
+            )));
+        }
+
+        api_response
+            .result
+            .ok_or_else(|| HttpError::InvalidResponse("No combo data in response".to_string()))
+    }
+
+    /// Get leg prices for a combo structure
+    ///
+    /// Returns individual leg prices for a given combo structure based on
+    /// an aggregated price of the strategy and the mark prices of the
+    /// individual legs.
+    ///
+    /// # Arguments
+    ///
+    /// * `legs` - List of legs for which the prices will be calculated
+    /// * `price` - Price for the whole leg structure
+    ///
+    /// # Errors
+    ///
+    /// Returns `HttpError` if the request fails or the response is invalid.
+    ///
+    /// # Examples
+    ///
+    /// ```rust,no_run
+    /// use deribit_http::DeribitHttpClient;
+    /// use deribit_http::model::LegInput;
+    ///
+    /// # async fn example() -> Result<(), Box<dyn std::error::Error>> {
+    /// let client = DeribitHttpClient::new();
+    /// let legs = vec![
+    ///     LegInput::buy("BTC-1NOV24-67000-C", 2.0),
+    ///     LegInput::sell("BTC-1NOV24-66000-C", 2.0),
+    /// ];
+    /// // let prices = client.get_leg_prices(&legs, 0.6).await?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub async fn get_leg_prices(
+        &self,
+        legs: &[crate::model::LegInput],
+        price: f64,
+    ) -> Result<crate::model::LegPricesResponse, HttpError> {
+        let legs_json = serde_json::to_string(legs)
+            .map_err(|e| HttpError::InvalidResponse(format!("Failed to serialize legs: {}", e)))?;
+
+        let url = format!(
+            "{}{}?legs={}&price={}",
+            self.base_url(),
+            GET_LEG_PRICES,
+            urlencoding::encode(&legs_json),
+            price
+        );
+
+        let response = self.make_authenticated_request(&url).await?;
+
+        if !response.status().is_success() {
+            let error_text = response
+                .text()
+                .await
+                .unwrap_or_else(|_| "Unknown error".to_string());
+            return Err(HttpError::RequestFailed(format!(
+                "Get leg prices failed: {}",
+                error_text
+            )));
+        }
+
+        let api_response: ApiResponse<crate::model::LegPricesResponse> = response
+            .json()
+            .await
+            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
+
+        if let Some(error) = api_response.error {
+            return Err(HttpError::RequestFailed(format!(
+                "API error: {} - {}",
+                error.code, error.message
+            )));
+        }
+
+        api_response
+            .result
+            .ok_or_else(|| HttpError::InvalidResponse("No leg prices in response".to_string()))
+    }
 }
