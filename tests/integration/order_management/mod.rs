@@ -234,3 +234,86 @@ mod get_margins_tests {
         Ok(())
     }
 }
+
+#[cfg(test)]
+mod mmp_tests {
+    use deribit_http::DeribitHttpClient;
+    use tokio::time::{Duration, Instant};
+    use tracing::info;
+
+    /// Test get_mmp_config endpoint behavior
+    ///
+    /// Returns MMP configuration for an index.
+    #[tokio::test]
+    #[serial_test::serial]
+    #[ignore = "Requires authentication"]
+    async fn test_get_mmp_config() -> Result<(), Box<dyn std::error::Error>> {
+        let client = DeribitHttpClient::new();
+
+        info!("Testing get_mmp_config");
+        let start_time = Instant::now();
+
+        let result = client.get_mmp_config(Some("btc_usd"), None, None).await;
+        let elapsed = start_time.elapsed();
+
+        match &result {
+            Ok(configs) => {
+                info!(
+                    "Get MMP config succeeded in {:?}: {} configs found",
+                    elapsed,
+                    configs.len()
+                );
+            }
+            Err(e) => {
+                info!("Get MMP config failed in {:?}: {:?}", elapsed, e);
+            }
+        }
+
+        assert!(
+            elapsed < Duration::from_secs(30),
+            "Request took too long: {:?}",
+            elapsed
+        );
+
+        info!("test_get_mmp_config completed");
+        Ok(())
+    }
+
+    /// Test get_mmp_status endpoint behavior
+    ///
+    /// Returns MMP status for triggered indexes.
+    #[tokio::test]
+    #[serial_test::serial]
+    #[ignore = "Requires authentication"]
+    async fn test_get_mmp_status() -> Result<(), Box<dyn std::error::Error>> {
+        let client = DeribitHttpClient::new();
+
+        info!("Testing get_mmp_status");
+        let start_time = Instant::now();
+
+        let result = client.get_mmp_status(None, None, None).await;
+        let elapsed = start_time.elapsed();
+
+        match &result {
+            Ok(statuses) => {
+                info!(
+                    "Get MMP status succeeded in {:?}: {} statuses found",
+                    elapsed,
+                    statuses.len()
+                );
+            }
+            Err(e) => {
+                info!("Get MMP status failed in {:?}: {:?}", elapsed, e);
+            }
+        }
+
+        assert!(
+            elapsed < Duration::from_secs(30),
+            "Request took too long: {:?}",
+            elapsed
+        );
+
+        info!("test_get_mmp_status completed");
+        Ok(())
+    }
+}

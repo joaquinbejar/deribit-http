@@ -124,6 +124,14 @@ pub mod endpoints {
     pub const CLOSE_POSITION: &str = "/private/close_position";
     /// Get margin requirements
     pub const GET_MARGINS: &str = "/private/get_margins";
+    /// Get MMP configuration
+    pub const GET_MMP_CONFIG: &str = "/private/get_mmp_config";
+    /// Get MMP status
+    pub const GET_MMP_STATUS: &str = "/private/get_mmp_status";
+    /// Set MMP configuration
+    pub const SET_MMP_CONFIG: &str = "/private/set_mmp_config";
+    /// Reset MMP limits
+    pub const RESET_MMP: &str = "/private/reset_mmp";
 
     // Private account endpoints
     /// Get account summary information

@@ -11,6 +11,8 @@ pub mod deposit;
 pub mod margin;
 /// Mass quote response models
 pub mod mass_quote;
+/// MMP response models
+pub mod mmp;
 /// Order response models and types
 pub mod order;
 /// Other response models and utilities
@@ -24,6 +26,7 @@ pub use api_response::*;
 pub use deposit::*;
 pub use margin::*;
 pub use mass_quote::*;
+pub use mmp::*;
 pub use order::*;
 pub use other::*;
 pub use trade::*;
