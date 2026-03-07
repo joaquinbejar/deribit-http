@@ -379,3 +379,187 @@ async fn test_submit_transfer_to_user_success() {
     }
     assert!(result.is_ok());
 }
+
+// =========================================================================
+// Close Position Tests (Issue #13)
+// =========================================================================
+
+#[tokio::test]
+async fn test_close_position_market_order_success() {
+    let mut server = mockito::Server::new_async().await;
+    let client = create_test_client(&server);
+
+    // Mock the OAuth2 authentication endpoint
+    let _auth_mock = create_auth_mock(&mut server).await;
+
+    let mock_response = json!({
+        "jsonrpc": "2.0",
+        "result": {
+            "order": {
+                "amount": 10.0,
+                "api": true,
+                "average_price": 50000.0,
+                "creation_timestamp": 1609459200000u64,
+                "direction": "sell",
+                "filled_amount": 10.0,
+                "instrument_name": "BTC-PERPETUAL",
+                "is_liquidation": false,
+                "label": "",
+                "last_update_timestamp": 1609459200000u64,
+                "order_id": "ETH-123456",
+                "order_state": "filled",
+                "order_type": "market",
+                "post_only": false,
+                "price": 50000.0,
+                "reduce_only": true,
+                "replaced": false,
+                "risk_reducing": false,
+                "time_in_force": "good_til_cancelled",
+                "web": false
+            },
+            "trades": [
+                {
+                    "trade_id": "BTC-12345",
+                    "instrument_name": "BTC-PERPETUAL",
+                    "timestamp": 1609459200000u64,
+                    "direction": "sell",
+                    "price": 50000.0,
+                    "amount": 10.0,
+                    "fee": 0.0001,
+                    "fee_currency": "BTC",
+                    "order_id": "ETH-123456",
+                    "order_type": "market",
+                    "trade_seq": 1,
+                    "state": "filled",
+                    "index_price": 50000.0,
+                    "liquidity": "T",
+                    "mark_price": 50000.0,
+                    "tick_direction": 0,
+                    "self_trade": false,
+                    "label": ""
+                }
+            ]
+        },
+        "id": 1
+    });
+
+    let mock = server
+        .mock(
+            "GET",
+            "/api/v2/private/close_position?instrument_name=BTC-PERPETUAL&type=market",
+        )
+        .with_status(200)
+        .with_header("content-type", "application/json")
+        .with_body(mock_response.to_string())
+        .create_async()
+        .await;
+
+    let result = client.close_position("BTC-PERPETUAL", "market", None).await;
+
+    mock.assert_async().await;
+    if let Err(e) = &result {
+        println!("Error in test_close_position_market_order_success: {:?}", e);
+    }
+    assert!(result.is_ok());
+    let response = result.unwrap();
+    assert_eq!(response.order.instrument_name, "BTC-PERPETUAL");
+    assert!(response.order.reduce_only);
+}
+
+#[tokio::test]
+async fn test_close_position_limit_order_success() {
+    let mut server = mockito::Server::new_async().await;
+    let client = create_test_client(&server);
+
+    // Mock the OAuth2 authentication endpoint
+    let _auth_mock = create_auth_mock(&mut server).await;
+
+    let mock_response = json!({
+        "jsonrpc": "2.0",
+        "result": {
+            "order": {
+                "amount": 10.0,
+                "api": true,
+                "average_price": 2500.0,
+                "creation_timestamp": 1609459200000u64,
+                "direction": "sell",
+                "filled_amount": 10.0,
+                "instrument_name": "ETH-PERPETUAL",
+                "is_liquidation": false,
+                "label": "",
+                "last_update_timestamp": 1609459200000u64,
+                "order_id": "ETH-789012",
+                "order_state": "open",
+                "order_type": "limit",
+                "post_only": false,
+                "price": 2500.0,
+                "reduce_only": true,
+                "replaced": false,
+                "risk_reducing": false,
+                "time_in_force": "good_til_cancelled",
+                "web": false
+            },
+            "trades": []
+        },
+        "id": 1
+    });
+
+    let mock = server
+        .mock(
+            "GET",
+            "/api/v2/private/close_position?instrument_name=ETH-PERPETUAL&type=limit&price=2500",
+        )
+        .with_status(200)
+        .with_header("content-type", "application/json")
+        .with_body(mock_response.to_string())
+        .create_async()
+        .await;
+
+    let result = client
+        .close_position("ETH-PERPETUAL", "limit", Some(2500.0))
+        .await;
+
+    mock.assert_async().await;
+    if let Err(e) = &result {
+        println!("Error in test_close_position_limit_order_success: {:?}", e);
+    }
+    assert!(result.is_ok());
+    let response = result.unwrap();
+    assert_eq!(response.order.instrument_name, "ETH-PERPETUAL");
+    assert_eq!(response.order.order_type, "limit");
+    assert!(response.order.reduce_only);
+}
+
+#[tokio::test]
+async fn test_close_position_no_position_error() {
+    let mut server = mockito::Server::new_async().await;
+    let client = create_test_client(&server);
+
+    // Mock the OAuth2 authentication endpoint
+    let _auth_mock = create_auth_mock(&mut server).await;
+
+    let mock = server
+        .mock(
+            "GET",
+            "/api/v2/private/close_position?instrument_name=BTC-PERPETUAL&type=market",
+        )
+        .with_status(400)
+        .with_header("content-type", "application/json")
+        .with_body(
+            r#"{
+            "jsonrpc": "2.0",
+            "id": 1,
+            "error": {
+                "code": 10041,
+                "message": "no_open_position"
+            }
+        }"#,
+        )
+        .create_async()
+        .await;
+
+    let result = client.close_position("BTC-PERPETUAL", "market", None).await;
+
+    mock.assert_async().await;
+    assert!(result.is_err());
+}
