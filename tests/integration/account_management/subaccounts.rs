@@ -528,3 +528,55 @@ mod user_trades_log_tests {
         Ok(())
     }
 }
+
+#[cfg(test)]
+mod get_subaccounts_details_tests {
+    use deribit_http::DeribitHttpClient;
+    use tokio::time::{Duration, Instant};
+    use tracing::info;
+
+    /// Test get_subaccounts_details endpoint behavior
+    ///
+    /// Returns position details for all subaccounts for a specific currency.
+    #[tokio::test]
+    #[serial_test::serial]
+    #[ignore = "Requires authentication"]
+    async fn test_get_subaccounts_details() -> Result<(), Box<dyn std::error::Error>> {
+        let client = DeribitHttpClient::new();
+
+        info!("Testing get_subaccounts_details");
+        let start_time = Instant::now();
+
+        let result = client.get_subaccounts_details("BTC", None).await;
+        let elapsed = start_time.elapsed();
+
+        match &result {
+            Ok(details) => {
+                info!(
+                    "Get subaccounts details succeeded in {:?}: {} subaccounts found",
+                    elapsed,
+                    details.len()
+                );
+                for detail in details {
+                    info!(
+                        "  Subaccount UID {}: {} positions",
+                        detail.uid,
+                        detail.positions.len()
+                    );
+                }
+            }
+            Err(e) => {
+                info!("Get subaccounts details failed in {:?}: {:?}", elapsed, e);
+            }
+        }
+
+        assert!(
+            elapsed < Duration::from_secs(30),
+            "Request took too long: {:?}",
+            elapsed
+        );
+
+        info!("test_get_subaccounts_details completed");
+        Ok(())
+    }
+}

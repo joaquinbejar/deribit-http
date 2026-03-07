@@ -156,6 +156,8 @@ pub mod endpoints {
     pub const GET_POSITIONS: &str = "/private/get_positions";
     /// Get subaccount information
     pub const GET_SUBACCOUNTS: &str = "/private/get_subaccounts";
+    /// Get subaccounts details with positions
+    pub const GET_SUBACCOUNTS_DETAILS: &str = "/private/get_subaccounts_details";
     /// Get transaction log
     pub const GET_TRANSACTION_LOG: &str = "/private/get_transaction_log";
     /// Get deposits
