@@ -142,6 +142,8 @@ pub mod endpoints {
     /// Get settlement history by instrument
     pub const GET_SETTLEMENT_HISTORY_BY_INSTRUMENT: &str =
         "/private/get_settlement_history_by_instrument";
+    /// Get trigger order history
+    pub const GET_TRIGGER_ORDER_HISTORY: &str = "/private/get_trigger_order_history";
 
     // Private account endpoints
     /// Get account summary information

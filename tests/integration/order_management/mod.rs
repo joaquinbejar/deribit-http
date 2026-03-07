@@ -422,3 +422,53 @@ mod get_order_state_by_label_tests {
         Ok(())
     }
 }
+
+#[cfg(test)]
+mod get_trigger_order_history_tests {
+    use deribit_http::DeribitHttpClient;
+    use tokio::time::{Duration, Instant};
+    use tracing::info;
+
+    /// Test get_trigger_order_history endpoint behavior
+    ///
+    /// Returns history of trigger orders (stop-loss, take-profit, etc.)
+    #[tokio::test]
+    #[serial_test::serial]
+    #[ignore = "Requires authentication"]
+    async fn test_get_trigger_order_history() -> Result<(), Box<dyn std::error::Error>> {
+        let client = DeribitHttpClient::new();
+
+        info!("Testing get_trigger_order_history");
+        let start_time = Instant::now();
+
+        let result = client
+            .get_trigger_order_history("BTC", None, Some(10), None)
+            .await;
+        let elapsed = start_time.elapsed();
+
+        match &result {
+            Ok(response) => {
+                info!(
+                    "Get trigger order history succeeded in {:?}: {} entries found",
+                    elapsed,
+                    response.entries.len()
+                );
+                if let Some(continuation) = &response.continuation {
+                    info!("Continuation token: {}", continuation);
+                }
+            }
+            Err(e) => {
+                info!("Get trigger order history failed in {:?}: {:?}", elapsed, e);
+            }
+        }
+
+        assert!(
+            elapsed < Duration::from_secs(30),
+            "Request took too long: {:?}",
+            elapsed
+        );
+
+        info!("test_get_trigger_order_history completed");
+        Ok(())
+    }
+}

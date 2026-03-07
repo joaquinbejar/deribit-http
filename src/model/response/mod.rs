@@ -19,6 +19,8 @@ pub mod order;
 pub mod other;
 /// Trade response models and types
 pub mod trade;
+/// Trigger order response models
+pub mod trigger;
 /// Withdrawal response models
 pub mod withdrawal;
 
@@ -30,4 +32,5 @@ pub use mmp::*;
 pub use order::*;
 pub use other::*;
 pub use trade::*;
+pub use trigger::*;
 pub use withdrawal::*;
