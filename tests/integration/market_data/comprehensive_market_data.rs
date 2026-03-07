@@ -618,7 +618,11 @@ mod comprehensive_market_data_tests {
                     );
 
                     // Price should be positive and reasonable for BTC
-                    assert!(point.price > 0.0, "Price should be positive: {}", point.price);
+                    assert!(
+                        point.price > 0.0,
+                        "Price should be positive: {}",
+                        point.price
+                    );
                     assert!(
                         point.price < 10_000_000.0,
                         "Price should be reasonable: {}",
@@ -660,7 +664,10 @@ mod comprehensive_market_data_tests {
         let ranges = ["1h", "1d", "2d", "1m", "1y"];
 
         for range in ranges.iter() {
-            info!("Testing get_index_chart_data for btc_usd with {} range", range);
+            info!(
+                "Testing get_index_chart_data for btc_usd with {} range",
+                range
+            );
             let start_time = Instant::now();
             let result = client.get_index_chart_data("btc_usd", range).await;
             let elapsed = start_time.elapsed();
@@ -698,10 +705,7 @@ mod comprehensive_market_data_tests {
                     }
                 }
                 Err(e) => {
-                    warn!(
-                        "Range '{}' failed in {:?}: {:?}",
-                        range, elapsed, e
-                    );
+                    warn!("Range '{}' failed in {:?}: {:?}", range, elapsed, e);
                     return Err(format!("Range '{}' failed: {:?}", range, e).into());
                 }
             }
@@ -732,7 +736,10 @@ mod comprehensive_market_data_tests {
                     elapsed
                 );
 
-                assert!(!data.is_empty(), "Should return at least one data point for ETH");
+                assert!(
+                    !data.is_empty(),
+                    "Should return at least one data point for ETH"
+                );
 
                 // Validate ETH price range (different from BTC)
                 for point in data.iter() {
@@ -761,7 +768,9 @@ mod comprehensive_market_data_tests {
 
         info!("Testing get_index_chart_data with invalid index name");
         let start_time = Instant::now();
-        let result = client.get_index_chart_data("invalid_index_name", "1d").await;
+        let result = client
+            .get_index_chart_data("invalid_index_name", "1d")
+            .await;
         let elapsed = start_time.elapsed();
 
         match result {
