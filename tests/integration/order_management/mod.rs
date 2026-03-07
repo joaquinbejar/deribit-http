@@ -317,3 +317,57 @@ mod mmp_tests {
         Ok(())
     }
 }
+
+#[cfg(test)]
+mod get_order_margin_by_ids_tests {
+    use deribit_http::DeribitHttpClient;
+    use tokio::time::{Duration, Instant};
+    use tracing::info;
+
+    /// Test get_order_margin_by_ids endpoint behavior
+    ///
+    /// Returns initial margin requirements for orders by their IDs.
+    #[tokio::test]
+    #[serial_test::serial]
+    #[ignore = "Requires authentication and valid order IDs"]
+    async fn test_get_order_margin_by_ids() -> Result<(), Box<dyn std::error::Error>> {
+        let client = DeribitHttpClient::new();
+
+        info!("Testing get_order_margin_by_ids");
+        let start_time = Instant::now();
+
+        // Note: This test requires valid order IDs that exist in the account
+        let result = client
+            .get_order_margin_by_ids(&["ETH-349280", "ETH-349279"])
+            .await;
+        let elapsed = start_time.elapsed();
+
+        match &result {
+            Ok(margins) => {
+                info!(
+                    "Get order margin by IDs succeeded in {:?}: {} margins found",
+                    elapsed,
+                    margins.len()
+                );
+                for margin in margins {
+                    info!(
+                        "Order {}: initial_margin={} {}",
+                        margin.order_id, margin.initial_margin, margin.initial_margin_currency
+                    );
+                }
+            }
+            Err(e) => {
+                info!("Get order margin by IDs failed in {:?}: {:?}", elapsed, e);
+            }
+        }
+
+        assert!(
+            elapsed < Duration::from_secs(30),
+            "Request took too long: {:?}",
+            elapsed
+        );
+
+        info!("test_get_order_margin_by_ids completed");
+        Ok(())
+    }
+}

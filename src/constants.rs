@@ -132,6 +132,8 @@ pub mod endpoints {
     pub const SET_MMP_CONFIG: &str = "/private/set_mmp_config";
     /// Reset MMP limits
     pub const RESET_MMP: &str = "/private/reset_mmp";
+    /// Get order margin by IDs
+    pub const GET_ORDER_MARGIN_BY_IDS: &str = "/private/get_order_margin_by_ids";
 
     // Private account endpoints
     /// Get account summary information
