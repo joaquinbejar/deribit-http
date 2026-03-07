@@ -2674,4 +2674,91 @@ impl DeribitHttpClient {
             .result
             .ok_or_else(|| HttpError::InvalidResponse("No order book data in response".to_string()))
     }
+
+    /// Get platform announcements
+    ///
+    /// Retrieves announcements from the platform. Default start_timestamp is current time,
+    /// count must be between 1 and 50 (default is 5).
+    ///
+    /// # Arguments
+    ///
+    /// * `count` - Number of announcements to retrieve (1-50, default 5)
+    /// * `start_timestamp` - Optional timestamp to start from in milliseconds
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # use deribit_http::DeribitHttpClient;
+    /// # #[tokio::main]
+    /// # async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    /// let client = DeribitHttpClient::new();
+    /// let announcements = client.get_announcements(Some(10), None).await?;
+    /// for announcement in announcements {
+    ///     println!("Announcement: {}", announcement.title);
+    /// }
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub async fn get_announcements(
+        &self,
+        count: Option<u32>,
+        start_timestamp: Option<u64>,
+    ) -> Result<Vec<crate::model::Announcement>, HttpError> {
+        let mut query_params = Vec::new();
+
+        if let Some(count) = count {
+            query_params.push(format!("count={}", count));
+        }
+
+        if let Some(ts) = start_timestamp {
+            query_params.push(format!("start_timestamp={}", ts));
+        }
+
+        let query_string = if query_params.is_empty() {
+            String::new()
+        } else {
+            format!("?{}", query_params.join("&"))
+        };
+
+        let url = format!(
+            "{}{}{}",
+            self.base_url(),
+            crate::constants::endpoints::GET_ANNOUNCEMENTS,
+            query_string
+        );
+
+        let response = self
+            .http_client()
+            .get(&url)
+            .send()
+            .await
+            .map_err(|e| HttpError::NetworkError(e.to_string()))?;
+
+        if !response.status().is_success() {
+            let error_text = response
+                .text()
+                .await
+                .unwrap_or_else(|_| "Unknown error".to_string());
+            return Err(HttpError::RequestFailed(format!(
+                "Get announcements failed: {}",
+                error_text
+            )));
+        }
+
+        let api_response: ApiResponse<Vec<crate::model::Announcement>> = response
+            .json()
+            .await
+            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
+
+        if let Some(error) = api_response.error {
+            return Err(HttpError::RequestFailed(format!(
+                "API error: {} - {}",
+                error.code, error.message
+            )));
+        }
+
+        api_response
+            .result
+            .ok_or_else(|| HttpError::InvalidResponse("No announcements in response".to_string()))
+    }
 }

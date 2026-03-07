@@ -245,6 +245,38 @@ pub mod endpoints {
     pub const LIST_ADDRESS_BENEFICIARIES: &str = "/private/list_address_beneficiaries";
     /// Set clearance originator for a deposit
     pub const SET_CLEARANCE_ORIGINATOR: &str = "/private/set_clearance_originator";
+
+    // Remaining account endpoints
+    /// Get account access log
+    pub const GET_ACCESS_LOG: &str = "/private/get_access_log";
+    /// Get user account locks
+    pub const GET_USER_LOCKS: &str = "/private/get_user_locks";
+    /// List custody accounts
+    pub const LIST_CUSTODY_ACCOUNTS: &str = "/private/list_custody_accounts";
+    /// Simulate portfolio margin
+    pub const SIMULATE_PORTFOLIO: &str = "/private/simulate_portfolio";
+    /// PME margin simulation
+    pub const PME_SIMULATE: &str = "/private/pme/simulate";
+    /// Change margin model
+    pub const CHANGE_MARGIN_MODEL: &str = "/private/change_margin_model";
+    /// Set self-trading configuration
+    pub const SET_SELF_TRADING_CONFIG: &str = "/private/set_self_trading_config";
+    /// Set disabled trading products
+    pub const SET_DISABLED_TRADING_PRODUCTS: &str = "/private/set_disabled_trading_products";
+    /// Get public announcements
+    pub const GET_ANNOUNCEMENTS: &str = "/public/get_announcements";
+    /// Get new (unread) announcements
+    pub const GET_NEW_ANNOUNCEMENTS: &str = "/private/get_new_announcements";
+    /// Mark announcement as read
+    pub const SET_ANNOUNCEMENT_AS_READ: &str = "/private/set_announcement_as_read";
+    /// Enable affiliate program
+    pub const ENABLE_AFFILIATE_PROGRAM: &str = "/private/enable_affiliate_program";
+    /// Get affiliate program information
+    pub const GET_AFFILIATE_PROGRAM_INFO: &str = "/private/get_affiliate_program_info";
+    /// Set email language preference
+    pub const SET_EMAIL_LANGUAGE: &str = "/private/set_email_language";
+    /// Get email language preference
+    pub const GET_EMAIL_LANGUAGE: &str = "/private/get_email_language";
 }
 
 /// HTTP headers
