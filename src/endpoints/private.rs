@@ -7469,4 +7469,759 @@ impl DeribitHttpClient {
             .result
             .ok_or_else(|| HttpError::InvalidResponse("No leg prices in response".to_string()))
     }
+
+    // ========================================================================
+    // Block RFQ endpoints
+    // ========================================================================
+
+    /// Creates a new Block RFQ (taker method).
+    ///
+    /// # Arguments
+    ///
+    /// * `legs` - List of legs for the Block RFQ
+    /// * `hedge` - Optional hedge leg
+    /// * `label` - Optional user-defined label (max 64 chars)
+    /// * `makers` - Optional list of targeted makers
+    /// * `non_anonymous` - Whether the RFQ is non-anonymous (default true)
+    /// * `trade_allocations` - Optional pre-allocation for splitting amounts
+    ///
+    /// # Errors
+    ///
+    /// Returns `HttpError` if the request fails.
+    pub async fn create_block_rfq(
+        &self,
+        legs: &[crate::model::response::BlockRfqLeg],
+        hedge: Option<&crate::model::response::BlockRfqHedge>,
+        label: Option<&str>,
+        makers: Option<&[&str]>,
+        non_anonymous: Option<bool>,
+        trade_allocations: Option<&[crate::model::response::BlockRfqTradeAllocation]>,
+    ) -> Result<crate::model::response::BlockRfq, HttpError> {
+        let legs_json = serde_json::to_string(legs)
+            .map_err(|e| HttpError::InvalidResponse(format!("Failed to serialize legs: {}", e)))?;
+
+        let mut query_params = vec![format!("legs={}", urlencoding::encode(&legs_json))];
+
+        if let Some(h) = hedge {
+            let hedge_json = serde_json::to_string(h).map_err(|e| {
+                HttpError::InvalidResponse(format!("Failed to serialize hedge: {}", e))
+            })?;
+            query_params.push(format!("hedge={}", urlencoding::encode(&hedge_json)));
+        }
+
+        if let Some(l) = label {
+            query_params.push(format!("label={}", urlencoding::encode(l)));
+        }
+
+        if let Some(m) = makers {
+            let makers_json = serde_json::to_string(m).map_err(|e| {
+                HttpError::InvalidResponse(format!("Failed to serialize makers: {}", e))
+            })?;
+            query_params.push(format!("makers={}", urlencoding::encode(&makers_json)));
+        }
+
+        if let Some(na) = non_anonymous {
+            query_params.push(format!("non_anonymous={}", na));
+        }
+
+        if let Some(ta) = trade_allocations {
+            let ta_json = serde_json::to_string(ta).map_err(|e| {
+                HttpError::InvalidResponse(format!("Failed to serialize trade_allocations: {}", e))
+            })?;
+            query_params.push(format!(
+                "trade_allocations={}",
+                urlencoding::encode(&ta_json)
+            ));
+        }
+
+        let url = format!(
+            "{}{}?{}",
+            self.base_url(),
+            crate::constants::endpoints::CREATE_BLOCK_RFQ,
+            query_params.join("&")
+        );
+
+        let response = self.make_authenticated_request(&url).await?;
+
+        if !response.status().is_success() {
+            let error_text = response
+                .text()
+                .await
+                .unwrap_or_else(|_| "Unknown error".to_string());
+            return Err(HttpError::RequestFailed(format!(
+                "Create Block RFQ failed: {}",
+                error_text
+            )));
+        }
+
+        let api_response: ApiResponse<crate::model::response::BlockRfq> = response
+            .json()
+            .await
+            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
+
+        if let Some(error) = api_response.error {
+            return Err(HttpError::RequestFailed(format!(
+                "API error: {} - {}",
+                error.code, error.message
+            )));
+        }
+
+        api_response
+            .result
+            .ok_or_else(|| HttpError::InvalidResponse("No Block RFQ in response".to_string()))
+    }
+
+    /// Cancels a Block RFQ (taker method).
+    ///
+    /// # Arguments
+    ///
+    /// * `block_rfq_id` - ID of the Block RFQ to cancel
+    ///
+    /// # Errors
+    ///
+    /// Returns `HttpError` if the request fails.
+    pub async fn cancel_block_rfq(
+        &self,
+        block_rfq_id: i64,
+    ) -> Result<crate::model::response::BlockRfq, HttpError> {
+        let url = format!(
+            "{}{}?block_rfq_id={}",
+            self.base_url(),
+            crate::constants::endpoints::CANCEL_BLOCK_RFQ,
+            block_rfq_id
+        );
+
+        let response = self.make_authenticated_request(&url).await?;
+
+        if !response.status().is_success() {
+            let error_text = response
+                .text()
+                .await
+                .unwrap_or_else(|_| "Unknown error".to_string());
+            return Err(HttpError::RequestFailed(format!(
+                "Cancel Block RFQ failed: {}",
+                error_text
+            )));
+        }
+
+        let api_response: ApiResponse<crate::model::response::BlockRfq> = response
+            .json()
+            .await
+            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
+
+        if let Some(error) = api_response.error {
+            return Err(HttpError::RequestFailed(format!(
+                "API error: {} - {}",
+                error.code, error.message
+            )));
+        }
+
+        api_response
+            .result
+            .ok_or_else(|| HttpError::InvalidResponse("No Block RFQ in response".to_string()))
+    }
+
+    /// Accepts a Block RFQ quote (taker method).
+    ///
+    /// # Arguments
+    ///
+    /// * `block_rfq_id` - ID of the Block RFQ
+    /// * `legs` - Legs to trade
+    /// * `price` - Maximum acceptable price
+    /// * `direction` - Direction from taker perspective
+    /// * `amount` - Order amount
+    /// * `time_in_force` - Time in force (fill_or_kill or good_til_cancelled)
+    /// * `hedge` - Optional hedge leg
+    ///
+    /// # Errors
+    ///
+    /// Returns `HttpError` if the request fails.
+    #[allow(clippy::too_many_arguments)]
+    pub async fn accept_block_rfq(
+        &self,
+        block_rfq_id: i64,
+        legs: &[crate::model::response::BlockRfqLeg],
+        price: f64,
+        direction: crate::model::types::Direction,
+        amount: f64,
+        time_in_force: Option<crate::model::response::BlockRfqTimeInForce>,
+        hedge: Option<&crate::model::response::BlockRfqHedge>,
+    ) -> Result<crate::model::response::AcceptBlockRfqResponse, HttpError> {
+        let legs_json = serde_json::to_string(legs)
+            .map_err(|e| HttpError::InvalidResponse(format!("Failed to serialize legs: {}", e)))?;
+
+        let direction_str = match direction {
+            crate::model::types::Direction::Buy => "buy",
+            crate::model::types::Direction::Sell => "sell",
+        };
+
+        let mut query_params = vec![
+            format!("block_rfq_id={}", block_rfq_id),
+            format!("legs={}", urlencoding::encode(&legs_json)),
+            format!("price={}", price),
+            format!("direction={}", direction_str),
+            format!("amount={}", amount),
+        ];
+
+        if let Some(tif) = time_in_force {
+            let tif_str = match tif {
+                crate::model::response::BlockRfqTimeInForce::FillOrKill => "fill_or_kill",
+                crate::model::response::BlockRfqTimeInForce::GoodTilCancelled => {
+                    "good_til_cancelled"
+                }
+            };
+            query_params.push(format!("time_in_force={}", tif_str));
+        }
+
+        if let Some(h) = hedge {
+            let hedge_json = serde_json::to_string(h).map_err(|e| {
+                HttpError::InvalidResponse(format!("Failed to serialize hedge: {}", e))
+            })?;
+            query_params.push(format!("hedge={}", urlencoding::encode(&hedge_json)));
+        }
+
+        let url = format!(
+            "{}{}?{}",
+            self.base_url(),
+            crate::constants::endpoints::ACCEPT_BLOCK_RFQ,
+            query_params.join("&")
+        );
+
+        let response = self.make_authenticated_request(&url).await?;
+
+        if !response.status().is_success() {
+            let error_text = response
+                .text()
+                .await
+                .unwrap_or_else(|_| "Unknown error".to_string());
+            return Err(HttpError::RequestFailed(format!(
+                "Accept Block RFQ failed: {}",
+                error_text
+            )));
+        }
+
+        let api_response: ApiResponse<crate::model::response::AcceptBlockRfqResponse> = response
+            .json()
+            .await
+            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
+
+        if let Some(error) = api_response.error {
+            return Err(HttpError::RequestFailed(format!(
+                "API error: {} - {}",
+                error.code, error.message
+            )));
+        }
+
+        api_response
+            .result
+            .ok_or_else(|| HttpError::InvalidResponse("No accept Block RFQ response".to_string()))
+    }
+
+    /// Retrieves Block RFQs.
+    ///
+    /// # Arguments
+    ///
+    /// * `count` - Optional number of RFQs to return (max 1000)
+    /// * `state` - Optional state filter
+    /// * `role` - Optional role filter
+    /// * `continuation` - Optional continuation token for pagination
+    /// * `block_rfq_id` - Optional specific Block RFQ ID
+    /// * `currency` - Optional currency filter
+    ///
+    /// # Errors
+    ///
+    /// Returns `HttpError` if the request fails.
+    pub async fn get_block_rfqs(
+        &self,
+        count: Option<u32>,
+        state: Option<crate::model::response::BlockRfqState>,
+        role: Option<crate::model::response::BlockRfqRole>,
+        continuation: Option<&str>,
+        block_rfq_id: Option<i64>,
+        currency: Option<&str>,
+    ) -> Result<crate::model::response::BlockRfqsResponse, HttpError> {
+        let mut query_params: Vec<String> = Vec::new();
+
+        if let Some(c) = count {
+            query_params.push(format!("count={}", c));
+        }
+
+        if let Some(s) = state {
+            let state_str = match s {
+                crate::model::response::BlockRfqState::Open => "open",
+                crate::model::response::BlockRfqState::Filled => "filled",
+                crate::model::response::BlockRfqState::Traded => "traded",
+                crate::model::response::BlockRfqState::Cancelled => "cancelled",
+                crate::model::response::BlockRfqState::Expired => "expired",
+                crate::model::response::BlockRfqState::Closed => "closed",
+                crate::model::response::BlockRfqState::Created => "created",
+            };
+            query_params.push(format!("state={}", state_str));
+        }
+
+        if let Some(r) = role {
+            let role_str = match r {
+                crate::model::response::BlockRfqRole::Taker => "taker",
+                crate::model::response::BlockRfqRole::Maker => "maker",
+                crate::model::response::BlockRfqRole::Any => "any",
+            };
+            query_params.push(format!("role={}", role_str));
+        }
+
+        if let Some(cont) = continuation {
+            query_params.push(format!("continuation={}", urlencoding::encode(cont)));
+        }
+
+        if let Some(id) = block_rfq_id {
+            query_params.push(format!("block_rfq_id={}", id));
+        }
+
+        if let Some(curr) = currency {
+            query_params.push(format!("currency={}", curr));
+        }
+
+        let url = if query_params.is_empty() {
+            format!(
+                "{}{}",
+                self.base_url(),
+                crate::constants::endpoints::GET_BLOCK_RFQS
+            )
+        } else {
+            format!(
+                "{}{}?{}",
+                self.base_url(),
+                crate::constants::endpoints::GET_BLOCK_RFQS,
+                query_params.join("&")
+            )
+        };
+
+        let response = self.make_authenticated_request(&url).await?;
+
+        if !response.status().is_success() {
+            let error_text = response
+                .text()
+                .await
+                .unwrap_or_else(|_| "Unknown error".to_string());
+            return Err(HttpError::RequestFailed(format!(
+                "Get Block RFQs failed: {}",
+                error_text
+            )));
+        }
+
+        let api_response: ApiResponse<crate::model::response::BlockRfqsResponse> = response
+            .json()
+            .await
+            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
+
+        if let Some(error) = api_response.error {
+            return Err(HttpError::RequestFailed(format!(
+                "API error: {} - {}",
+                error.code, error.message
+            )));
+        }
+
+        api_response
+            .result
+            .ok_or_else(|| HttpError::InvalidResponse("No Block RFQs in response".to_string()))
+    }
+
+    /// Retrieves open quotes for Block RFQs (maker method).
+    ///
+    /// # Arguments
+    ///
+    /// * `block_rfq_id` - Optional Block RFQ ID filter
+    /// * `label` - Optional label filter
+    /// * `block_rfq_quote_id` - Optional specific quote ID
+    ///
+    /// # Errors
+    ///
+    /// Returns `HttpError` if the request fails.
+    pub async fn get_block_rfq_quotes(
+        &self,
+        block_rfq_id: Option<i64>,
+        label: Option<&str>,
+        block_rfq_quote_id: Option<i64>,
+    ) -> Result<Vec<crate::model::response::BlockRfqQuote>, HttpError> {
+        let mut query_params: Vec<String> = Vec::new();
+
+        if let Some(id) = block_rfq_id {
+            query_params.push(format!("block_rfq_id={}", id));
+        }
+
+        if let Some(l) = label {
+            query_params.push(format!("label={}", urlencoding::encode(l)));
+        }
+
+        if let Some(qid) = block_rfq_quote_id {
+            query_params.push(format!("block_rfq_quote_id={}", qid));
+        }
+
+        let url = if query_params.is_empty() {
+            format!(
+                "{}{}",
+                self.base_url(),
+                crate::constants::endpoints::GET_BLOCK_RFQ_QUOTES
+            )
+        } else {
+            format!(
+                "{}{}?{}",
+                self.base_url(),
+                crate::constants::endpoints::GET_BLOCK_RFQ_QUOTES,
+                query_params.join("&")
+            )
+        };
+
+        let response = self.make_authenticated_request(&url).await?;
+
+        if !response.status().is_success() {
+            let error_text = response
+                .text()
+                .await
+                .unwrap_or_else(|_| "Unknown error".to_string());
+            return Err(HttpError::RequestFailed(format!(
+                "Get Block RFQ quotes failed: {}",
+                error_text
+            )));
+        }
+
+        let api_response: ApiResponse<Vec<crate::model::response::BlockRfqQuote>> = response
+            .json()
+            .await
+            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
+
+        if let Some(error) = api_response.error {
+            return Err(HttpError::RequestFailed(format!(
+                "API error: {} - {}",
+                error.code, error.message
+            )));
+        }
+
+        api_response.result.ok_or_else(|| {
+            HttpError::InvalidResponse("No Block RFQ quotes in response".to_string())
+        })
+    }
+
+    /// Adds a quote to a Block RFQ (maker method).
+    ///
+    /// # Arguments
+    ///
+    /// * `block_rfq_id` - ID of the Block RFQ
+    /// * `amount` - Quote amount
+    /// * `direction` - Direction from maker perspective
+    /// * `legs` - Legs with prices
+    /// * `label` - Optional user-defined label
+    /// * `hedge` - Optional hedge leg
+    /// * `execution_instruction` - Optional execution instruction
+    /// * `expires_at` - Optional expiration timestamp in milliseconds
+    ///
+    /// # Errors
+    ///
+    /// Returns `HttpError` if the request fails.
+    #[allow(clippy::too_many_arguments)]
+    pub async fn add_block_rfq_quote(
+        &self,
+        block_rfq_id: i64,
+        amount: f64,
+        direction: crate::model::types::Direction,
+        legs: &[crate::model::response::BlockRfqLeg],
+        label: Option<&str>,
+        hedge: Option<&crate::model::response::BlockRfqHedge>,
+        execution_instruction: Option<crate::model::response::ExecutionInstruction>,
+        expires_at: Option<i64>,
+    ) -> Result<crate::model::response::BlockRfqQuote, HttpError> {
+        let legs_json = serde_json::to_string(legs)
+            .map_err(|e| HttpError::InvalidResponse(format!("Failed to serialize legs: {}", e)))?;
+
+        let direction_str = match direction {
+            crate::model::types::Direction::Buy => "buy",
+            crate::model::types::Direction::Sell => "sell",
+        };
+
+        let mut query_params = vec![
+            format!("block_rfq_id={}", block_rfq_id),
+            format!("amount={}", amount),
+            format!("direction={}", direction_str),
+            format!("legs={}", urlencoding::encode(&legs_json)),
+        ];
+
+        if let Some(l) = label {
+            query_params.push(format!("label={}", urlencoding::encode(l)));
+        }
+
+        if let Some(h) = hedge {
+            let hedge_json = serde_json::to_string(h).map_err(|e| {
+                HttpError::InvalidResponse(format!("Failed to serialize hedge: {}", e))
+            })?;
+            query_params.push(format!("hedge={}", urlencoding::encode(&hedge_json)));
+        }
+
+        if let Some(ei) = execution_instruction {
+            let ei_str = match ei {
+                crate::model::response::ExecutionInstruction::AllOrNone => "all_or_none",
+                crate::model::response::ExecutionInstruction::AnyPartOf => "any_part_of",
+            };
+            query_params.push(format!("execution_instruction={}", ei_str));
+        }
+
+        if let Some(exp) = expires_at {
+            query_params.push(format!("expires_at={}", exp));
+        }
+
+        let url = format!(
+            "{}{}?{}",
+            self.base_url(),
+            crate::constants::endpoints::ADD_BLOCK_RFQ_QUOTE,
+            query_params.join("&")
+        );
+
+        let response = self.make_authenticated_request(&url).await?;
+
+        if !response.status().is_success() {
+            let error_text = response
+                .text()
+                .await
+                .unwrap_or_else(|_| "Unknown error".to_string());
+            return Err(HttpError::RequestFailed(format!(
+                "Add Block RFQ quote failed: {}",
+                error_text
+            )));
+        }
+
+        let api_response: ApiResponse<crate::model::response::BlockRfqQuote> = response
+            .json()
+            .await
+            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
+
+        if let Some(error) = api_response.error {
+            return Err(HttpError::RequestFailed(format!(
+                "API error: {} - {}",
+                error.code, error.message
+            )));
+        }
+
+        api_response
+            .result
+            .ok_or_else(|| HttpError::InvalidResponse("No Block RFQ quote in response".to_string()))
+    }
+
+    /// Edits a Block RFQ quote (maker method).
+    ///
+    /// # Arguments
+    ///
+    /// * `block_rfq_quote_id` - Optional quote ID to edit
+    /// * `block_rfq_id` - Optional Block RFQ ID (used with label)
+    /// * `label` - Optional label (used with block_rfq_id)
+    /// * `amount` - Optional new amount
+    /// * `legs` - Optional new legs
+    /// * `hedge` - Optional new hedge
+    /// * `execution_instruction` - Optional new execution instruction
+    /// * `expires_at` - Optional new expiration timestamp
+    ///
+    /// # Errors
+    ///
+    /// Returns `HttpError` if the request fails.
+    #[allow(clippy::too_many_arguments)]
+    pub async fn edit_block_rfq_quote(
+        &self,
+        block_rfq_quote_id: Option<i64>,
+        block_rfq_id: Option<i64>,
+        label: Option<&str>,
+        amount: Option<f64>,
+        legs: Option<&[crate::model::response::BlockRfqLeg]>,
+        hedge: Option<&crate::model::response::BlockRfqHedge>,
+        execution_instruction: Option<crate::model::response::ExecutionInstruction>,
+        expires_at: Option<i64>,
+    ) -> Result<crate::model::response::BlockRfqQuote, HttpError> {
+        let mut query_params: Vec<String> = Vec::new();
+
+        if let Some(qid) = block_rfq_quote_id {
+            query_params.push(format!("block_rfq_quote_id={}", qid));
+        }
+
+        if let Some(id) = block_rfq_id {
+            query_params.push(format!("block_rfq_id={}", id));
+        }
+
+        if let Some(l) = label {
+            query_params.push(format!("label={}", urlencoding::encode(l)));
+        }
+
+        if let Some(a) = amount {
+            query_params.push(format!("amount={}", a));
+        }
+
+        if let Some(l) = legs {
+            let legs_json = serde_json::to_string(l).map_err(|e| {
+                HttpError::InvalidResponse(format!("Failed to serialize legs: {}", e))
+            })?;
+            query_params.push(format!("legs={}", urlencoding::encode(&legs_json)));
+        }
+
+        if let Some(h) = hedge {
+            let hedge_json = serde_json::to_string(h).map_err(|e| {
+                HttpError::InvalidResponse(format!("Failed to serialize hedge: {}", e))
+            })?;
+            query_params.push(format!("hedge={}", urlencoding::encode(&hedge_json)));
+        }
+
+        if let Some(ei) = execution_instruction {
+            let ei_str = match ei {
+                crate::model::response::ExecutionInstruction::AllOrNone => "all_or_none",
+                crate::model::response::ExecutionInstruction::AnyPartOf => "any_part_of",
+            };
+            query_params.push(format!("execution_instruction={}", ei_str));
+        }
+
+        if let Some(exp) = expires_at {
+            query_params.push(format!("expires_at={}", exp));
+        }
+
+        let url = format!(
+            "{}{}?{}",
+            self.base_url(),
+            crate::constants::endpoints::EDIT_BLOCK_RFQ_QUOTE,
+            query_params.join("&")
+        );
+
+        let response = self.make_authenticated_request(&url).await?;
+
+        if !response.status().is_success() {
+            let error_text = response
+                .text()
+                .await
+                .unwrap_or_else(|_| "Unknown error".to_string());
+            return Err(HttpError::RequestFailed(format!(
+                "Edit Block RFQ quote failed: {}",
+                error_text
+            )));
+        }
+
+        let api_response: ApiResponse<crate::model::response::BlockRfqQuote> = response
+            .json()
+            .await
+            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
+
+        if let Some(error) = api_response.error {
+            return Err(HttpError::RequestFailed(format!(
+                "API error: {} - {}",
+                error.code, error.message
+            )));
+        }
+
+        api_response
+            .result
+            .ok_or_else(|| HttpError::InvalidResponse("No Block RFQ quote in response".to_string()))
+    }
+
+    /// Cancels a single Block RFQ quote (maker method).
+    ///
+    /// # Arguments
+    ///
+    /// * `block_rfq_quote_id` - Optional quote ID to cancel
+    /// * `block_rfq_id` - Optional Block RFQ ID (used with label)
+    /// * `label` - Optional label (used with block_rfq_id)
+    ///
+    /// # Errors
+    ///
+    /// Returns `HttpError` if the request fails.
+    pub async fn cancel_block_rfq_quote(
+        &self,
+        block_rfq_quote_id: Option<i64>,
+        block_rfq_id: Option<i64>,
+        label: Option<&str>,
+    ) -> Result<crate::model::response::BlockRfqQuote, HttpError> {
+        let mut query_params: Vec<String> = Vec::new();
+
+        if let Some(qid) = block_rfq_quote_id {
+            query_params.push(format!("block_rfq_quote_id={}", qid));
+        }
+
+        if let Some(id) = block_rfq_id {
+            query_params.push(format!("block_rfq_id={}", id));
+        }
+
+        if let Some(l) = label {
+            query_params.push(format!("label={}", urlencoding::encode(l)));
+        }
+
+        let url = format!(
+            "{}{}?{}",
+            self.base_url(),
+            crate::constants::endpoints::CANCEL_BLOCK_RFQ_QUOTE,
+            query_params.join("&")
+        );
+
+        let response = self.make_authenticated_request(&url).await?;
+
+        if !response.status().is_success() {
+            let error_text = response
+                .text()
+                .await
+                .unwrap_or_else(|_| "Unknown error".to_string());
+            return Err(HttpError::RequestFailed(format!(
+                "Cancel Block RFQ quote failed: {}",
+                error_text
+            )));
+        }
+
+        let api_response: ApiResponse<crate::model::response::BlockRfqQuote> = response
+            .json()
+            .await
+            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
+
+        if let Some(error) = api_response.error {
+            return Err(HttpError::RequestFailed(format!(
+                "API error: {} - {}",
+                error.code, error.message
+            )));
+        }
+
+        api_response
+            .result
+            .ok_or_else(|| HttpError::InvalidResponse("No Block RFQ quote in response".to_string()))
+    }
+
+    /// Cancels all Block RFQ quotes (maker method).
+    ///
+    /// # Errors
+    ///
+    /// Returns `HttpError` if the request fails.
+    pub async fn cancel_all_block_rfq_quotes(
+        &self,
+    ) -> Result<Vec<crate::model::response::BlockRfqQuote>, HttpError> {
+        let url = format!(
+            "{}{}",
+            self.base_url(),
+            crate::constants::endpoints::CANCEL_ALL_BLOCK_RFQ_QUOTES
+        );
+
+        let response = self.make_authenticated_request(&url).await?;
+
+        if !response.status().is_success() {
+            let error_text = response
+                .text()
+                .await
+                .unwrap_or_else(|_| "Unknown error".to_string());
+            return Err(HttpError::RequestFailed(format!(
+                "Cancel all Block RFQ quotes failed: {}",
+                error_text
+            )));
+        }
+
+        let api_response: ApiResponse<Vec<crate::model::response::BlockRfqQuote>> = response
+            .json()
+            .await
+            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
+
+        if let Some(error) = api_response.error {
+            return Err(HttpError::RequestFailed(format!(
+                "API error: {} - {}",
+                error.code, error.message
+            )));
+        }
+
+        api_response.result.ok_or_else(|| {
+            HttpError::InvalidResponse("No cancelled quotes in response".to_string())
+        })
+    }
 }

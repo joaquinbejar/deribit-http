@@ -340,6 +340,28 @@ pub mod endpoints {
     pub const SIMULATE_BLOCK_TRADE: &str = "/private/simulate_block_trade";
     /// Verify and create a block trade signature
     pub const VERIFY_BLOCK_TRADE: &str = "/private/verify_block_trade";
+
+    // Block RFQ endpoints
+    /// Get recent Block RFQ trades (public)
+    pub const GET_BLOCK_RFQ_TRADES: &str = "/public/get_block_rfq_trades";
+    /// Create a new Block RFQ (taker)
+    pub const CREATE_BLOCK_RFQ: &str = "/private/create_block_rfq";
+    /// Cancel a Block RFQ (taker)
+    pub const CANCEL_BLOCK_RFQ: &str = "/private/cancel_block_rfq";
+    /// Accept a Block RFQ quote (taker)
+    pub const ACCEPT_BLOCK_RFQ: &str = "/private/accept_block_rfq";
+    /// Get list of Block RFQs
+    pub const GET_BLOCK_RFQS: &str = "/private/get_block_rfqs";
+    /// Get open quotes for Block RFQs (maker)
+    pub const GET_BLOCK_RFQ_QUOTES: &str = "/private/get_block_rfq_quotes";
+    /// Add a quote to a Block RFQ (maker)
+    pub const ADD_BLOCK_RFQ_QUOTE: &str = "/private/add_block_rfq_quote";
+    /// Edit a Block RFQ quote (maker)
+    pub const EDIT_BLOCK_RFQ_QUOTE: &str = "/private/edit_block_rfq_quote";
+    /// Cancel a single Block RFQ quote (maker)
+    pub const CANCEL_BLOCK_RFQ_QUOTE: &str = "/private/cancel_block_rfq_quote";
+    /// Cancel all Block RFQ quotes (maker)
+    pub const CANCEL_ALL_BLOCK_RFQ_QUOTES: &str = "/private/cancel_all_block_rfq_quotes";
 }
 
 /// HTTP headers

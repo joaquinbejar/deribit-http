@@ -5,6 +5,8 @@
 ******************************************************************************/
 /// API response structures and utilities
 pub mod api_response;
+/// Block RFQ response models
+pub mod block_rfq;
 /// Deposit response models
 pub mod deposit;
 /// Margin response models
@@ -33,6 +35,7 @@ pub mod wallet;
 pub mod withdrawal;
 
 pub use api_response::*;
+pub use block_rfq::*;
 pub use deposit::*;
 pub use margin::*;
 pub use mass_quote::*;
