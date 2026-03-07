@@ -100,3 +100,82 @@ mod close_position_tests {
         Ok(())
     }
 }
+
+#[cfg(test)]
+mod edit_order_by_label_tests {
+    use deribit_http::DeribitHttpClient;
+    use deribit_http::model::request::order::OrderRequest;
+    use tokio::time::{Duration, Instant};
+    use tracing::info;
+
+    /// Test edit_order_by_label endpoint behavior
+    ///
+    /// Note: This test requires authentication and an existing order with a specific label.
+    /// It will attempt to edit an order and verify the response structure.
+    /// If no order with the label exists, the API will return an error which is expected.
+    #[tokio::test]
+    #[serial_test::serial]
+    #[ignore = "Requires authentication and an existing order with label"]
+    async fn test_edit_order_by_label() -> Result<(), Box<dyn std::error::Error>> {
+        let client = DeribitHttpClient::new();
+
+        info!("Testing edit_order_by_label");
+        let start_time = Instant::now();
+
+        let request = OrderRequest {
+            order_id: None,
+            instrument_name: "BTC-PERPETUAL".to_string(),
+            amount: Some(150.0),
+            contracts: None,
+            type_: None,
+            label: Some("test_order_label".to_string()),
+            price: Some(50000.0),
+            time_in_force: None,
+            display_amount: None,
+            post_only: None,
+            reject_post_only: None,
+            reduce_only: None,
+            trigger_price: None,
+            trigger_offset: None,
+            trigger: None,
+            advanced: None,
+            mmp: None,
+            valid_until: None,
+            linked_order_type: None,
+            trigger_fill_condition: None,
+            otoco_config: None,
+        };
+
+        let result = client.edit_order_by_label(request).await;
+        let elapsed = start_time.elapsed();
+
+        match &result {
+            Ok(response) => {
+                info!(
+                    "Edit order by label succeeded in {:?}: order_id={}, label={}",
+                    elapsed, response.order.order_id, response.order.label
+                );
+                assert!(
+                    response.order.replaced,
+                    "Order should be marked as replaced"
+                );
+            }
+            Err(e) => {
+                // Expected if no order with label exists
+                info!(
+                    "Edit order by label failed in {:?} (expected if no order with label): {:?}",
+                    elapsed, e
+                );
+            }
+        }
+
+        assert!(
+            elapsed < Duration::from_secs(30),
+            "Request took too long: {:?}",
+            elapsed
+        );
+
+        info!("test_edit_order_by_label completed");
+        Ok(())
+    }
+}

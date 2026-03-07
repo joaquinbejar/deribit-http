@@ -563,3 +563,188 @@ async fn test_close_position_no_position_error() {
     mock.assert_async().await;
     assert!(result.is_err());
 }
+
+// =========================================================================
+// Edit Order By Label Tests (Issue #14)
+// =========================================================================
+
+#[tokio::test]
+async fn test_edit_order_by_label_success() {
+    let mut server = mockito::Server::new_async().await;
+    let client = create_test_client(&server);
+
+    // Mock the OAuth2 authentication endpoint
+    let _auth_mock = create_auth_mock(&mut server).await;
+
+    let mock_response = json!({
+        "jsonrpc": "2.0",
+        "result": {
+            "order": {
+                "amount": 150.0,
+                "api": true,
+                "average_price": 0.0,
+                "creation_timestamp": 1616155547764u64,
+                "direction": "buy",
+                "filled_amount": 0.0,
+                "instrument_name": "BTC-PERPETUAL",
+                "is_liquidation": false,
+                "label": "i_love_deribit",
+                "last_update_timestamp": 1616155550773u64,
+                "max_show": 150.0,
+                "order_id": "94166",
+                "order_state": "open",
+                "order_type": "limit",
+                "post_only": false,
+                "price": 50111.0,
+                "reduce_only": false,
+                "replaced": true,
+                "risk_reducing": false,
+                "time_in_force": "good_til_cancelled",
+                "web": false
+            },
+            "trades": []
+        },
+        "id": 1
+    });
+
+    let mock = server
+        .mock(
+            "GET",
+            "/api/v2/private/edit_by_label?label=i_love_deribit&instrument_name=BTC-PERPETUAL&amount=150&price=50111",
+        )
+        .with_status(200)
+        .with_header("content-type", "application/json")
+        .with_body(mock_response.to_string())
+        .create_async()
+        .await;
+
+    let request = deribit_http::model::request::order::OrderRequest {
+        order_id: None,
+        instrument_name: "BTC-PERPETUAL".to_string(),
+        amount: Some(150.0),
+        contracts: None,
+        type_: None,
+        label: Some("i_love_deribit".to_string()),
+        price: Some(50111.0),
+        time_in_force: None,
+        display_amount: None,
+        post_only: None,
+        reject_post_only: None,
+        reduce_only: None,
+        trigger_price: None,
+        trigger_offset: None,
+        trigger: None,
+        advanced: None,
+        mmp: None,
+        valid_until: None,
+        linked_order_type: None,
+        trigger_fill_condition: None,
+        otoco_config: None,
+    };
+
+    let result = client.edit_order_by_label(request).await;
+
+    mock.assert_async().await;
+    if let Err(e) = &result {
+        println!("Error in test_edit_order_by_label_success: {:?}", e);
+    }
+    assert!(result.is_ok());
+    let response = result.unwrap();
+    assert_eq!(response.order.instrument_name, "BTC-PERPETUAL");
+    assert_eq!(response.order.label, "i_love_deribit");
+    assert!(response.order.replaced);
+}
+
+#[tokio::test]
+async fn test_edit_order_by_label_missing_label_error() {
+    let server = mockito::Server::new_async().await;
+    let client = create_test_client(&server);
+
+    let request = deribit_http::model::request::order::OrderRequest {
+        order_id: None,
+        instrument_name: "BTC-PERPETUAL".to_string(),
+        amount: Some(150.0),
+        contracts: None,
+        type_: None,
+        label: None, // Missing label
+        price: Some(50111.0),
+        time_in_force: None,
+        display_amount: None,
+        post_only: None,
+        reject_post_only: None,
+        reduce_only: None,
+        trigger_price: None,
+        trigger_offset: None,
+        trigger: None,
+        advanced: None,
+        mmp: None,
+        valid_until: None,
+        linked_order_type: None,
+        trigger_fill_condition: None,
+        otoco_config: None,
+    };
+
+    let result = client.edit_order_by_label(request).await;
+
+    assert!(result.is_err());
+    let err = result.unwrap_err();
+    assert!(err.to_string().contains("label is required"));
+}
+
+#[tokio::test]
+async fn test_edit_order_by_label_no_order_error() {
+    let mut server = mockito::Server::new_async().await;
+    let client = create_test_client(&server);
+
+    // Mock the OAuth2 authentication endpoint
+    let _auth_mock = create_auth_mock(&mut server).await;
+
+    let mock = server
+        .mock(
+            "GET",
+            "/api/v2/private/edit_by_label?label=nonexistent_label&instrument_name=BTC-PERPETUAL&amount=150",
+        )
+        .with_status(400)
+        .with_header("content-type", "application/json")
+        .with_body(
+            r#"{
+            "jsonrpc": "2.0",
+            "id": 1,
+            "error": {
+                "code": 11044,
+                "message": "no_order_with_label"
+            }
+        }"#,
+        )
+        .create_async()
+        .await;
+
+    let request = deribit_http::model::request::order::OrderRequest {
+        order_id: None,
+        instrument_name: "BTC-PERPETUAL".to_string(),
+        amount: Some(150.0),
+        contracts: None,
+        type_: None,
+        label: Some("nonexistent_label".to_string()),
+        price: None,
+        time_in_force: None,
+        display_amount: None,
+        post_only: None,
+        reject_post_only: None,
+        reduce_only: None,
+        trigger_price: None,
+        trigger_offset: None,
+        trigger: None,
+        advanced: None,
+        mmp: None,
+        valid_until: None,
+        linked_order_type: None,
+        trigger_fill_condition: None,
+        otoco_config: None,
+    };
+
+    let result = client.edit_order_by_label(request).await;
+
+    mock.assert_async().await;
+    assert!(result.is_err());
+}

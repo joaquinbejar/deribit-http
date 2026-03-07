@@ -1324,10 +1324,133 @@ impl DeribitHttpClient {
             .ok_or_else(|| HttpError::InvalidResponse("No order data in response".to_string()))
     }
 
-    // TODO:
-    // pub async fn edit_order_by_label(&self, request: OrderRequest) -> Result<OrderResponse, HttpError> {
-    //
-    // }
+    /// Edit an order by label
+    ///
+    /// Modifies an order identified by its label. This method works only when there
+    /// is exactly one open order with the specified label.
+    ///
+    /// # Arguments
+    ///
+    /// * `request` - The edit order request parameters (must include label and instrument_name)
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use deribit_http::DeribitHttpClient;
+    /// use deribit_http::model::request::order::OrderRequest;
+    ///
+    /// let client = DeribitHttpClient::new();
+    /// // let request = OrderRequest {
+    /// //     label: Some("my_order_label".to_string()),
+    /// //     instrument_name: "BTC-PERPETUAL".to_string(),
+    /// //     amount: Some(150.0),
+    /// //     price: Some(50111.0),
+    /// //     ..Default::default()
+    /// // };
+    /// // let result = client.edit_order_by_label(request).await?;
+    /// ```
+    pub async fn edit_order_by_label(
+        &self,
+        request: OrderRequest,
+    ) -> Result<OrderResponse, HttpError> {
+        let label = request.label.ok_or_else(|| {
+            HttpError::RequestFailed("label is required for edit_order_by_label".to_string())
+        })?;
+
+        let mut query_params = vec![
+            ("label".to_string(), label),
+            ("instrument_name".to_string(), request.instrument_name),
+        ];
+
+        if let Some(amount) = request.amount {
+            query_params.push(("amount".to_string(), amount.to_string()));
+        }
+
+        if let Some(contracts) = request.contracts {
+            query_params.push(("contracts".to_string(), contracts.to_string()));
+        }
+
+        if let Some(price) = request.price {
+            query_params.push(("price".to_string(), price.to_string()));
+        }
+
+        if let Some(post_only) = request.post_only
+            && post_only
+        {
+            query_params.push(("post_only".to_string(), "true".to_string()));
+        }
+
+        if let Some(reduce_only) = request.reduce_only
+            && reduce_only
+        {
+            query_params.push(("reduce_only".to_string(), "true".to_string()));
+        }
+
+        if let Some(reject_post_only) = request.reject_post_only
+            && reject_post_only
+        {
+            query_params.push(("reject_post_only".to_string(), "true".to_string()));
+        }
+
+        if let Some(advanced) = request.advanced {
+            let advanced_str = match advanced {
+                crate::model::request::order::AdvancedOrderType::Usd => "usd",
+                crate::model::request::order::AdvancedOrderType::Implv => "implv",
+            };
+            query_params.push(("advanced".to_string(), advanced_str.to_string()));
+        }
+
+        if let Some(trigger_price) = request.trigger_price {
+            query_params.push(("trigger_price".to_string(), trigger_price.to_string()));
+        }
+
+        if let Some(mmp) = request.mmp
+            && mmp
+        {
+            query_params.push(("mmp".to_string(), "true".to_string()));
+        }
+
+        if let Some(valid_until) = request.valid_until {
+            query_params.push(("valid_until".to_string(), valid_until.to_string()));
+        }
+
+        let query_string = query_params
+            .iter()
+            .map(|(k, v)| format!("{}={}", k, urlencoding::encode(v)))
+            .collect::<Vec<_>>()
+            .join("&");
+
+        let url = format!("{}{}?{}", self.base_url(), EDIT_BY_LABEL, query_string);
+
+        let response = self.make_authenticated_request(&url).await?;
+
+        if !response.status().is_success() {
+            let error_text = response
+                .text()
+                .await
+                .unwrap_or_else(|_| "Unknown error".to_string());
+            return Err(HttpError::RequestFailed(format!(
+                "Edit order by label failed: {}",
+                error_text
+            )));
+        }
+
+        let api_response: ApiResponse<OrderResponse> = response
+            .json()
+            .await
+            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
+
+        if let Some(error) = api_response.error {
+            return Err(HttpError::RequestFailed(format!(
+                "API error: {} - {}",
+                error.code, error.message
+            )));
+        }
+
+        api_response
+            .result
+            .ok_or_else(|| HttpError::InvalidResponse("No order data in response".to_string()))
+    }
 
     /// Close an existing position
     ///

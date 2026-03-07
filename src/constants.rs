@@ -116,6 +116,8 @@ pub mod endpoints {
     pub const CANCEL_BY_LABEL: &str = "/private/cancel_by_label";
     /// Edit order
     pub const EDIT: &str = "/private/edit";
+    /// Edit order by label
+    pub const EDIT_BY_LABEL: &str = "/private/edit_by_label";
     /// Cancel quotes
     pub const CANCEL_QUOTES: &str = "/private/cancel_quotes";
     /// Close an existing position
