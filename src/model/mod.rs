@@ -5,6 +5,8 @@
 pub mod account;
 /// API key management models
 pub mod api_key;
+/// Address beneficiary models for wallet endpoints
+pub mod beneficiary;
 /// Order book models
 pub mod book;
 /// Currency and expiration models
@@ -54,6 +56,7 @@ pub mod withdrawal;
 
 pub use account::*;
 pub use api_key::*;
+pub use beneficiary::*;
 pub use book::*;
 pub use currency::*;
 pub use deposit::*;
