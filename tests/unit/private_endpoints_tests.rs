@@ -1736,3 +1736,337 @@ async fn test_get_subaccounts_details_empty() {
     let details = result.unwrap();
     assert!(details.is_empty());
 }
+
+// =========================================================================
+// Subaccount Management Tests (Issue #25)
+// =========================================================================
+
+#[tokio::test]
+async fn test_create_subaccount_success() {
+    let mut server = mockito::Server::new_async().await;
+    let client = create_test_client(&server);
+
+    let _auth_mock = create_auth_mock(&mut server).await;
+
+    let mock_response = json!({
+        "jsonrpc": "2.0",
+        "result": {
+            "email": "user_AAA@email.com",
+            "id": 13,
+            "is_password": false,
+            "login_enabled": false,
+            "receive_notifications": false,
+            "system_name": "user_1_4",
+            "security_keys_enabled": false,
+            "type": "subaccount",
+            "username": "user_1_4"
+        },
+        "id": 1
+    });
+
+    let mock = server
+        .mock("GET", "/api/v2/private/create_subaccount")
+        .with_status(200)
+        .with_header("content-type", "application/json")
+        .with_body(mock_response.to_string())
+        .create_async()
+        .await;
+
+    let result = client.create_subaccount().await;
+
+    mock.assert_async().await;
+    assert!(result.is_ok());
+    let subaccount = result.unwrap();
+    assert_eq!(subaccount.id, 13);
+    assert_eq!(subaccount.username, "user_1_4");
+    assert!(!subaccount.login_enabled);
+}
+
+#[tokio::test]
+async fn test_create_subaccount_error() {
+    let mut server = mockito::Server::new_async().await;
+    let client = create_test_client(&server);
+
+    let _auth_mock = create_auth_mock(&mut server).await;
+
+    let mock = server
+        .mock("GET", "/api/v2/private/create_subaccount")
+        .with_status(403)
+        .with_header("content-type", "application/json")
+        .with_body(r#"{"jsonrpc": "2.0", "error": {"code": 13009, "message": "not_main_account"}, "id": 1}"#)
+        .create_async()
+        .await;
+
+    let result = client.create_subaccount().await;
+
+    mock.assert_async().await;
+    assert!(result.is_err());
+}
+
+#[tokio::test]
+async fn test_remove_subaccount_success() {
+    let mut server = mockito::Server::new_async().await;
+    let client = create_test_client(&server);
+
+    let _auth_mock = create_auth_mock(&mut server).await;
+
+    let mock_response = json!({
+        "jsonrpc": "2.0",
+        "result": "ok",
+        "id": 1
+    });
+
+    let mock = server
+        .mock("GET", "/api/v2/private/remove_subaccount?subaccount_id=123")
+        .with_status(200)
+        .with_header("content-type", "application/json")
+        .with_body(mock_response.to_string())
+        .create_async()
+        .await;
+
+    let result = client.remove_subaccount(123).await;
+
+    mock.assert_async().await;
+    assert!(result.is_ok());
+    assert_eq!(result.unwrap(), "ok");
+}
+
+#[tokio::test]
+async fn test_remove_subaccount_error() {
+    let mut server = mockito::Server::new_async().await;
+    let client = create_test_client(&server);
+
+    let _auth_mock = create_auth_mock(&mut server).await;
+
+    let mock = server
+        .mock("GET", "/api/v2/private/remove_subaccount?subaccount_id=999")
+        .with_status(400)
+        .with_header("content-type", "application/json")
+        .with_body(r#"{"jsonrpc": "2.0", "error": {"code": 13004, "message": "subaccount_not_found"}, "id": 1}"#)
+        .create_async()
+        .await;
+
+    let result = client.remove_subaccount(999).await;
+
+    mock.assert_async().await;
+    assert!(result.is_err());
+}
+
+#[tokio::test]
+async fn test_change_subaccount_name_success() {
+    let mut server = mockito::Server::new_async().await;
+    let client = create_test_client(&server);
+
+    let _auth_mock = create_auth_mock(&mut server).await;
+
+    let mock_response = json!({
+        "jsonrpc": "2.0",
+        "result": "ok",
+        "id": 1
+    });
+
+    let mock = server
+        .mock(
+            "GET",
+            "/api/v2/private/change_subaccount_name?sid=7&name=new_user_name",
+        )
+        .with_status(200)
+        .with_header("content-type", "application/json")
+        .with_body(mock_response.to_string())
+        .create_async()
+        .await;
+
+    let result = client.change_subaccount_name(7, "new_user_name").await;
+
+    mock.assert_async().await;
+    assert!(result.is_ok());
+    assert_eq!(result.unwrap(), "ok");
+}
+
+#[tokio::test]
+async fn test_change_subaccount_name_error() {
+    let mut server = mockito::Server::new_async().await;
+    let client = create_test_client(&server);
+
+    let _auth_mock = create_auth_mock(&mut server).await;
+
+    let mock = server
+        .mock("GET", "/api/v2/private/change_subaccount_name?sid=999&name=invalid")
+        .with_status(400)
+        .with_header("content-type", "application/json")
+        .with_body(r#"{"jsonrpc": "2.0", "error": {"code": 13004, "message": "subaccount_not_found"}, "id": 1}"#)
+        .create_async()
+        .await;
+
+    let result = client.change_subaccount_name(999, "invalid").await;
+
+    mock.assert_async().await;
+    assert!(result.is_err());
+}
+
+#[tokio::test]
+async fn test_toggle_subaccount_login_success() {
+    let mut server = mockito::Server::new_async().await;
+    let client = create_test_client(&server);
+
+    let _auth_mock = create_auth_mock(&mut server).await;
+
+    let mock_response = json!({
+        "jsonrpc": "2.0",
+        "result": "ok",
+        "id": 1
+    });
+
+    let mock = server
+        .mock(
+            "GET",
+            "/api/v2/private/toggle_subaccount_login?sid=7&state=enable",
+        )
+        .with_status(200)
+        .with_header("content-type", "application/json")
+        .with_body(mock_response.to_string())
+        .create_async()
+        .await;
+
+    let result = client.toggle_subaccount_login(7, "enable").await;
+
+    mock.assert_async().await;
+    assert!(result.is_ok());
+    assert_eq!(result.unwrap(), "ok");
+}
+
+#[tokio::test]
+async fn test_toggle_subaccount_login_error() {
+    let mut server = mockito::Server::new_async().await;
+    let client = create_test_client(&server);
+
+    let _auth_mock = create_auth_mock(&mut server).await;
+
+    let mock = server
+        .mock("GET", "/api/v2/private/toggle_subaccount_login?sid=999&state=enable")
+        .with_status(400)
+        .with_header("content-type", "application/json")
+        .with_body(r#"{"jsonrpc": "2.0", "error": {"code": 13004, "message": "subaccount_not_found"}, "id": 1}"#)
+        .create_async()
+        .await;
+
+    let result = client.toggle_subaccount_login(999, "enable").await;
+
+    mock.assert_async().await;
+    assert!(result.is_err());
+}
+
+#[tokio::test]
+async fn test_set_email_for_subaccount_success() {
+    let mut server = mockito::Server::new_async().await;
+    let client = create_test_client(&server);
+
+    let _auth_mock = create_auth_mock(&mut server).await;
+
+    let mock_response = json!({
+        "jsonrpc": "2.0",
+        "result": "ok",
+        "id": 1
+    });
+
+    let mock = server
+        .mock(
+            "GET",
+            mockito::Matcher::Regex(
+                r"/api/v2/private/set_email_for_subaccount\?sid=7&email=.*".to_string(),
+            ),
+        )
+        .with_status(200)
+        .with_header("content-type", "application/json")
+        .with_body(mock_response.to_string())
+        .create_async()
+        .await;
+
+    let result = client.set_email_for_subaccount(7, "user@example.com").await;
+
+    mock.assert_async().await;
+    assert!(result.is_ok());
+    assert_eq!(result.unwrap(), "ok");
+}
+
+#[tokio::test]
+async fn test_set_email_for_subaccount_error() {
+    let mut server = mockito::Server::new_async().await;
+    let client = create_test_client(&server);
+
+    let _auth_mock = create_auth_mock(&mut server).await;
+
+    let mock = server
+        .mock(
+            "GET",
+            mockito::Matcher::Regex(
+                r"/api/v2/private/set_email_for_subaccount\?sid=999&email=.*".to_string(),
+            ),
+        )
+        .with_status(400)
+        .with_header("content-type", "application/json")
+        .with_body(r#"{"jsonrpc": "2.0", "error": {"code": 13004, "message": "subaccount_not_found"}, "id": 1}"#)
+        .create_async()
+        .await;
+
+    let result = client
+        .set_email_for_subaccount(999, "invalid@example.com")
+        .await;
+
+    mock.assert_async().await;
+    assert!(result.is_err());
+}
+
+#[tokio::test]
+async fn test_toggle_notifications_from_subaccount_success() {
+    let mut server = mockito::Server::new_async().await;
+    let client = create_test_client(&server);
+
+    let _auth_mock = create_auth_mock(&mut server).await;
+
+    let mock_response = json!({
+        "jsonrpc": "2.0",
+        "result": "ok",
+        "id": 1
+    });
+
+    let mock = server
+        .mock(
+            "GET",
+            "/api/v2/private/toggle_notifications_from_subaccount?sid=7&state=true",
+        )
+        .with_status(200)
+        .with_header("content-type", "application/json")
+        .with_body(mock_response.to_string())
+        .create_async()
+        .await;
+
+    let result = client.toggle_notifications_from_subaccount(7, true).await;
+
+    mock.assert_async().await;
+    assert!(result.is_ok());
+    assert_eq!(result.unwrap(), "ok");
+}
+
+#[tokio::test]
+async fn test_toggle_notifications_from_subaccount_error() {
+    let mut server = mockito::Server::new_async().await;
+    let client = create_test_client(&server);
+
+    let _auth_mock = create_auth_mock(&mut server).await;
+
+    let mock = server
+        .mock("GET", "/api/v2/private/toggle_notifications_from_subaccount?sid=999&state=false")
+        .with_status(400)
+        .with_header("content-type", "application/json")
+        .with_body(r#"{"jsonrpc": "2.0", "error": {"code": 13004, "message": "subaccount_not_found"}, "id": 1}"#)
+        .create_async()
+        .await;
+
+    let result = client
+        .toggle_notifications_from_subaccount(999, false)
+        .await;
+
+    mock.assert_async().await;
+    assert!(result.is_err());
+}

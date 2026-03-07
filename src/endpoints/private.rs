@@ -175,6 +175,397 @@ impl DeribitHttpClient {
         })
     }
 
+    /// Create a new subaccount
+    ///
+    /// Creates a new subaccount under the main account.
+    ///
+    /// # Returns
+    ///
+    /// Returns the newly created `Subaccount` with its details.
+    ///
+    /// # Errors
+    ///
+    /// Returns `HttpError` if the request fails or if the user is not a main account.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use deribit_http::DeribitHttpClient;
+    ///
+    /// let client = DeribitHttpClient::new();
+    /// // let subaccount = client.create_subaccount().await?;
+    /// // tracing::info!("Created subaccount with ID: {}", subaccount.id);
+    /// ```
+    pub async fn create_subaccount(&self) -> Result<Subaccount, HttpError> {
+        let url = format!("{}{}", self.base_url(), CREATE_SUBACCOUNT);
+
+        let response = self.make_authenticated_request(&url).await?;
+
+        if !response.status().is_success() {
+            let error_text = response
+                .text()
+                .await
+                .unwrap_or_else(|_| "Unknown error".to_string());
+            return Err(HttpError::RequestFailed(format!(
+                "Create subaccount failed: {}",
+                error_text
+            )));
+        }
+
+        let api_response: ApiResponse<Subaccount> = response
+            .json()
+            .await
+            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
+
+        if let Some(error) = api_response.error {
+            return Err(HttpError::RequestFailed(format!(
+                "API error: {} - {}",
+                error.code, error.message
+            )));
+        }
+
+        api_response
+            .result
+            .ok_or_else(|| HttpError::InvalidResponse("No subaccount data in response".to_string()))
+    }
+
+    /// Remove an empty subaccount
+    ///
+    /// Removes a subaccount that has no open positions or pending orders.
+    ///
+    /// # Arguments
+    ///
+    /// * `subaccount_id` - The ID of the subaccount to remove
+    ///
+    /// # Returns
+    ///
+    /// Returns `"ok"` on success.
+    ///
+    /// # Errors
+    ///
+    /// Returns `HttpError` if the request fails or if the subaccount is not empty.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use deribit_http::DeribitHttpClient;
+    ///
+    /// let client = DeribitHttpClient::new();
+    /// // let result = client.remove_subaccount(123).await?;
+    /// // assert_eq!(result, "ok");
+    /// ```
+    pub async fn remove_subaccount(&self, subaccount_id: u64) -> Result<String, HttpError> {
+        let url = format!(
+            "{}{}?subaccount_id={}",
+            self.base_url(),
+            REMOVE_SUBACCOUNT,
+            subaccount_id
+        );
+
+        let response = self.make_authenticated_request(&url).await?;
+
+        if !response.status().is_success() {
+            let error_text = response
+                .text()
+                .await
+                .unwrap_or_else(|_| "Unknown error".to_string());
+            return Err(HttpError::RequestFailed(format!(
+                "Remove subaccount failed: {}",
+                error_text
+            )));
+        }
+
+        let api_response: ApiResponse<String> = response
+            .json()
+            .await
+            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
+
+        if let Some(error) = api_response.error {
+            return Err(HttpError::RequestFailed(format!(
+                "API error: {} - {}",
+                error.code, error.message
+            )));
+        }
+
+        api_response
+            .result
+            .ok_or_else(|| HttpError::InvalidResponse("No result in response".to_string()))
+    }
+
+    /// Change the name of a subaccount
+    ///
+    /// Updates the username for a subaccount.
+    ///
+    /// # Arguments
+    ///
+    /// * `sid` - The subaccount ID
+    /// * `name` - The new username for the subaccount
+    ///
+    /// # Returns
+    ///
+    /// Returns `"ok"` on success.
+    ///
+    /// # Errors
+    ///
+    /// Returns `HttpError` if the request fails.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use deribit_http::DeribitHttpClient;
+    ///
+    /// let client = DeribitHttpClient::new();
+    /// // let result = client.change_subaccount_name(123, "new_name").await?;
+    /// // assert_eq!(result, "ok");
+    /// ```
+    pub async fn change_subaccount_name(&self, sid: u64, name: &str) -> Result<String, HttpError> {
+        let url = format!(
+            "{}{}?sid={}&name={}",
+            self.base_url(),
+            CHANGE_SUBACCOUNT_NAME,
+            sid,
+            urlencoding::encode(name)
+        );
+
+        let response = self.make_authenticated_request(&url).await?;
+
+        if !response.status().is_success() {
+            let error_text = response
+                .text()
+                .await
+                .unwrap_or_else(|_| "Unknown error".to_string());
+            return Err(HttpError::RequestFailed(format!(
+                "Change subaccount name failed: {}",
+                error_text
+            )));
+        }
+
+        let api_response: ApiResponse<String> = response
+            .json()
+            .await
+            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
+
+        if let Some(error) = api_response.error {
+            return Err(HttpError::RequestFailed(format!(
+                "API error: {} - {}",
+                error.code, error.message
+            )));
+        }
+
+        api_response
+            .result
+            .ok_or_else(|| HttpError::InvalidResponse("No result in response".to_string()))
+    }
+
+    /// Enable or disable login for a subaccount
+    ///
+    /// Toggles whether a subaccount can log in. If login is disabled and a session
+    /// for the subaccount exists, that session will be terminated.
+    ///
+    /// # Arguments
+    ///
+    /// * `sid` - The subaccount ID
+    /// * `state` - Either `"enable"` or `"disable"`
+    ///
+    /// # Returns
+    ///
+    /// Returns `"ok"` on success.
+    ///
+    /// # Errors
+    ///
+    /// Returns `HttpError` if the request fails.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use deribit_http::DeribitHttpClient;
+    ///
+    /// let client = DeribitHttpClient::new();
+    /// // let result = client.toggle_subaccount_login(123, "enable").await?;
+    /// // assert_eq!(result, "ok");
+    /// ```
+    pub async fn toggle_subaccount_login(
+        &self,
+        sid: u64,
+        state: &str,
+    ) -> Result<String, HttpError> {
+        let url = format!(
+            "{}{}?sid={}&state={}",
+            self.base_url(),
+            TOGGLE_SUBACCOUNT_LOGIN,
+            sid,
+            urlencoding::encode(state)
+        );
+
+        let response = self.make_authenticated_request(&url).await?;
+
+        if !response.status().is_success() {
+            let error_text = response
+                .text()
+                .await
+                .unwrap_or_else(|_| "Unknown error".to_string());
+            return Err(HttpError::RequestFailed(format!(
+                "Toggle subaccount login failed: {}",
+                error_text
+            )));
+        }
+
+        let api_response: ApiResponse<String> = response
+            .json()
+            .await
+            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
+
+        if let Some(error) = api_response.error {
+            return Err(HttpError::RequestFailed(format!(
+                "API error: {} - {}",
+                error.code, error.message
+            )));
+        }
+
+        api_response
+            .result
+            .ok_or_else(|| HttpError::InvalidResponse("No result in response".to_string()))
+    }
+
+    /// Set email address for a subaccount
+    ///
+    /// Assigns an email address to a subaccount. The user will receive an email
+    /// with a confirmation link.
+    ///
+    /// # Arguments
+    ///
+    /// * `sid` - The subaccount ID
+    /// * `email` - The email address to assign
+    ///
+    /// # Returns
+    ///
+    /// Returns `"ok"` on success.
+    ///
+    /// # Errors
+    ///
+    /// Returns `HttpError` if the request fails.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use deribit_http::DeribitHttpClient;
+    ///
+    /// let client = DeribitHttpClient::new();
+    /// // let result = client.set_email_for_subaccount(123, "user@example.com").await?;
+    /// // assert_eq!(result, "ok");
+    /// ```
+    pub async fn set_email_for_subaccount(
+        &self,
+        sid: u64,
+        email: &str,
+    ) -> Result<String, HttpError> {
+        let url = format!(
+            "{}{}?sid={}&email={}",
+            self.base_url(),
+            SET_EMAIL_FOR_SUBACCOUNT,
+            sid,
+            urlencoding::encode(email)
+        );
+
+        let response = self.make_authenticated_request(&url).await?;
+
+        if !response.status().is_success() {
+            let error_text = response
+                .text()
+                .await
+                .unwrap_or_else(|_| "Unknown error".to_string());
+            return Err(HttpError::RequestFailed(format!(
+                "Set email for subaccount failed: {}",
+                error_text
+            )));
+        }
+
+        let api_response: ApiResponse<String> = response
+            .json()
+            .await
+            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
+
+        if let Some(error) = api_response.error {
+            return Err(HttpError::RequestFailed(format!(
+                "API error: {} - {}",
+                error.code, error.message
+            )));
+        }
+
+        api_response
+            .result
+            .ok_or_else(|| HttpError::InvalidResponse("No result in response".to_string()))
+    }
+
+    /// Enable or disable notifications for a subaccount
+    ///
+    /// Toggles whether the main account receives notifications from a subaccount.
+    ///
+    /// # Arguments
+    ///
+    /// * `sid` - The subaccount ID
+    /// * `state` - `true` to enable notifications, `false` to disable
+    ///
+    /// # Returns
+    ///
+    /// Returns `"ok"` on success.
+    ///
+    /// # Errors
+    ///
+    /// Returns `HttpError` if the request fails.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use deribit_http::DeribitHttpClient;
+    ///
+    /// let client = DeribitHttpClient::new();
+    /// // let result = client.toggle_notifications_from_subaccount(123, true).await?;
+    /// // assert_eq!(result, "ok");
+    /// ```
+    pub async fn toggle_notifications_from_subaccount(
+        &self,
+        sid: u64,
+        state: bool,
+    ) -> Result<String, HttpError> {
+        let url = format!(
+            "{}{}?sid={}&state={}",
+            self.base_url(),
+            TOGGLE_NOTIFICATIONS_FROM_SUBACCOUNT,
+            sid,
+            state
+        );
+
+        let response = self.make_authenticated_request(&url).await?;
+
+        if !response.status().is_success() {
+            let error_text = response
+                .text()
+                .await
+                .unwrap_or_else(|_| "Unknown error".to_string());
+            return Err(HttpError::RequestFailed(format!(
+                "Toggle notifications from subaccount failed: {}",
+                error_text
+            )));
+        }
+
+        let api_response: ApiResponse<String> = response
+            .json()
+            .await
+            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
+
+        if let Some(error) = api_response.error {
+            return Err(HttpError::RequestFailed(format!(
+                "API error: {} - {}",
+                error.code, error.message
+            )));
+        }
+
+        api_response
+            .result
+            .ok_or_else(|| HttpError::InvalidResponse("No result in response".to_string()))
+    }
+
     /// Get transaction log
     ///
     /// Retrieves transaction log entries for the account.
