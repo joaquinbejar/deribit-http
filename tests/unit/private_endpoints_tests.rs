@@ -2070,3 +2070,297 @@ async fn test_toggle_notifications_from_subaccount_error() {
     mock.assert_async().await;
     assert!(result.is_err());
 }
+
+// =========================================================================
+// Transfer Endpoints Tests (Issue #28)
+// =========================================================================
+
+#[tokio::test]
+async fn test_get_transfers_success() {
+    let mut server = mockito::Server::new_async().await;
+    let client = create_test_client(&server);
+
+    let _auth_mock = create_auth_mock(&mut server).await;
+
+    let mock_response = json!({
+        "jsonrpc": "2.0",
+        "result": {
+            "count": 1,
+            "data": [{
+                "id": 2,
+                "created_timestamp": 1550579457727_i64,
+                "updated_timestamp": 1550579457727_i64,
+                "currency": "BTC",
+                "amount": 0.2,
+                "direction": "payment",
+                "other_side": "new_user_1_1",
+                "state": "confirmed",
+                "type": "subaccount"
+            }]
+        },
+        "id": 1
+    });
+
+    let mock = server
+        .mock("GET", "/api/v2/private/get_transfers?currency=BTC")
+        .with_status(200)
+        .with_header("content-type", "application/json")
+        .with_body(mock_response.to_string())
+        .create_async()
+        .await;
+
+    let result = client.get_transfers("BTC", None, None).await;
+
+    mock.assert_async().await;
+    assert!(result.is_ok());
+    let transfers = result.unwrap();
+    assert_eq!(transfers.count, 1);
+    assert_eq!(transfers.len(), 1);
+    assert!(!transfers.is_empty());
+    assert_eq!(transfers.data[0].id, 2);
+    assert_eq!(transfers.data[0].currency, "BTC");
+    assert!((transfers.data[0].amount - 0.2).abs() < f64::EPSILON);
+    assert_eq!(transfers.data[0].other_side, "new_user_1_1");
+}
+
+#[tokio::test]
+async fn test_get_transfers_with_pagination() {
+    let mut server = mockito::Server::new_async().await;
+    let client = create_test_client(&server);
+
+    let _auth_mock = create_auth_mock(&mut server).await;
+
+    let mock_response = json!({
+        "jsonrpc": "2.0",
+        "result": {
+            "count": 0,
+            "data": []
+        },
+        "id": 1
+    });
+
+    let mock = server
+        .mock(
+            "GET",
+            "/api/v2/private/get_transfers?currency=ETH&count=5&offset=10",
+        )
+        .with_status(200)
+        .with_header("content-type", "application/json")
+        .with_body(mock_response.to_string())
+        .create_async()
+        .await;
+
+    let result = client.get_transfers("ETH", Some(5), Some(10)).await;
+
+    mock.assert_async().await;
+    assert!(result.is_ok());
+    let transfers = result.unwrap();
+    assert_eq!(transfers.count, 0);
+    assert!(transfers.is_empty());
+}
+
+#[tokio::test]
+async fn test_get_transfers_error() {
+    let mut server = mockito::Server::new_async().await;
+    let client = create_test_client(&server);
+
+    let _auth_mock = create_auth_mock(&mut server).await;
+
+    let mock = server
+        .mock("GET", "/api/v2/private/get_transfers?currency=INVALID")
+        .with_status(400)
+        .with_header("content-type", "application/json")
+        .with_body(
+            r#"{"jsonrpc": "2.0", "error": {"code": 10001, "message": "invalid_currency"}, "id": 1}"#,
+        )
+        .create_async()
+        .await;
+
+    let result = client.get_transfers("INVALID", None, None).await;
+
+    mock.assert_async().await;
+    assert!(result.is_err());
+}
+
+#[tokio::test]
+async fn test_cancel_transfer_by_id_success() {
+    let mut server = mockito::Server::new_async().await;
+    let client = create_test_client(&server);
+
+    let _auth_mock = create_auth_mock(&mut server).await;
+
+    let mock_response = json!({
+        "jsonrpc": "2.0",
+        "result": {
+            "id": 123,
+            "created_timestamp": 1550579457727_i64,
+            "updated_timestamp": 1550579457800_i64,
+            "currency": "BTC",
+            "amount": 0.5,
+            "direction": "payment",
+            "other_side": "subaccount_1",
+            "state": "cancelled",
+            "type": "subaccount"
+        },
+        "id": 1
+    });
+
+    let mock = server
+        .mock("GET", "/api/v2/private/cancel_transfer_by_id?currency=BTC&id=123")
+        .with_status(200)
+        .with_header("content-type", "application/json")
+        .with_body(mock_response.to_string())
+        .create_async()
+        .await;
+
+    let result = client.cancel_transfer_by_id("BTC", 123).await;
+
+    mock.assert_async().await;
+    assert!(result.is_ok());
+    let transfer = result.unwrap();
+    assert_eq!(transfer.id, 123);
+    assert!(transfer.is_cancelled());
+}
+
+#[tokio::test]
+async fn test_cancel_transfer_by_id_error() {
+    let mut server = mockito::Server::new_async().await;
+    let client = create_test_client(&server);
+
+    let _auth_mock = create_auth_mock(&mut server).await;
+
+    let mock = server
+        .mock("GET", "/api/v2/private/cancel_transfer_by_id?currency=BTC&id=999")
+        .with_status(400)
+        .with_header("content-type", "application/json")
+        .with_body(
+            r#"{"jsonrpc": "2.0", "error": {"code": 10003, "message": "transfer_not_found"}, "id": 1}"#,
+        )
+        .create_async()
+        .await;
+
+    let result = client.cancel_transfer_by_id("BTC", 999).await;
+
+    mock.assert_async().await;
+    assert!(result.is_err());
+}
+
+#[tokio::test]
+async fn test_submit_transfer_between_subaccounts_success() {
+    let mut server = mockito::Server::new_async().await;
+    let client = create_test_client(&server);
+
+    let _auth_mock = create_auth_mock(&mut server).await;
+
+    let mock_response = json!({
+        "jsonrpc": "2.0",
+        "result": {
+            "id": 456,
+            "created_timestamp": 1550579457727_i64,
+            "updated_timestamp": 1550579457727_i64,
+            "currency": "ETH",
+            "amount": 12.1234,
+            "direction": "payment",
+            "other_side": "subaccount_20",
+            "state": "confirmed",
+            "type": "subaccount"
+        },
+        "id": 1
+    });
+
+    let mock = server
+        .mock(
+            "GET",
+            "/api/v2/private/submit_transfer_between_subaccounts?currency=ETH&amount=12.1234&destination=20",
+        )
+        .with_status(200)
+        .with_header("content-type", "application/json")
+        .with_body(mock_response.to_string())
+        .create_async()
+        .await;
+
+    let result = client
+        .submit_transfer_between_subaccounts("ETH", 12.1234, 20, None)
+        .await;
+
+    mock.assert_async().await;
+    assert!(result.is_ok());
+    let transfer = result.unwrap();
+    assert_eq!(transfer.id, 456);
+    assert_eq!(transfer.currency, "ETH");
+    assert!((transfer.amount - 12.1234).abs() < f64::EPSILON);
+    assert!(transfer.is_confirmed());
+    assert!(transfer.is_payment());
+}
+
+#[tokio::test]
+async fn test_submit_transfer_between_subaccounts_with_source() {
+    let mut server = mockito::Server::new_async().await;
+    let client = create_test_client(&server);
+
+    let _auth_mock = create_auth_mock(&mut server).await;
+
+    let mock_response = json!({
+        "jsonrpc": "2.0",
+        "result": {
+            "id": 789,
+            "created_timestamp": 1550579457727_i64,
+            "updated_timestamp": 1550579457727_i64,
+            "currency": "BTC",
+            "amount": 1.0,
+            "direction": "payment",
+            "other_side": "subaccount_20",
+            "state": "confirmed",
+            "type": "subaccount"
+        },
+        "id": 1
+    });
+
+    let mock = server
+        .mock(
+            "GET",
+            "/api/v2/private/submit_transfer_between_subaccounts?currency=BTC&amount=1&destination=20&source=10",
+        )
+        .with_status(200)
+        .with_header("content-type", "application/json")
+        .with_body(mock_response.to_string())
+        .create_async()
+        .await;
+
+    let result = client
+        .submit_transfer_between_subaccounts("BTC", 1.0, 20, Some(10))
+        .await;
+
+    mock.assert_async().await;
+    assert!(result.is_ok());
+    let transfer = result.unwrap();
+    assert_eq!(transfer.id, 789);
+}
+
+#[tokio::test]
+async fn test_submit_transfer_between_subaccounts_error() {
+    let mut server = mockito::Server::new_async().await;
+    let client = create_test_client(&server);
+
+    let _auth_mock = create_auth_mock(&mut server).await;
+
+    let mock = server
+        .mock(
+            "GET",
+            "/api/v2/private/submit_transfer_between_subaccounts?currency=BTC&amount=1000000&destination=999",
+        )
+        .with_status(400)
+        .with_header("content-type", "application/json")
+        .with_body(
+            r#"{"jsonrpc": "2.0", "error": {"code": 10004, "message": "insufficient_funds"}, "id": 1}"#,
+        )
+        .create_async()
+        .await;
+
+    let result = client
+        .submit_transfer_between_subaccounts("BTC", 1000000.0, 999, None)
+        .await;
+
+    mock.assert_async().await;
+    assert!(result.is_err());
+}

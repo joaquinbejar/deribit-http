@@ -181,6 +181,13 @@ pub mod endpoints {
     pub const SUBMIT_TRANSFER_TO_SUBACCOUNT: &str = "/private/submit_transfer_to_subaccount";
     /// Submit transfer to user
     pub const SUBMIT_TRANSFER_TO_USER: &str = "/private/submit_transfer_to_user";
+    /// Get transfers list
+    pub const GET_TRANSFERS: &str = "/private/get_transfers";
+    /// Cancel a transfer by ID
+    pub const CANCEL_TRANSFER_BY_ID: &str = "/private/cancel_transfer_by_id";
+    /// Submit transfer between subaccounts
+    pub const SUBMIT_TRANSFER_BETWEEN_SUBACCOUNTS: &str =
+        "/private/submit_transfer_between_subaccounts";
     /// Move positions between subaccounts
     pub const MOVE_POSITIONS: &str = "/private/move_positions";
 
