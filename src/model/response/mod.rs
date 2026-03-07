@@ -17,6 +17,8 @@ pub mod mmp;
 pub mod order;
 /// Other response models and utilities
 pub mod other;
+/// Position response models
+pub mod position;
 /// Trade response models and types
 pub mod trade;
 /// Trigger order response models
@@ -31,6 +33,7 @@ pub use mass_quote::*;
 pub use mmp::*;
 pub use order::*;
 pub use other::*;
+pub use position::*;
 pub use trade::*;
 pub use trigger::*;
 pub use withdrawal::*;

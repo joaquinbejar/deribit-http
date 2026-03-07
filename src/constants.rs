@@ -164,6 +164,8 @@ pub mod endpoints {
     pub const SUBMIT_TRANSFER_TO_SUBACCOUNT: &str = "/private/submit_transfer_to_subaccount";
     /// Submit transfer to user
     pub const SUBMIT_TRANSFER_TO_USER: &str = "/private/submit_transfer_to_user";
+    /// Move positions between subaccounts
+    pub const MOVE_POSITIONS: &str = "/private/move_positions";
 
     // Private order endpoints
     /// Get all open orders

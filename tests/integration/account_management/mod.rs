@@ -4,6 +4,7 @@
 //! including account summary, positions, subaccounts, and transaction logs.
 
 pub mod account_summary;
+pub mod move_positions;
 pub mod positions;
 pub mod settlement_history;
 pub mod subaccounts;

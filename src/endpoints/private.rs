@@ -7,6 +7,7 @@ use crate::model::account::Subaccount;
 use crate::model::position::Position;
 use crate::model::request::mass_quote::MassQuoteRequest;
 use crate::model::request::order::OrderRequest;
+use crate::model::request::position::MovePositionTrade;
 use crate::model::request::trade::TradesRequest;
 use crate::model::response::api_response::ApiResponse;
 use crate::model::response::deposit::DepositsResponse;
@@ -17,6 +18,7 @@ use crate::model::response::order::{OrderInfoResponse, OrderResponse};
 use crate::model::response::other::{
     AccountSummaryResponse, SettlementsResponse, TransactionLogResponse, TransferResultResponse,
 };
+use crate::model::response::position::MovePositionResult;
 use crate::model::response::trigger::TriggerOrderHistoryResponse;
 use crate::model::response::withdrawal::WithdrawalsResponse;
 use crate::model::{
@@ -2002,6 +2004,89 @@ impl DeribitHttpClient {
 
         api_response.result.ok_or_else(|| {
             HttpError::InvalidResponse("No trigger order history data in response".to_string())
+        })
+    }
+
+    /// Move positions between subaccounts
+    ///
+    /// Moves positions from a source subaccount to a target subaccount. This operation
+    /// transfers open positions between subaccounts, which is useful for rebalancing
+    /// or reorganizing trading activities.
+    ///
+    /// **Rate Limits**: 6 requests/minute, 100 move_position uses per week (168 hours)
+    ///
+    /// **Important**: In rare cases, the request may return an internal_server_error.
+    /// This does not necessarily mean the operation failed entirely. Part or all of
+    /// the position transfer might have still been processed successfully.
+    ///
+    /// # Arguments
+    ///
+    /// * `currency` - Currency symbol (e.g., "BTC", "ETH", "USDC")
+    /// * `source_uid` - Source subaccount ID
+    /// * `target_uid` - Target subaccount ID
+    /// * `trades` - List of position trades to move
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use deribit_http::DeribitHttpClient;
+    /// use deribit_http::model::request::position::MovePositionTrade;
+    ///
+    /// let client = DeribitHttpClient::new();
+    /// let trades = vec![
+    ///     MovePositionTrade::with_price("BTC-PERPETUAL", 110.0, 35800.0),
+    /// ];
+    /// // let results = client.move_positions("BTC", 3, 23, &trades).await?;
+    /// ```
+    pub async fn move_positions(
+        &self,
+        currency: &str,
+        source_uid: i64,
+        target_uid: i64,
+        trades: &[MovePositionTrade],
+    ) -> Result<Vec<MovePositionResult>, HttpError> {
+        let mut url = format!(
+            "{}{}?currency={}&source_uid={}&target_uid={}",
+            self.base_url(),
+            MOVE_POSITIONS,
+            urlencoding::encode(currency),
+            source_uid,
+            target_uid
+        );
+
+        // Build trades array as JSON
+        let trades_json = serde_json::to_string(trades).map_err(|e| {
+            HttpError::InvalidResponse(format!("Failed to serialize trades: {}", e))
+        })?;
+        url.push_str(&format!("&trades={}", urlencoding::encode(&trades_json)));
+
+        let response = self.make_authenticated_request(&url).await?;
+
+        if !response.status().is_success() {
+            let error_text = response
+                .text()
+                .await
+                .unwrap_or_else(|_| "Unknown error".to_string());
+            return Err(HttpError::RequestFailed(format!(
+                "Move positions failed: {}",
+                error_text
+            )));
+        }
+
+        let api_response: ApiResponse<Vec<MovePositionResult>> = response
+            .json()
+            .await
+            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
+
+        if let Some(error) = api_response.error {
+            return Err(HttpError::RequestFailed(format!(
+                "API error: {} - {}",
+                error.code, error.message
+            )));
+        }
+
+        api_response.result.ok_or_else(|| {
+            HttpError::InvalidResponse("No move positions data in response".to_string())
         })
     }
 
