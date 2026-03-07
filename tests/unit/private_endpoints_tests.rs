@@ -1370,3 +1370,104 @@ async fn test_get_trigger_order_history_empty() {
     assert!(response.entries.is_empty());
     assert!(response.continuation.is_none());
 }
+
+// =========================================================================
+// Move Positions Tests (Issue #21)
+// =========================================================================
+
+#[tokio::test]
+async fn test_move_positions_success() {
+    use deribit_http::model::request::position::MovePositionTrade;
+
+    let mut server = mockito::Server::new_async().await;
+    let client = create_test_client(&server);
+
+    let _auth_mock = create_auth_mock(&mut server).await;
+
+    let mock_response = json!({
+        "jsonrpc": "2.0",
+        "result": [
+            {
+                "target_uid": 23,
+                "source_uid": 3,
+                "price": 35800.0,
+                "instrument_name": "BTC-PERPETUAL",
+                "direction": "buy",
+                "amount": 110.0
+            },
+            {
+                "target_uid": 23,
+                "source_uid": 3,
+                "price": 0.1223,
+                "instrument_name": "BTC-28JAN22-32500-C",
+                "direction": "sell",
+                "amount": 0.1
+            }
+        ],
+        "id": 1
+    });
+
+    let mock = server
+        .mock(
+            "GET",
+            mockito::Matcher::Regex(r"/api/v2/private/move_positions\?currency=BTC.*".to_string()),
+        )
+        .with_status(200)
+        .with_header("content-type", "application/json")
+        .with_body(mock_response.to_string())
+        .create_async()
+        .await;
+
+    let trades = vec![
+        MovePositionTrade::with_price("BTC-PERPETUAL", 110.0, 35800.0),
+        MovePositionTrade::new("BTC-28JAN22-32500-C", 0.1),
+    ];
+
+    let result = client.move_positions("BTC", 3, 23, &trades).await;
+
+    mock.assert_async().await;
+    assert!(result.is_ok());
+    let results = result.unwrap();
+    assert_eq!(results.len(), 2);
+    assert_eq!(results[0].instrument_name, "BTC-PERPETUAL");
+    assert_eq!(results[0].direction, "buy");
+    assert_eq!(results[0].amount, 110.0);
+    assert_eq!(results[1].instrument_name, "BTC-28JAN22-32500-C");
+    assert_eq!(results[1].direction, "sell");
+}
+
+#[tokio::test]
+async fn test_move_positions_empty() {
+    use deribit_http::model::request::position::MovePositionTrade;
+
+    let mut server = mockito::Server::new_async().await;
+    let client = create_test_client(&server);
+
+    let _auth_mock = create_auth_mock(&mut server).await;
+
+    let mock_response = json!({
+        "jsonrpc": "2.0",
+        "result": [],
+        "id": 1
+    });
+
+    let mock = server
+        .mock(
+            "GET",
+            mockito::Matcher::Regex(r"/api/v2/private/move_positions\?currency=ETH.*".to_string()),
+        )
+        .with_status(200)
+        .with_header("content-type", "application/json")
+        .with_body(mock_response.to_string())
+        .create_async()
+        .await;
+
+    let trades = vec![MovePositionTrade::new("ETH-PERPETUAL", 10.0)];
+
+    let result = client.move_positions("ETH", 1, 2, &trades).await;
+
+    mock.assert_async().await;
+    assert!(result.is_ok());
+    let results = result.unwrap();
+    assert!(results.is_empty());
+}
