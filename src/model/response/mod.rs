@@ -23,6 +23,8 @@ pub mod position;
 pub mod subaccount;
 /// Trade response models and types
 pub mod trade;
+/// Internal transfer response models
+pub mod transfer;
 /// Trigger order response models
 pub mod trigger;
 /// Wallet response models for address book operations
@@ -40,6 +42,7 @@ pub use other::*;
 pub use position::*;
 pub use subaccount::*;
 pub use trade::*;
+pub use transfer::*;
 pub use trigger::*;
 pub use wallet::*;
 pub use withdrawal::*;

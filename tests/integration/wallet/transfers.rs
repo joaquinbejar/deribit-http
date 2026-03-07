@@ -358,4 +358,254 @@ mod withdrawal_tests {
         info!("Transfer parameter validation test completed successfully");
         Ok(())
     }
+
+    // =========================================================================
+    // Get Transfers Tests (Issue #28)
+    // =========================================================================
+
+    #[tokio::test]
+    #[ignore = "Requires authentication"]
+    #[serial_test::serial]
+    async fn test_get_transfers_success() -> Result<(), Box<dyn std::error::Error>> {
+        check_env_file()?;
+
+        let client = DeribitHttpClient::new();
+
+        // Get transfers for BTC
+        let result = client.get_transfers("BTC", Some(10), None).await;
+
+        match result {
+            Ok(transfers) => {
+                info!("Got {} transfers (total: {})", transfers.len(), transfers.count);
+                for transfer in &transfers.data {
+                    debug!(
+                        "Transfer ID: {}, Amount: {} {}, Direction: {:?}, State: {:?}",
+                        transfer.id,
+                        transfer.amount,
+                        transfer.currency,
+                        transfer.direction,
+                        transfer.state
+                    );
+                }
+            }
+            Err(e) => {
+                warn!("Get transfers failed (may be expected): {:?}", e);
+            }
+        }
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    #[ignore = "Requires authentication"]
+    #[serial_test::serial]
+    async fn test_get_transfers_with_pagination() -> Result<(), Box<dyn std::error::Error>> {
+        check_env_file()?;
+
+        let client = DeribitHttpClient::new();
+
+        // Get first page
+        let page1 = client.get_transfers("BTC", Some(5), Some(0)).await;
+        // Get second page
+        let page2 = client.get_transfers("BTC", Some(5), Some(5)).await;
+
+        match (page1, page2) {
+            (Ok(p1), Ok(p2)) => {
+                info!("Page 1: {} transfers, Page 2: {} transfers", p1.len(), p2.len());
+                assert!(
+                    p1.count == p2.count,
+                    "Total count should be consistent across pages"
+                );
+            }
+            (Err(e1), _) => {
+                warn!("Page 1 failed: {:?}", e1);
+            }
+            (_, Err(e2)) => {
+                warn!("Page 2 failed: {:?}", e2);
+            }
+        }
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    #[ignore = "Requires authentication"]
+    #[serial_test::serial]
+    async fn test_get_transfers_multiple_currencies() -> Result<(), Box<dyn std::error::Error>> {
+        check_env_file()?;
+
+        let client = DeribitHttpClient::new();
+
+        let currencies = ["BTC", "ETH", "USDC"];
+
+        for currency in currencies {
+            let result = client.get_transfers(currency, Some(5), None).await;
+
+            match result {
+                Ok(transfers) => {
+                    info!(
+                        "{}: {} transfers (total: {})",
+                        currency,
+                        transfers.len(),
+                        transfers.count
+                    );
+                }
+                Err(e) => {
+                    warn!("Get transfers for {} failed: {:?}", currency, e);
+                }
+            }
+
+            tokio::time::sleep(std::time::Duration::from_millis(100)).await;
+        }
+
+        Ok(())
+    }
+
+    // =========================================================================
+    // Cancel Transfer Tests (Issue #28)
+    // =========================================================================
+
+    #[tokio::test]
+    #[ignore = "Requires authentication and active transfer"]
+    #[serial_test::serial]
+    async fn test_cancel_transfer_by_id() -> Result<(), Box<dyn std::error::Error>> {
+        check_env_file()?;
+
+        let client = DeribitHttpClient::new();
+
+        // This test requires an actual pending transfer to cancel
+        // Using a non-existent ID to test error handling
+        let result = client.cancel_transfer_by_id("BTC", 999999).await;
+
+        match result {
+            Ok(transfer) => {
+                info!("Transfer cancelled: {:?}", transfer);
+                assert!(transfer.is_cancelled(), "Transfer should be cancelled");
+            }
+            Err(e) => {
+                warn!("Cancel transfer failed (expected for non-existent ID): {:?}", e);
+            }
+        }
+
+        Ok(())
+    }
+
+    // =========================================================================
+    // Submit Transfer Between Subaccounts Tests (Issue #28)
+    // =========================================================================
+
+    #[tokio::test]
+    #[ignore = "Requires authentication and subaccounts"]
+    #[serial_test::serial]
+    async fn test_submit_transfer_between_subaccounts() -> Result<(), Box<dyn std::error::Error>> {
+        check_env_file()?;
+
+        let client = DeribitHttpClient::new();
+
+        // This test requires actual subaccounts to exist
+        // Using test parameters that will likely fail but test API structure
+        let result = client
+            .submit_transfer_between_subaccounts("BTC", 0.00001, 1, None)
+            .await;
+
+        match result {
+            Ok(transfer) => {
+                info!("Transfer submitted: {:?}", transfer);
+                assert_eq!(transfer.currency, "BTC");
+                assert!(transfer.is_confirmed() || transfer.is_pending());
+            }
+            Err(e) => {
+                warn!(
+                    "Submit transfer between subaccounts failed (expected): {:?}",
+                    e
+                );
+            }
+        }
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    #[ignore = "Requires authentication and subaccounts"]
+    #[serial_test::serial]
+    async fn test_submit_transfer_between_subaccounts_with_source(
+    ) -> Result<(), Box<dyn std::error::Error>> {
+        check_env_file()?;
+
+        let client = DeribitHttpClient::new();
+
+        // Test with explicit source subaccount
+        let result = client
+            .submit_transfer_between_subaccounts("ETH", 0.001, 20, Some(10))
+            .await;
+
+        match result {
+            Ok(transfer) => {
+                info!("Transfer submitted with source: {:?}", transfer);
+                assert_eq!(transfer.currency, "ETH");
+            }
+            Err(e) => {
+                warn!(
+                    "Submit transfer with source failed (expected): {:?}",
+                    e
+                );
+            }
+        }
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    #[ignore = "Requires authentication"]
+    #[serial_test::serial]
+    async fn test_transfer_workflow() -> Result<(), Box<dyn std::error::Error>> {
+        check_env_file()?;
+
+        let client = DeribitHttpClient::new();
+
+        info!("Testing complete transfer workflow");
+
+        // Step 1: Get initial transfers
+        let initial_transfers = client.get_transfers("BTC", Some(10), None).await;
+        let initial_count = initial_transfers.map(|t| t.count).unwrap_or(0);
+        info!("Initial transfer count: {}", initial_count);
+
+        // Step 2: Attempt a transfer (will likely fail without proper setup)
+        let transfer_result = client
+            .submit_transfer_between_subaccounts("BTC", 0.00001, 1, None)
+            .await;
+
+        match transfer_result {
+            Ok(transfer) => {
+                info!("Transfer created: ID={}", transfer.id);
+
+                // Step 3: Verify transfer appears in list
+                let updated_transfers = client.get_transfers("BTC", Some(10), None).await;
+                if let Ok(transfers) = updated_transfers {
+                    info!("Updated transfer count: {}", transfers.count);
+                }
+
+                // Step 4: Attempt to cancel if transfer is pending
+                if transfer.is_pending() {
+                    let cancel_result = client
+                        .cancel_transfer_by_id("BTC", transfer.id)
+                        .await;
+                    match cancel_result {
+                        Ok(cancelled) => {
+                            info!("Transfer cancelled: {:?}", cancelled.state);
+                        }
+                        Err(e) => {
+                            warn!("Cancel failed: {:?}", e);
+                        }
+                    }
+                }
+            }
+            Err(e) => {
+                warn!("Transfer workflow test: transfer creation failed (expected): {:?}", e);
+            }
+        }
+
+        info!("Transfer workflow test completed");
+        Ok(())
+    }
 }

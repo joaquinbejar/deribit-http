@@ -19,6 +19,7 @@ use crate::model::response::order::{OrderInfoResponse, OrderResponse};
 use crate::model::response::other::{
     AccountSummaryResponse, SettlementsResponse, TransactionLogResponse, TransferResultResponse,
 };
+use crate::model::response::transfer::{InternalTransfer, TransfersResponse};
 use crate::model::response::position::MovePositionResult;
 use crate::model::response::subaccount::SubaccountDetails;
 use crate::model::response::trigger::TriggerOrderHistoryResponse;
@@ -955,6 +956,254 @@ impl DeribitHttpClient {
         api_response
             .result
             .ok_or_else(|| HttpError::InvalidResponse("No transfer result in response".to_string()))
+    }
+
+    /// Get transfers list
+    ///
+    /// Retrieves the user's internal transfers (between subaccounts or to other users).
+    ///
+    /// # Arguments
+    ///
+    /// * `currency` - Currency symbol (BTC, ETH, etc.)
+    /// * `count` - Number of transfers to retrieve (1-1000, default 10)
+    /// * `offset` - Offset for pagination (default 0)
+    ///
+    /// # Returns
+    ///
+    /// Returns a `TransfersResponse` containing the total count and list of transfers.
+    ///
+    /// # Errors
+    ///
+    /// Returns `HttpError` if the request fails or the response is invalid.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use deribit_http::DeribitHttpClient;
+    ///
+    /// let client = DeribitHttpClient::new();
+    /// // let transfers = client.get_transfers("BTC", Some(10), None).await?;
+    /// // tracing::info!("Found {} transfers", transfers.count);
+    /// ```
+    pub async fn get_transfers(
+        &self,
+        currency: &str,
+        count: Option<u32>,
+        offset: Option<u32>,
+    ) -> Result<TransfersResponse, HttpError> {
+        let mut query_params = vec![("currency".to_string(), currency.to_string())];
+
+        if let Some(c) = count {
+            query_params.push(("count".to_string(), c.to_string()));
+        }
+
+        if let Some(o) = offset {
+            query_params.push(("offset".to_string(), o.to_string()));
+        }
+
+        let query_string = query_params
+            .iter()
+            .map(|(k, v)| format!("{}={}", k, urlencoding::encode(v)))
+            .collect::<Vec<_>>()
+            .join("&");
+
+        let url = format!("{}{}?{}", self.base_url(), GET_TRANSFERS, query_string);
+
+        let response = self.make_authenticated_request(&url).await?;
+
+        if !response.status().is_success() {
+            let error_text = response
+                .text()
+                .await
+                .unwrap_or_else(|_| "Unknown error".to_string());
+            return Err(HttpError::RequestFailed(format!(
+                "Get transfers failed: {}",
+                error_text
+            )));
+        }
+
+        let api_response: ApiResponse<TransfersResponse> = response
+            .json()
+            .await
+            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
+
+        if let Some(error) = api_response.error {
+            return Err(HttpError::RequestFailed(format!(
+                "API error: {} - {}",
+                error.code, error.message
+            )));
+        }
+
+        api_response
+            .result
+            .ok_or_else(|| HttpError::InvalidResponse("No transfers data in response".to_string()))
+    }
+
+    /// Cancel a transfer by ID
+    ///
+    /// Cancels a pending internal transfer.
+    ///
+    /// # Arguments
+    ///
+    /// * `currency` - Currency symbol (BTC, ETH, etc.)
+    /// * `id` - Transfer ID to cancel
+    ///
+    /// # Returns
+    ///
+    /// Returns the cancelled `InternalTransfer`.
+    ///
+    /// # Errors
+    ///
+    /// Returns `HttpError` if the transfer cannot be cancelled or does not exist.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use deribit_http::DeribitHttpClient;
+    ///
+    /// let client = DeribitHttpClient::new();
+    /// // let transfer = client.cancel_transfer_by_id("BTC", 123).await?;
+    /// // tracing::info!("Cancelled transfer: {:?}", transfer.state);
+    /// ```
+    pub async fn cancel_transfer_by_id(
+        &self,
+        currency: &str,
+        id: i64,
+    ) -> Result<InternalTransfer, HttpError> {
+        let query_params = [
+            ("currency".to_string(), currency.to_string()),
+            ("id".to_string(), id.to_string()),
+        ];
+
+        let query_string = query_params
+            .iter()
+            .map(|(k, v)| format!("{}={}", k, urlencoding::encode(v)))
+            .collect::<Vec<_>>()
+            .join("&");
+
+        let url = format!(
+            "{}{}?{}",
+            self.base_url(),
+            CANCEL_TRANSFER_BY_ID,
+            query_string
+        );
+
+        let response = self.make_authenticated_request(&url).await?;
+
+        if !response.status().is_success() {
+            let error_text = response
+                .text()
+                .await
+                .unwrap_or_else(|_| "Unknown error".to_string());
+            return Err(HttpError::RequestFailed(format!(
+                "Cancel transfer failed: {}",
+                error_text
+            )));
+        }
+
+        let api_response: ApiResponse<InternalTransfer> = response
+            .json()
+            .await
+            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
+
+        if let Some(error) = api_response.error {
+            return Err(HttpError::RequestFailed(format!(
+                "API error: {} - {}",
+                error.code, error.message
+            )));
+        }
+
+        api_response
+            .result
+            .ok_or_else(|| HttpError::InvalidResponse("No transfer data in response".to_string()))
+    }
+
+    /// Submit transfer between subaccounts
+    ///
+    /// Transfers funds between two subaccounts or between a subaccount and the main account.
+    ///
+    /// # Arguments
+    ///
+    /// * `currency` - Currency symbol (BTC, ETH, etc.)
+    /// * `amount` - Amount of funds to transfer
+    /// * `destination` - Destination subaccount ID
+    /// * `source` - Source subaccount ID (optional, defaults to requesting account)
+    ///
+    /// # Returns
+    ///
+    /// Returns the created `InternalTransfer`.
+    ///
+    /// # Errors
+    ///
+    /// Returns `HttpError` if the transfer fails or validation fails.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use deribit_http::DeribitHttpClient;
+    ///
+    /// let client = DeribitHttpClient::new();
+    /// // let transfer = client.submit_transfer_between_subaccounts("ETH", 1.5, 20, Some(10)).await?;
+    /// // tracing::info!("Transfer ID: {}", transfer.id);
+    /// ```
+    pub async fn submit_transfer_between_subaccounts(
+        &self,
+        currency: &str,
+        amount: f64,
+        destination: i64,
+        source: Option<i64>,
+    ) -> Result<InternalTransfer, HttpError> {
+        let mut query_params = vec![
+            ("currency".to_string(), currency.to_string()),
+            ("amount".to_string(), amount.to_string()),
+            ("destination".to_string(), destination.to_string()),
+        ];
+
+        if let Some(s) = source {
+            query_params.push(("source".to_string(), s.to_string()));
+        }
+
+        let query_string = query_params
+            .iter()
+            .map(|(k, v)| format!("{}={}", k, urlencoding::encode(v)))
+            .collect::<Vec<_>>()
+            .join("&");
+
+        let url = format!(
+            "{}{}?{}",
+            self.base_url(),
+            SUBMIT_TRANSFER_BETWEEN_SUBACCOUNTS,
+            query_string
+        );
+
+        let response = self.make_authenticated_request(&url).await?;
+
+        if !response.status().is_success() {
+            let error_text = response
+                .text()
+                .await
+                .unwrap_or_else(|_| "Unknown error".to_string());
+            return Err(HttpError::RequestFailed(format!(
+                "Submit transfer between subaccounts failed: {}",
+                error_text
+            )));
+        }
+
+        let api_response: ApiResponse<InternalTransfer> = response
+            .json()
+            .await
+            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
+
+        if let Some(error) = api_response.error {
+            return Err(HttpError::RequestFailed(format!(
+                "API error: {} - {}",
+                error.code, error.message
+            )));
+        }
+
+        api_response
+            .result
+            .ok_or_else(|| HttpError::InvalidResponse("No transfer data in response".to_string()))
     }
 
     /// Place a buy order
