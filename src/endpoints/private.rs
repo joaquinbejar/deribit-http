@@ -135,45 +135,11 @@ impl DeribitHttpClient {
         currency: &str,
         with_open_orders: Option<bool>,
     ) -> Result<Vec<SubaccountDetails>, HttpError> {
-        let mut url = format!(
-            "{}{}?currency={}",
-            self.base_url(),
-            GET_SUBACCOUNTS_DETAILS,
-            urlencoding::encode(currency)
-        );
-
+        let mut query = format!("?currency={}", urlencoding::encode(currency));
         if let Some(with_open_orders) = with_open_orders {
-            url.push_str(&format!("&with_open_orders={}", with_open_orders));
+            query.push_str(&format!("&with_open_orders={}", with_open_orders));
         }
-
-        let response = self.make_authenticated_request(&url).await?;
-
-        if !response.status().is_success() {
-            let error_text = response
-                .text()
-                .await
-                .unwrap_or_else(|_| "Unknown error".to_string());
-            return Err(HttpError::RequestFailed(format!(
-                "Get subaccounts details failed: {}",
-                error_text
-            )));
-        }
-
-        let api_response: ApiResponse<Vec<SubaccountDetails>> = response
-            .json()
-            .await
-            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
-
-        if let Some(error) = api_response.error {
-            return Err(HttpError::RequestFailed(format!(
-                "API error: {} - {}",
-                error.code, error.message
-            )));
-        }
-
-        api_response.result.ok_or_else(|| {
-            HttpError::InvalidResponse("No subaccounts details data in response".to_string())
-        })
+        self.private_get(GET_SUBACCOUNTS_DETAILS, &query).await
     }
 
     /// Create a new subaccount
@@ -198,36 +164,7 @@ impl DeribitHttpClient {
     /// // tracing::info!("Created subaccount with ID: {}", subaccount.id);
     /// ```
     pub async fn create_subaccount(&self) -> Result<Subaccount, HttpError> {
-        let url = format!("{}{}", self.base_url(), CREATE_SUBACCOUNT);
-
-        let response = self.make_authenticated_request(&url).await?;
-
-        if !response.status().is_success() {
-            let error_text = response
-                .text()
-                .await
-                .unwrap_or_else(|_| "Unknown error".to_string());
-            return Err(HttpError::RequestFailed(format!(
-                "Create subaccount failed: {}",
-                error_text
-            )));
-        }
-
-        let api_response: ApiResponse<Subaccount> = response
-            .json()
-            .await
-            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
-
-        if let Some(error) = api_response.error {
-            return Err(HttpError::RequestFailed(format!(
-                "API error: {} - {}",
-                error.code, error.message
-            )));
-        }
-
-        api_response
-            .result
-            .ok_or_else(|| HttpError::InvalidResponse("No subaccount data in response".to_string()))
+        self.private_get(CREATE_SUBACCOUNT, "").await
     }
 
     /// Remove an empty subaccount
@@ -256,41 +193,8 @@ impl DeribitHttpClient {
     /// // assert_eq!(result, "ok");
     /// ```
     pub async fn remove_subaccount(&self, subaccount_id: u64) -> Result<String, HttpError> {
-        let url = format!(
-            "{}{}?subaccount_id={}",
-            self.base_url(),
-            REMOVE_SUBACCOUNT,
-            subaccount_id
-        );
-
-        let response = self.make_authenticated_request(&url).await?;
-
-        if !response.status().is_success() {
-            let error_text = response
-                .text()
-                .await
-                .unwrap_or_else(|_| "Unknown error".to_string());
-            return Err(HttpError::RequestFailed(format!(
-                "Remove subaccount failed: {}",
-                error_text
-            )));
-        }
-
-        let api_response: ApiResponse<String> = response
-            .json()
-            .await
-            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
-
-        if let Some(error) = api_response.error {
-            return Err(HttpError::RequestFailed(format!(
-                "API error: {} - {}",
-                error.code, error.message
-            )));
-        }
-
-        api_response
-            .result
-            .ok_or_else(|| HttpError::InvalidResponse("No result in response".to_string()))
+        let query = format!("?subaccount_id={}", subaccount_id);
+        self.private_get(REMOVE_SUBACCOUNT, &query).await
     }
 
     /// Change the name of a subaccount
@@ -320,42 +224,8 @@ impl DeribitHttpClient {
     /// // assert_eq!(result, "ok");
     /// ```
     pub async fn change_subaccount_name(&self, sid: u64, name: &str) -> Result<String, HttpError> {
-        let url = format!(
-            "{}{}?sid={}&name={}",
-            self.base_url(),
-            CHANGE_SUBACCOUNT_NAME,
-            sid,
-            urlencoding::encode(name)
-        );
-
-        let response = self.make_authenticated_request(&url).await?;
-
-        if !response.status().is_success() {
-            let error_text = response
-                .text()
-                .await
-                .unwrap_or_else(|_| "Unknown error".to_string());
-            return Err(HttpError::RequestFailed(format!(
-                "Change subaccount name failed: {}",
-                error_text
-            )));
-        }
-
-        let api_response: ApiResponse<String> = response
-            .json()
-            .await
-            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
-
-        if let Some(error) = api_response.error {
-            return Err(HttpError::RequestFailed(format!(
-                "API error: {} - {}",
-                error.code, error.message
-            )));
-        }
-
-        api_response
-            .result
-            .ok_or_else(|| HttpError::InvalidResponse("No result in response".to_string()))
+        let query = format!("?sid={}&name={}", sid, urlencoding::encode(name));
+        self.private_get(CHANGE_SUBACCOUNT_NAME, &query).await
     }
 
     /// Enable or disable login for a subaccount
@@ -390,42 +260,8 @@ impl DeribitHttpClient {
         sid: u64,
         state: &str,
     ) -> Result<String, HttpError> {
-        let url = format!(
-            "{}{}?sid={}&state={}",
-            self.base_url(),
-            TOGGLE_SUBACCOUNT_LOGIN,
-            sid,
-            urlencoding::encode(state)
-        );
-
-        let response = self.make_authenticated_request(&url).await?;
-
-        if !response.status().is_success() {
-            let error_text = response
-                .text()
-                .await
-                .unwrap_or_else(|_| "Unknown error".to_string());
-            return Err(HttpError::RequestFailed(format!(
-                "Toggle subaccount login failed: {}",
-                error_text
-            )));
-        }
-
-        let api_response: ApiResponse<String> = response
-            .json()
-            .await
-            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
-
-        if let Some(error) = api_response.error {
-            return Err(HttpError::RequestFailed(format!(
-                "API error: {} - {}",
-                error.code, error.message
-            )));
-        }
-
-        api_response
-            .result
-            .ok_or_else(|| HttpError::InvalidResponse("No result in response".to_string()))
+        let query = format!("?sid={}&state={}", sid, urlencoding::encode(state));
+        self.private_get(TOGGLE_SUBACCOUNT_LOGIN, &query).await
     }
 
     /// Set email address for a subaccount
@@ -460,42 +296,8 @@ impl DeribitHttpClient {
         sid: u64,
         email: &str,
     ) -> Result<String, HttpError> {
-        let url = format!(
-            "{}{}?sid={}&email={}",
-            self.base_url(),
-            SET_EMAIL_FOR_SUBACCOUNT,
-            sid,
-            urlencoding::encode(email)
-        );
-
-        let response = self.make_authenticated_request(&url).await?;
-
-        if !response.status().is_success() {
-            let error_text = response
-                .text()
-                .await
-                .unwrap_or_else(|_| "Unknown error".to_string());
-            return Err(HttpError::RequestFailed(format!(
-                "Set email for subaccount failed: {}",
-                error_text
-            )));
-        }
-
-        let api_response: ApiResponse<String> = response
-            .json()
-            .await
-            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
-
-        if let Some(error) = api_response.error {
-            return Err(HttpError::RequestFailed(format!(
-                "API error: {} - {}",
-                error.code, error.message
-            )));
-        }
-
-        api_response
-            .result
-            .ok_or_else(|| HttpError::InvalidResponse("No result in response".to_string()))
+        let query = format!("?sid={}&email={}", sid, urlencoding::encode(email));
+        self.private_get(SET_EMAIL_FOR_SUBACCOUNT, &query).await
     }
 
     /// Enable or disable notifications for a subaccount
@@ -529,42 +331,9 @@ impl DeribitHttpClient {
         sid: u64,
         state: bool,
     ) -> Result<String, HttpError> {
-        let url = format!(
-            "{}{}?sid={}&state={}",
-            self.base_url(),
-            TOGGLE_NOTIFICATIONS_FROM_SUBACCOUNT,
-            sid,
-            state
-        );
-
-        let response = self.make_authenticated_request(&url).await?;
-
-        if !response.status().is_success() {
-            let error_text = response
-                .text()
-                .await
-                .unwrap_or_else(|_| "Unknown error".to_string());
-            return Err(HttpError::RequestFailed(format!(
-                "Toggle notifications from subaccount failed: {}",
-                error_text
-            )));
-        }
-
-        let api_response: ApiResponse<String> = response
-            .json()
+        let query = format!("?sid={}&state={}", sid, state);
+        self.private_get(TOGGLE_NOTIFICATIONS_FROM_SUBACCOUNT, &query)
             .await
-            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
-
-        if let Some(error) = api_response.error {
-            return Err(HttpError::RequestFailed(format!(
-                "API error: {} - {}",
-                error.code, error.message
-            )));
-        }
-
-        api_response
-            .result
-            .ok_or_else(|| HttpError::InvalidResponse("No result in response".to_string()))
     }
 
     /// Get transaction log
@@ -594,74 +363,32 @@ impl DeribitHttpClient {
         &self,
         request: TransactionLogRequest,
     ) -> Result<TransactionLogResponse, HttpError> {
-        let mut query_params = vec![("currency".to_string(), request.currency.to_string())];
-
-        query_params.push((
-            "start_timestamp".to_string(),
-            request.start_timestamp.to_string(),
-        ));
-        query_params.push((
-            "end_timestamp".to_string(),
-            request.end_timestamp.to_string(),
-        ));
-
+        let mut query_params = vec![
+            ("currency", request.currency.to_string()),
+            ("start_timestamp", request.start_timestamp.to_string()),
+            ("end_timestamp", request.end_timestamp.to_string()),
+        ];
         if let Some(query) = request.query {
-            query_params.push(("query".to_string(), query));
+            query_params.push(("query", query));
         }
-
         if let Some(count) = request.count {
-            query_params.push(("count".to_string(), count.to_string()));
+            query_params.push(("count", count.to_string()));
         }
-
         if let Some(subaccount_id) = request.subaccount_id {
-            query_params.push(("subaccount_id".to_string(), subaccount_id.to_string()));
+            query_params.push(("subaccount_id", subaccount_id.to_string()));
         }
-
         if let Some(continuation) = request.continuation {
-            query_params.push(("continuation".to_string(), continuation.to_string()));
+            query_params.push(("continuation", continuation.to_string()));
         }
-
-        let query_string = query_params
-            .iter()
-            .map(|(k, v)| format!("{}={}", k, urlencoding::encode(v)))
-            .collect::<Vec<_>>()
-            .join("&");
-
-        let url = format!(
-            "{}{}?{}",
-            self.base_url(),
-            GET_TRANSACTION_LOG,
-            query_string
+        let query = format!(
+            "?{}",
+            query_params
+                .iter()
+                .map(|(k, v)| format!("{}={}", k, urlencoding::encode(v)))
+                .collect::<Vec<_>>()
+                .join("&")
         );
-
-        let response = self.make_authenticated_request(&url).await?;
-
-        if !response.status().is_success() {
-            let error_text = response
-                .text()
-                .await
-                .unwrap_or_else(|_| "Unknown error".to_string());
-            return Err(HttpError::RequestFailed(format!(
-                "Get transaction log failed: {}",
-                error_text
-            )));
-        }
-
-        let api_response: ApiResponse<TransactionLogResponse> = response
-            .json()
-            .await
-            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
-
-        if let Some(error) = api_response.error {
-            return Err(HttpError::RequestFailed(format!(
-                "API error: {} - {}",
-                error.code, error.message
-            )));
-        }
-
-        api_response.result.ok_or_else(|| {
-            HttpError::InvalidResponse("No transaction log data in response".to_string())
-        })
+        self.private_get(GET_TRANSACTION_LOG, &query).await
     }
 
     /// Get deposits
@@ -689,52 +416,14 @@ impl DeribitHttpClient {
         count: Option<u32>,
         offset: Option<u32>,
     ) -> Result<DepositsResponse, HttpError> {
-        let mut query_params = vec![("currency".to_string(), currency.to_string())];
-
+        let mut query = format!("?currency={}", urlencoding::encode(currency));
         if let Some(count) = count {
-            query_params.push(("count".to_string(), count.to_string()));
+            query.push_str(&format!("&count={}", count));
         }
-
         if let Some(offset) = offset {
-            query_params.push(("offset".to_string(), offset.to_string()));
+            query.push_str(&format!("&offset={}", offset));
         }
-
-        let query_string = query_params
-            .iter()
-            .map(|(k, v)| format!("{}={}", k, urlencoding::encode(v)))
-            .collect::<Vec<_>>()
-            .join("&");
-
-        let url = format!("{}{}?{}", self.base_url(), GET_DEPOSITS, query_string);
-
-        let response = self.make_authenticated_request(&url).await?;
-
-        if !response.status().is_success() {
-            let error_text = response
-                .text()
-                .await
-                .unwrap_or_else(|_| "Unknown error".to_string());
-            return Err(HttpError::RequestFailed(format!(
-                "Get deposits failed: {}",
-                error_text
-            )));
-        }
-
-        let api_response: ApiResponse<DepositsResponse> = response
-            .json()
-            .await
-            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
-
-        if let Some(error) = api_response.error {
-            return Err(HttpError::RequestFailed(format!(
-                "API error: {} - {}",
-                error.code, error.message
-            )));
-        }
-
-        api_response
-            .result
-            .ok_or_else(|| HttpError::InvalidResponse("No deposits data in response".to_string()))
+        self.private_get(GET_DEPOSITS, &query).await
     }
 
     /// Get withdrawals
@@ -762,52 +451,14 @@ impl DeribitHttpClient {
         count: Option<u32>,
         offset: Option<u32>,
     ) -> Result<WithdrawalsResponse, HttpError> {
-        let mut query_params = vec![("currency".to_string(), currency.to_string())];
-
+        let mut query = format!("?currency={}", urlencoding::encode(currency));
         if let Some(count) = count {
-            query_params.push(("count".to_string(), count.to_string()));
+            query.push_str(&format!("&count={}", count));
         }
-
         if let Some(offset) = offset {
-            query_params.push(("offset".to_string(), offset.to_string()));
+            query.push_str(&format!("&offset={}", offset));
         }
-
-        let query_string = query_params
-            .iter()
-            .map(|(k, v)| format!("{}={}", k, urlencoding::encode(v)))
-            .collect::<Vec<_>>()
-            .join("&");
-
-        let url = format!("{}{}?{}", self.base_url(), GET_WITHDRAWALS, query_string);
-
-        let response = self.make_authenticated_request(&url).await?;
-
-        if !response.status().is_success() {
-            let error_text = response
-                .text()
-                .await
-                .unwrap_or_else(|_| "Unknown error".to_string());
-            return Err(HttpError::RequestFailed(format!(
-                "Get withdrawals failed: {}",
-                error_text
-            )));
-        }
-
-        let api_response: ApiResponse<WithdrawalsResponse> = response
-            .json()
-            .await
-            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
-
-        if let Some(error) = api_response.error {
-            return Err(HttpError::RequestFailed(format!(
-                "API error: {} - {}",
-                error.code, error.message
-            )));
-        }
-
-        api_response.result.ok_or_else(|| {
-            HttpError::InvalidResponse("No withdrawals data in response".to_string())
-        })
+        self.private_get(GET_WITHDRAWALS, &query).await
     }
 
     /// Submit transfer to subaccount
@@ -835,53 +486,14 @@ impl DeribitHttpClient {
         amount: f64,
         destination: u64,
     ) -> Result<TransferResultResponse, HttpError> {
-        let query_params = [
-            ("currency".to_string(), currency.to_string()),
-            ("amount".to_string(), amount.to_string()),
-            ("destination".to_string(), destination.to_string()),
-        ];
-
-        let query_string = query_params
-            .iter()
-            .map(|(k, v)| format!("{}={}", k, urlencoding::encode(v)))
-            .collect::<Vec<_>>()
-            .join("&");
-
-        let url = format!(
-            "{}{}?{}",
-            self.base_url(),
-            SUBMIT_TRANSFER_TO_SUBACCOUNT,
-            query_string
+        let query = format!(
+            "?currency={}&amount={}&destination={}",
+            urlencoding::encode(currency),
+            amount,
+            destination
         );
-
-        let response = self.make_authenticated_request(&url).await?;
-
-        if !response.status().is_success() {
-            let error_text = response
-                .text()
-                .await
-                .unwrap_or_else(|_| "Unknown error".to_string());
-            return Err(HttpError::RequestFailed(format!(
-                "Submit transfer to subaccount failed: {}",
-                error_text
-            )));
-        }
-
-        let api_response: ApiResponse<TransferResultResponse> = response
-            .json()
+        self.private_get(SUBMIT_TRANSFER_TO_SUBACCOUNT, &query)
             .await
-            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
-
-        if let Some(error) = api_response.error {
-            return Err(HttpError::RequestFailed(format!(
-                "API error: {} - {}",
-                error.code, error.message
-            )));
-        }
-
-        api_response
-            .result
-            .ok_or_else(|| HttpError::InvalidResponse("No transfer result in response".to_string()))
     }
 
     /// Submit transfer to user
@@ -909,53 +521,13 @@ impl DeribitHttpClient {
         amount: f64,
         destination: &str,
     ) -> Result<TransferResultResponse, HttpError> {
-        let query_params = [
-            ("currency".to_string(), currency.to_string()),
-            ("amount".to_string(), amount.to_string()),
-            ("destination".to_string(), destination.to_string()),
-        ];
-
-        let query_string = query_params
-            .iter()
-            .map(|(k, v)| format!("{}={}", k, urlencoding::encode(v)))
-            .collect::<Vec<_>>()
-            .join("&");
-
-        let url = format!(
-            "{}{}?{}",
-            self.base_url(),
-            SUBMIT_TRANSFER_TO_USER,
-            query_string
+        let query = format!(
+            "?currency={}&amount={}&destination={}",
+            urlencoding::encode(currency),
+            amount,
+            urlencoding::encode(destination)
         );
-
-        let response = self.make_authenticated_request(&url).await?;
-
-        if !response.status().is_success() {
-            let error_text = response
-                .text()
-                .await
-                .unwrap_or_else(|_| "Unknown error".to_string());
-            return Err(HttpError::RequestFailed(format!(
-                "Submit transfer to user failed: {}",
-                error_text
-            )));
-        }
-
-        let api_response: ApiResponse<TransferResultResponse> = response
-            .json()
-            .await
-            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
-
-        if let Some(error) = api_response.error {
-            return Err(HttpError::RequestFailed(format!(
-                "API error: {} - {}",
-                error.code, error.message
-            )));
-        }
-
-        api_response
-            .result
-            .ok_or_else(|| HttpError::InvalidResponse("No transfer result in response".to_string()))
+        self.private_get(SUBMIT_TRANSFER_TO_USER, &query).await
     }
 
     /// Get transfers list
@@ -991,52 +563,14 @@ impl DeribitHttpClient {
         count: Option<u32>,
         offset: Option<u32>,
     ) -> Result<TransfersResponse, HttpError> {
-        let mut query_params = vec![("currency".to_string(), currency.to_string())];
-
+        let mut query = format!("?currency={}", urlencoding::encode(currency));
         if let Some(c) = count {
-            query_params.push(("count".to_string(), c.to_string()));
+            query.push_str(&format!("&count={}", c));
         }
-
         if let Some(o) = offset {
-            query_params.push(("offset".to_string(), o.to_string()));
+            query.push_str(&format!("&offset={}", o));
         }
-
-        let query_string = query_params
-            .iter()
-            .map(|(k, v)| format!("{}={}", k, urlencoding::encode(v)))
-            .collect::<Vec<_>>()
-            .join("&");
-
-        let url = format!("{}{}?{}", self.base_url(), GET_TRANSFERS, query_string);
-
-        let response = self.make_authenticated_request(&url).await?;
-
-        if !response.status().is_success() {
-            let error_text = response
-                .text()
-                .await
-                .unwrap_or_else(|_| "Unknown error".to_string());
-            return Err(HttpError::RequestFailed(format!(
-                "Get transfers failed: {}",
-                error_text
-            )));
-        }
-
-        let api_response: ApiResponse<TransfersResponse> = response
-            .json()
-            .await
-            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
-
-        if let Some(error) = api_response.error {
-            return Err(HttpError::RequestFailed(format!(
-                "API error: {} - {}",
-                error.code, error.message
-            )));
-        }
-
-        api_response
-            .result
-            .ok_or_else(|| HttpError::InvalidResponse("No transfers data in response".to_string()))
+        self.private_get(GET_TRANSFERS, &query).await
     }
 
     /// Cancel a transfer by ID
@@ -1070,52 +604,8 @@ impl DeribitHttpClient {
         currency: &str,
         id: i64,
     ) -> Result<InternalTransfer, HttpError> {
-        let query_params = [
-            ("currency".to_string(), currency.to_string()),
-            ("id".to_string(), id.to_string()),
-        ];
-
-        let query_string = query_params
-            .iter()
-            .map(|(k, v)| format!("{}={}", k, urlencoding::encode(v)))
-            .collect::<Vec<_>>()
-            .join("&");
-
-        let url = format!(
-            "{}{}?{}",
-            self.base_url(),
-            CANCEL_TRANSFER_BY_ID,
-            query_string
-        );
-
-        let response = self.make_authenticated_request(&url).await?;
-
-        if !response.status().is_success() {
-            let error_text = response
-                .text()
-                .await
-                .unwrap_or_else(|_| "Unknown error".to_string());
-            return Err(HttpError::RequestFailed(format!(
-                "Cancel transfer failed: {}",
-                error_text
-            )));
-        }
-
-        let api_response: ApiResponse<InternalTransfer> = response
-            .json()
-            .await
-            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
-
-        if let Some(error) = api_response.error {
-            return Err(HttpError::RequestFailed(format!(
-                "API error: {} - {}",
-                error.code, error.message
-            )));
-        }
-
-        api_response
-            .result
-            .ok_or_else(|| HttpError::InvalidResponse("No transfer data in response".to_string()))
+        let query = format!("?currency={}&id={}", urlencoding::encode(currency), id);
+        self.private_get(CANCEL_TRANSFER_BY_ID, &query).await
     }
 
     /// Submit transfer between subaccounts
@@ -1153,57 +643,17 @@ impl DeribitHttpClient {
         destination: i64,
         source: Option<i64>,
     ) -> Result<InternalTransfer, HttpError> {
-        let mut query_params = vec![
-            ("currency".to_string(), currency.to_string()),
-            ("amount".to_string(), amount.to_string()),
-            ("destination".to_string(), destination.to_string()),
-        ];
-
-        if let Some(s) = source {
-            query_params.push(("source".to_string(), s.to_string()));
-        }
-
-        let query_string = query_params
-            .iter()
-            .map(|(k, v)| format!("{}={}", k, urlencoding::encode(v)))
-            .collect::<Vec<_>>()
-            .join("&");
-
-        let url = format!(
-            "{}{}?{}",
-            self.base_url(),
-            SUBMIT_TRANSFER_BETWEEN_SUBACCOUNTS,
-            query_string
+        let mut query = format!(
+            "?currency={}&amount={}&destination={}",
+            urlencoding::encode(currency),
+            amount,
+            destination
         );
-
-        let response = self.make_authenticated_request(&url).await?;
-
-        if !response.status().is_success() {
-            let error_text = response
-                .text()
-                .await
-                .unwrap_or_else(|_| "Unknown error".to_string());
-            return Err(HttpError::RequestFailed(format!(
-                "Submit transfer between subaccounts failed: {}",
-                error_text
-            )));
+        if let Some(s) = source {
+            query.push_str(&format!("&source={}", s));
         }
-
-        let api_response: ApiResponse<InternalTransfer> = response
-            .json()
+        self.private_get(SUBMIT_TRANSFER_BETWEEN_SUBACCOUNTS, &query)
             .await
-            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
-
-        if let Some(error) = api_response.error {
-            return Err(HttpError::RequestFailed(format!(
-                "API error: {} - {}",
-                error.code, error.message
-            )));
-        }
-
-        api_response
-            .result
-            .ok_or_else(|| HttpError::InvalidResponse("No transfer data in response".to_string()))
     }
 
     /// Place a buy order
@@ -1422,41 +872,8 @@ impl DeribitHttpClient {
     /// * `order_id` - The order ID to cancel
     ///
     pub async fn cancel_order(&self, order_id: &str) -> Result<OrderInfoResponse, HttpError> {
-        let url = format!(
-            "{}{}?order_id={}",
-            self.base_url(),
-            CANCEL,
-            urlencoding::encode(order_id)
-        );
-
-        let response = self.make_authenticated_request(&url).await?;
-
-        if !response.status().is_success() {
-            let error_text = response
-                .text()
-                .await
-                .unwrap_or_else(|_| "Unknown error".to_string());
-            return Err(HttpError::RequestFailed(format!(
-                "Cancel order failed: {}",
-                error_text
-            )));
-        }
-
-        let api_response: ApiResponse<OrderInfoResponse> = response
-            .json()
-            .await
-            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
-
-        if let Some(error) = api_response.error {
-            return Err(HttpError::RequestFailed(format!(
-                "API error: {} - {}",
-                error.code, error.message
-            )));
-        }
-
-        api_response
-            .result
-            .ok_or_else(|| HttpError::InvalidResponse("No order data in response".to_string()))
+        let query = format!("?order_id={}", urlencoding::encode(order_id));
+        self.private_get(CANCEL, &query).await
     }
 
     /// Cancel all orders
@@ -1467,36 +884,7 @@ impl DeribitHttpClient {
     ///
     /// Returns the number of cancelled orders.
     pub async fn cancel_all(&self) -> Result<u32, HttpError> {
-        let url = format!("{}{}", self.base_url(), CANCEL_ALL);
-
-        let response = self.make_authenticated_request(&url).await?;
-
-        if !response.status().is_success() {
-            let error_text = response
-                .text()
-                .await
-                .unwrap_or_else(|_| "Unknown error".to_string());
-            return Err(HttpError::RequestFailed(format!(
-                "Cancel all orders failed: {}",
-                error_text
-            )));
-        }
-
-        let api_response: ApiResponse<u32> = response
-            .json()
-            .await
-            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
-
-        if let Some(error) = api_response.error {
-            return Err(HttpError::RequestFailed(format!(
-                "API error: {} - {}",
-                error.code, error.message
-            )));
-        }
-
-        api_response
-            .result
-            .ok_or_else(|| HttpError::InvalidResponse("No result in response".to_string()))
+        self.private_get(CANCEL_ALL, "").await
     }
 
     /// Cancel all orders by currency
@@ -1511,41 +899,8 @@ impl DeribitHttpClient {
     ///
     /// Returns the number of cancelled orders.
     pub async fn cancel_all_by_currency(&self, currency: &str) -> Result<u32, HttpError> {
-        let url = format!(
-            "{}{}?currency={}",
-            self.base_url(),
-            CANCEL_ALL_BY_CURRENCY,
-            urlencoding::encode(currency)
-        );
-
-        let response = self.make_authenticated_request(&url).await?;
-
-        if !response.status().is_success() {
-            let error_text = response
-                .text()
-                .await
-                .unwrap_or_else(|_| "Unknown error".to_string());
-            return Err(HttpError::RequestFailed(format!(
-                "Cancel all orders by currency failed: {}",
-                error_text
-            )));
-        }
-
-        let api_response: ApiResponse<u32> = response
-            .json()
-            .await
-            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
-
-        if let Some(error) = api_response.error {
-            return Err(HttpError::RequestFailed(format!(
-                "API error: {} - {}",
-                error.code, error.message
-            )));
-        }
-
-        api_response
-            .result
-            .ok_or_else(|| HttpError::InvalidResponse("No result in response".to_string()))
+        let query = format!("?currency={}", urlencoding::encode(currency));
+        self.private_get(CANCEL_ALL_BY_CURRENCY, &query).await
     }
 
     /// Cancel all orders by currency pair
@@ -1560,41 +915,8 @@ impl DeribitHttpClient {
     ///
     /// Returns the number of cancelled orders.
     pub async fn cancel_all_by_currency_pair(&self, currency_pair: &str) -> Result<u32, HttpError> {
-        let url = format!(
-            "{}{}?currency_pair={}",
-            self.base_url(),
-            CANCEL_ALL_BY_CURRENCY_PAIR,
-            urlencoding::encode(currency_pair)
-        );
-
-        let response = self.make_authenticated_request(&url).await?;
-
-        if !response.status().is_success() {
-            let error_text = response
-                .text()
-                .await
-                .unwrap_or_else(|_| "Unknown error".to_string());
-            return Err(HttpError::RequestFailed(format!(
-                "Cancel all orders by currency pair failed: {}",
-                error_text
-            )));
-        }
-
-        let api_response: ApiResponse<u32> = response
-            .json()
-            .await
-            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
-
-        if let Some(error) = api_response.error {
-            return Err(HttpError::RequestFailed(format!(
-                "API error: {} - {}",
-                error.code, error.message
-            )));
-        }
-
-        api_response
-            .result
-            .ok_or_else(|| HttpError::InvalidResponse("No result in response".to_string()))
+        let query = format!("?currency_pair={}", urlencoding::encode(currency_pair));
+        self.private_get(CANCEL_ALL_BY_CURRENCY_PAIR, &query).await
     }
 
     /// Cancel all orders by instrument
@@ -1609,41 +931,8 @@ impl DeribitHttpClient {
     ///
     /// Returns the number of cancelled orders.
     pub async fn cancel_all_by_instrument(&self, instrument_name: &str) -> Result<u32, HttpError> {
-        let url = format!(
-            "{}{}?instrument_name={}",
-            self.base_url(),
-            CANCEL_ALL_BY_INSTRUMENT,
-            urlencoding::encode(instrument_name)
-        );
-
-        let response = self.make_authenticated_request(&url).await?;
-
-        if !response.status().is_success() {
-            let error_text = response
-                .text()
-                .await
-                .unwrap_or_else(|_| "Unknown error".to_string());
-            return Err(HttpError::RequestFailed(format!(
-                "Cancel all orders by instrument failed: {}",
-                error_text
-            )));
-        }
-
-        let api_response: ApiResponse<u32> = response
-            .json()
-            .await
-            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
-
-        if let Some(error) = api_response.error {
-            return Err(HttpError::RequestFailed(format!(
-                "API error: {} - {}",
-                error.code, error.message
-            )));
-        }
-
-        api_response
-            .result
-            .ok_or_else(|| HttpError::InvalidResponse("No result in response".to_string()))
+        let query = format!("?instrument_name={}", urlencoding::encode(instrument_name));
+        self.private_get(CANCEL_ALL_BY_INSTRUMENT, &query).await
     }
 
     /// Cancel all orders by kind or type
@@ -1664,61 +953,18 @@ impl DeribitHttpClient {
         order_type: Option<&str>,
     ) -> Result<u32, HttpError> {
         let mut query_params = Vec::new();
-
         if let Some(kind) = kind {
-            query_params.push(("kind".to_string(), kind.to_string()));
+            query_params.push(format!("kind={}", urlencoding::encode(kind)));
         }
-
         if let Some(order_type) = order_type {
-            query_params.push(("type".to_string(), order_type.to_string()));
+            query_params.push(format!("type={}", urlencoding::encode(order_type)));
         }
-
-        let query_string = if query_params.is_empty() {
+        let query = if query_params.is_empty() {
             String::new()
         } else {
-            "?".to_string()
-                + &query_params
-                    .iter()
-                    .map(|(k, v)| format!("{}={}", k, urlencoding::encode(v)))
-                    .collect::<Vec<_>>()
-                    .join("&")
+            format!("?{}", query_params.join("&"))
         };
-
-        let url = format!(
-            "{}{}{}",
-            self.base_url(),
-            CANCEL_ALL_BY_KIND_OR_TYPE,
-            query_string
-        );
-
-        let response = self.make_authenticated_request(&url).await?;
-
-        if !response.status().is_success() {
-            let error_text = response
-                .text()
-                .await
-                .unwrap_or_else(|_| "Unknown error".to_string());
-            return Err(HttpError::RequestFailed(format!(
-                "Cancel all orders by kind or type failed: {}",
-                error_text
-            )));
-        }
-
-        let api_response: ApiResponse<u32> = response
-            .json()
-            .await
-            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
-
-        if let Some(error) = api_response.error {
-            return Err(HttpError::RequestFailed(format!(
-                "API error: {} - {}",
-                error.code, error.message
-            )));
-        }
-
-        api_response
-            .result
-            .ok_or_else(|| HttpError::InvalidResponse("No result in response".to_string()))
+        self.private_get(CANCEL_ALL_BY_KIND_OR_TYPE, &query).await
     }
 
     /// Cancel orders by label
@@ -1733,41 +979,8 @@ impl DeribitHttpClient {
     ///
     /// Returns the number of cancelled orders.
     pub async fn cancel_by_label(&self, label: &str) -> Result<u32, HttpError> {
-        let url = format!(
-            "{}{}?label={}",
-            self.base_url(),
-            CANCEL_BY_LABEL,
-            urlencoding::encode(label)
-        );
-
-        let response = self.make_authenticated_request(&url).await?;
-
-        if !response.status().is_success() {
-            let error_text = response
-                .text()
-                .await
-                .unwrap_or_else(|_| "Unknown error".to_string());
-            return Err(HttpError::RequestFailed(format!(
-                "Cancel orders by label failed: {}",
-                error_text
-            )));
-        }
-
-        let api_response: ApiResponse<u32> = response
-            .json()
-            .await
-            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
-
-        if let Some(error) = api_response.error {
-            return Err(HttpError::RequestFailed(format!(
-                "API error: {} - {}",
-                error.code, error.message
-            )));
-        }
-
-        api_response
-            .result
-            .ok_or_else(|| HttpError::InvalidResponse("No result in response".to_string()))
+        let query = format!("?label={}", urlencoding::encode(label));
+        self.private_get(CANCEL_BY_LABEL, &query).await
     }
 
     /// Get account summary
@@ -1784,53 +997,11 @@ impl DeribitHttpClient {
         currency: &str,
         extended: Option<bool>,
     ) -> Result<AccountSummaryResponse, HttpError> {
-        let mut query_params = vec![("currency".to_string(), currency.to_string())];
-
+        let mut query = format!("?currency={}", urlencoding::encode(currency));
         if let Some(extended) = extended {
-            query_params.push(("extended".to_string(), extended.to_string()));
+            query.push_str(&format!("&extended={}", extended));
         }
-
-        let query_string = query_params
-            .iter()
-            .map(|(k, v)| format!("{}={}", k, urlencoding::encode(v)))
-            .collect::<Vec<_>>()
-            .join("&");
-
-        let url = format!(
-            "{}{}?{}",
-            self.base_url(),
-            GET_ACCOUNT_SUMMARY,
-            query_string
-        );
-
-        let response = self.make_authenticated_request(&url).await?;
-
-        if !response.status().is_success() {
-            let error_text = response
-                .text()
-                .await
-                .unwrap_or_else(|_| "Unknown error".to_string());
-            return Err(HttpError::RequestFailed(format!(
-                "Get account summary failed: {}",
-                error_text
-            )));
-        }
-
-        let api_response: ApiResponse<AccountSummaryResponse> = response
-            .json()
-            .await
-            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
-
-        if let Some(error) = api_response.error {
-            return Err(HttpError::RequestFailed(format!(
-                "API error: {} - {}",
-                error.code, error.message
-            )));
-        }
-
-        api_response.result.ok_or_else(|| {
-            HttpError::InvalidResponse("No account summary data in response".to_string())
-        })
+        self.private_get(GET_ACCOUNT_SUMMARY, &query).await
     }
 
     /// Get account summaries for all currencies
@@ -1858,51 +1029,19 @@ impl DeribitHttpClient {
         subaccount_id: Option<i64>,
         extended: Option<bool>,
     ) -> Result<AccountSummaryResponse, HttpError> {
-        let mut url = format!("{}{}", self.base_url(), GET_ACCOUNT_SUMMARIES);
-
         let mut params = Vec::new();
-
         if let Some(subaccount_id) = subaccount_id {
             params.push(format!("subaccount_id={}", subaccount_id));
         }
-
         if let Some(extended) = extended {
             params.push(format!("extended={}", extended));
         }
-
-        if !params.is_empty() {
-            url.push('?');
-            url.push_str(&params.join("&"));
-        }
-
-        let response = self.make_authenticated_request(&url).await?;
-
-        if !response.status().is_success() {
-            let error_text = response
-                .text()
-                .await
-                .unwrap_or_else(|_| "Unknown error".to_string());
-            return Err(HttpError::RequestFailed(format!(
-                "Get account summaries failed: {}",
-                error_text
-            )));
-        }
-
-        let api_response: ApiResponse<AccountSummaryResponse> = response
-            .json()
-            .await
-            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
-
-        if let Some(error) = api_response.error {
-            return Err(HttpError::RequestFailed(format!(
-                "API error: {} - {}",
-                error.code, error.message
-            )));
-        }
-
-        api_response.result.ok_or_else(|| {
-            HttpError::InvalidResponse("No account summaries data in response".to_string())
-        })
+        let query = if params.is_empty() {
+            String::new()
+        } else {
+            format!("?{}", params.join("&"))
+        };
+        self.private_get(GET_ACCOUNT_SUMMARIES, &query).await
     }
 
     /// Get positions
@@ -1930,61 +1069,22 @@ impl DeribitHttpClient {
         kind: Option<&str>,
         subaccount_id: Option<i32>,
     ) -> Result<Vec<Position>, HttpError> {
-        let mut query_params = Vec::new();
-
+        let mut params = Vec::new();
         if let Some(currency) = currency {
-            query_params.push(("currency".to_string(), currency.to_string()));
+            params.push(format!("currency={}", urlencoding::encode(currency)));
         }
-
         if let Some(kind) = kind {
-            query_params.push(("kind".to_string(), kind.to_string()));
+            params.push(format!("kind={}", urlencoding::encode(kind)));
         }
-
         if let Some(subaccount_id) = subaccount_id {
-            query_params.push(("subaccount_id".to_string(), subaccount_id.to_string()));
+            params.push(format!("subaccount_id={}", subaccount_id));
         }
-
-        let query_string = if query_params.is_empty() {
+        let query = if params.is_empty() {
             String::new()
         } else {
-            "?".to_string()
-                + &query_params
-                    .iter()
-                    .map(|(k, v)| format!("{}={}", k, urlencoding::encode(v)))
-                    .collect::<Vec<_>>()
-                    .join("&")
+            format!("?{}", params.join("&"))
         };
-
-        let url = format!("{}{}{}", self.base_url(), GET_POSITIONS, query_string);
-
-        let response = self.make_authenticated_request(&url).await?;
-
-        if !response.status().is_success() {
-            let error_text = response
-                .text()
-                .await
-                .unwrap_or_else(|_| "Unknown error".to_string());
-            return Err(HttpError::RequestFailed(format!(
-                "Get positions failed: {}",
-                error_text
-            )));
-        }
-
-        let api_response: ApiResponse<Vec<Position>> = response
-            .json()
-            .await
-            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
-
-        if let Some(error) = api_response.error {
-            return Err(HttpError::RequestFailed(format!(
-                "API error: {} - {}",
-                error.code, error.message
-            )));
-        }
-
-        api_response
-            .result
-            .ok_or_else(|| HttpError::InvalidResponse("No positions data in response".to_string()))
+        self.private_get(GET_POSITIONS, &query).await
     }
 
     /// Get position for a specific instrument
@@ -2000,36 +1100,8 @@ impl DeribitHttpClient {
     /// Returns a vector of positions for the specified instrument
     ///
     pub async fn get_position(&self, instrument_name: &str) -> Result<Vec<Position>, HttpError> {
-        let query_string = format!("instrument_name={}", instrument_name);
-        let url = format!("{}{}{}", self.base_url(), GET_POSITION, query_string);
-        let response = self.make_authenticated_request(&url).await?;
-
-        if !response.status().is_success() {
-            let error_text = response
-                .text()
-                .await
-                .unwrap_or_else(|_| "Unknown error".to_string());
-            return Err(HttpError::RequestFailed(format!(
-                "Get positions failed: {}",
-                error_text
-            )));
-        }
-
-        let api_response: ApiResponse<Vec<Position>> = response
-            .json()
-            .await
-            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
-
-        if let Some(error) = api_response.error {
-            return Err(HttpError::RequestFailed(format!(
-                "API error: {} - {}",
-                error.code, error.message
-            )));
-        }
-
-        api_response
-            .result
-            .ok_or_else(|| HttpError::InvalidResponse("No positions data in response".to_string()))
+        let query = format!("?instrument_name={}", urlencoding::encode(instrument_name));
+        self.private_get(GET_POSITION, &query).await
     }
 
     /// Edit an order
@@ -2264,51 +1336,15 @@ impl DeribitHttpClient {
         order_type: &str,
         price: Option<f64>,
     ) -> Result<OrderResponse, HttpError> {
-        let mut query_params = vec![
-            ("instrument_name".to_string(), instrument_name.to_string()),
-            ("type".to_string(), order_type.to_string()),
-        ];
-
+        let mut query = format!(
+            "?instrument_name={}&type={}",
+            urlencoding::encode(instrument_name),
+            urlencoding::encode(order_type)
+        );
         if let Some(price) = price {
-            query_params.push(("price".to_string(), price.to_string()));
+            query.push_str(&format!("&price={}", price));
         }
-
-        let query_string = query_params
-            .iter()
-            .map(|(k, v)| format!("{}={}", k, urlencoding::encode(v)))
-            .collect::<Vec<_>>()
-            .join("&");
-
-        let url = format!("{}{}?{}", self.base_url(), CLOSE_POSITION, query_string);
-
-        let response = self.make_authenticated_request(&url).await?;
-
-        if !response.status().is_success() {
-            let error_text = response
-                .text()
-                .await
-                .unwrap_or_else(|_| "Unknown error".to_string());
-            return Err(HttpError::RequestFailed(format!(
-                "Close position failed: {}",
-                error_text
-            )));
-        }
-
-        let api_response: ApiResponse<OrderResponse> = response
-            .json()
-            .await
-            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
-
-        if let Some(error) = api_response.error {
-            return Err(HttpError::RequestFailed(format!(
-                "API error: {} - {}",
-                error.code, error.message
-            )));
-        }
-
-        api_response
-            .result
-            .ok_or_else(|| HttpError::InvalidResponse("No order data in response".to_string()))
+        self.private_get(CLOSE_POSITION, &query).await
     }
 
     /// Get margin requirements
@@ -2338,48 +1374,13 @@ impl DeribitHttpClient {
         amount: f64,
         price: f64,
     ) -> Result<MarginsResponse, HttpError> {
-        let query_params = [
-            ("instrument_name".to_string(), instrument_name.to_string()),
-            ("amount".to_string(), amount.to_string()),
-            ("price".to_string(), price.to_string()),
-        ];
-
-        let query_string = query_params
-            .iter()
-            .map(|(k, v)| format!("{}={}", k, urlencoding::encode(v)))
-            .collect::<Vec<_>>()
-            .join("&");
-
-        let url = format!("{}{}?{}", self.base_url(), GET_MARGINS, query_string);
-
-        let response = self.make_authenticated_request(&url).await?;
-
-        if !response.status().is_success() {
-            let error_text = response
-                .text()
-                .await
-                .unwrap_or_else(|_| "Unknown error".to_string());
-            return Err(HttpError::RequestFailed(format!(
-                "Get margins failed: {}",
-                error_text
-            )));
-        }
-
-        let api_response: ApiResponse<MarginsResponse> = response
-            .json()
-            .await
-            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
-
-        if let Some(error) = api_response.error {
-            return Err(HttpError::RequestFailed(format!(
-                "API error: {} - {}",
-                error.code, error.message
-            )));
-        }
-
-        api_response
-            .result
-            .ok_or_else(|| HttpError::InvalidResponse("No margin data in response".to_string()))
+        let query = format!(
+            "?instrument_name={}&amount={}&price={}",
+            urlencoding::encode(instrument_name),
+            amount,
+            price
+        );
+        self.private_get(GET_MARGINS, &query).await
     }
 
     /// Get order margin by IDs
@@ -2477,52 +1478,12 @@ impl DeribitHttpClient {
         currency: &str,
         label: &str,
     ) -> Result<Vec<OrderInfoResponse>, HttpError> {
-        let query_params = [
-            ("currency".to_string(), currency.to_string()),
-            ("label".to_string(), label.to_string()),
-        ];
-
-        let query_string = query_params
-            .iter()
-            .map(|(k, v)| format!("{}={}", k, urlencoding::encode(v)))
-            .collect::<Vec<_>>()
-            .join("&");
-
-        let url = format!(
-            "{}{}?{}",
-            self.base_url(),
-            GET_ORDER_STATE_BY_LABEL,
-            query_string
+        let query = format!(
+            "?currency={}&label={}",
+            urlencoding::encode(currency),
+            urlencoding::encode(label)
         );
-
-        let response = self.make_authenticated_request(&url).await?;
-
-        if !response.status().is_success() {
-            let error_text = response
-                .text()
-                .await
-                .unwrap_or_else(|_| "Unknown error".to_string());
-            return Err(HttpError::RequestFailed(format!(
-                "Get order state by label failed: {}",
-                error_text
-            )));
-        }
-
-        let api_response: ApiResponse<Vec<OrderInfoResponse>> = response
-            .json()
-            .await
-            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
-
-        if let Some(error) = api_response.error {
-            return Err(HttpError::RequestFailed(format!(
-                "API error: {} - {}",
-                error.code, error.message
-            )));
-        }
-
-        api_response
-            .result
-            .ok_or_else(|| HttpError::InvalidResponse("No order data in response".to_string()))
+        self.private_get(GET_ORDER_STATE_BY_LABEL, &query).await
     }
 
     /// Get settlement history by currency
@@ -2555,63 +1516,27 @@ impl DeribitHttpClient {
         continuation: Option<&str>,
         search_start_timestamp: Option<u64>,
     ) -> Result<SettlementsResponse, HttpError> {
-        let mut url = format!(
-            "{}{}?currency={}",
-            self.base_url(),
-            GET_SETTLEMENT_HISTORY_BY_CURRENCY,
-            urlencoding::encode(currency)
-        );
-
+        let mut query = format!("?currency={}", urlencoding::encode(currency));
         if let Some(settlement_type) = settlement_type {
-            url.push_str(&format!("&type={}", urlencoding::encode(settlement_type)));
+            query.push_str(&format!("&type={}", urlencoding::encode(settlement_type)));
         }
-
         if let Some(count) = count {
-            url.push_str(&format!("&count={}", count));
+            query.push_str(&format!("&count={}", count));
         }
-
         if let Some(continuation) = continuation {
-            url.push_str(&format!(
+            query.push_str(&format!(
                 "&continuation={}",
                 urlencoding::encode(continuation)
             ));
         }
-
         if let Some(search_start_timestamp) = search_start_timestamp {
-            url.push_str(&format!(
+            query.push_str(&format!(
                 "&search_start_timestamp={}",
                 search_start_timestamp
             ));
         }
-
-        let response = self.make_authenticated_request(&url).await?;
-
-        if !response.status().is_success() {
-            let error_text = response
-                .text()
-                .await
-                .unwrap_or_else(|_| "Unknown error".to_string());
-            return Err(HttpError::RequestFailed(format!(
-                "Get settlement history by currency failed: {}",
-                error_text
-            )));
-        }
-
-        let api_response: ApiResponse<SettlementsResponse> = response
-            .json()
+        self.private_get(GET_SETTLEMENT_HISTORY_BY_CURRENCY, &query)
             .await
-            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
-
-        if let Some(error) = api_response.error {
-            return Err(HttpError::RequestFailed(format!(
-                "API error: {} - {}",
-                error.code, error.message
-            )));
-        }
-
-        api_response
-            .result
-            .ok_or_else(|| HttpError::InvalidResponse("No settlement data in response".to_string()))
     }
 
     /// Get settlement history by instrument
@@ -2644,63 +1569,27 @@ impl DeribitHttpClient {
         continuation: Option<&str>,
         search_start_timestamp: Option<u64>,
     ) -> Result<SettlementsResponse, HttpError> {
-        let mut url = format!(
-            "{}{}?instrument_name={}",
-            self.base_url(),
-            GET_SETTLEMENT_HISTORY_BY_INSTRUMENT,
-            urlencoding::encode(instrument_name)
-        );
-
+        let mut query = format!("?instrument_name={}", urlencoding::encode(instrument_name));
         if let Some(settlement_type) = settlement_type {
-            url.push_str(&format!("&type={}", urlencoding::encode(settlement_type)));
+            query.push_str(&format!("&type={}", urlencoding::encode(settlement_type)));
         }
-
         if let Some(count) = count {
-            url.push_str(&format!("&count={}", count));
+            query.push_str(&format!("&count={}", count));
         }
-
         if let Some(continuation) = continuation {
-            url.push_str(&format!(
+            query.push_str(&format!(
                 "&continuation={}",
                 urlencoding::encode(continuation)
             ));
         }
-
         if let Some(search_start_timestamp) = search_start_timestamp {
-            url.push_str(&format!(
+            query.push_str(&format!(
                 "&search_start_timestamp={}",
                 search_start_timestamp
             ));
         }
-
-        let response = self.make_authenticated_request(&url).await?;
-
-        if !response.status().is_success() {
-            let error_text = response
-                .text()
-                .await
-                .unwrap_or_else(|_| "Unknown error".to_string());
-            return Err(HttpError::RequestFailed(format!(
-                "Get settlement history by instrument failed: {}",
-                error_text
-            )));
-        }
-
-        let api_response: ApiResponse<SettlementsResponse> = response
-            .json()
+        self.private_get(GET_SETTLEMENT_HISTORY_BY_INSTRUMENT, &query)
             .await
-            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
-
-        if let Some(error) = api_response.error {
-            return Err(HttpError::RequestFailed(format!(
-                "API error: {} - {}",
-                error.code, error.message
-            )));
-        }
-
-        api_response
-            .result
-            .ok_or_else(|| HttpError::InvalidResponse("No settlement data in response".to_string()))
     }
 
     /// Get trigger order history
@@ -2731,59 +1620,23 @@ impl DeribitHttpClient {
         count: Option<u32>,
         continuation: Option<&str>,
     ) -> Result<TriggerOrderHistoryResponse, HttpError> {
-        let mut url = format!(
-            "{}{}?currency={}",
-            self.base_url(),
-            GET_TRIGGER_ORDER_HISTORY,
-            urlencoding::encode(currency)
-        );
-
+        let mut query = format!("?currency={}", urlencoding::encode(currency));
         if let Some(instrument_name) = instrument_name {
-            url.push_str(&format!(
+            query.push_str(&format!(
                 "&instrument_name={}",
                 urlencoding::encode(instrument_name)
             ));
         }
-
         if let Some(count) = count {
-            url.push_str(&format!("&count={}", count));
+            query.push_str(&format!("&count={}", count));
         }
-
         if let Some(continuation) = continuation {
-            url.push_str(&format!(
+            query.push_str(&format!(
                 "&continuation={}",
                 urlencoding::encode(continuation)
             ));
         }
-
-        let response = self.make_authenticated_request(&url).await?;
-
-        if !response.status().is_success() {
-            let error_text = response
-                .text()
-                .await
-                .unwrap_or_else(|_| "Unknown error".to_string());
-            return Err(HttpError::RequestFailed(format!(
-                "Get trigger order history failed: {}",
-                error_text
-            )));
-        }
-
-        let api_response: ApiResponse<TriggerOrderHistoryResponse> = response
-            .json()
-            .await
-            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
-
-        if let Some(error) = api_response.error {
-            return Err(HttpError::RequestFailed(format!(
-                "API error: {} - {}",
-                error.code, error.message
-            )));
-        }
-
-        api_response.result.ok_or_else(|| {
-            HttpError::InvalidResponse("No trigger order history data in response".to_string())
-        })
+        self.private_get(GET_TRIGGER_ORDER_HISTORY, &query).await
     }
 
     /// Move positions between subaccounts
@@ -2894,61 +1747,24 @@ impl DeribitHttpClient {
         mmp_group: Option<&str>,
         block_rfq: Option<bool>,
     ) -> Result<Vec<MmpConfig>, HttpError> {
-        let mut query_params: Vec<(String, String)> = Vec::new();
-
+        let mut params = Vec::new();
         if let Some(index) = index_name {
-            query_params.push(("index_name".to_string(), index.to_string()));
+            params.push(format!("index_name={}", urlencoding::encode(index)));
         }
-
         if let Some(group) = mmp_group {
-            query_params.push(("mmp_group".to_string(), group.to_string()));
+            params.push(format!("mmp_group={}", urlencoding::encode(group)));
         }
-
         if let Some(rfq) = block_rfq
             && rfq
         {
-            query_params.push(("block_rfq".to_string(), "true".to_string()));
+            params.push("block_rfq=true".to_string());
         }
-
-        let url = if query_params.is_empty() {
-            format!("{}{}", self.base_url(), GET_MMP_CONFIG)
+        let query = if params.is_empty() {
+            String::new()
         } else {
-            let query_string = query_params
-                .iter()
-                .map(|(k, v)| format!("{}={}", k, urlencoding::encode(v)))
-                .collect::<Vec<_>>()
-                .join("&");
-            format!("{}{}?{}", self.base_url(), GET_MMP_CONFIG, query_string)
+            format!("?{}", params.join("&"))
         };
-
-        let response = self.make_authenticated_request(&url).await?;
-
-        if !response.status().is_success() {
-            let error_text = response
-                .text()
-                .await
-                .unwrap_or_else(|_| "Unknown error".to_string());
-            return Err(HttpError::RequestFailed(format!(
-                "Get MMP config failed: {}",
-                error_text
-            )));
-        }
-
-        let api_response: ApiResponse<Vec<MmpConfig>> = response
-            .json()
-            .await
-            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
-
-        if let Some(error) = api_response.error {
-            return Err(HttpError::RequestFailed(format!(
-                "API error: {} - {}",
-                error.code, error.message
-            )));
-        }
-
-        api_response
-            .result
-            .ok_or_else(|| HttpError::InvalidResponse("No MMP config data in response".to_string()))
+        self.private_get(GET_MMP_CONFIG, &query).await
     }
 
     /// Get MMP status
@@ -2976,61 +1792,24 @@ impl DeribitHttpClient {
         mmp_group: Option<&str>,
         block_rfq: Option<bool>,
     ) -> Result<Vec<MmpStatus>, HttpError> {
-        let mut query_params: Vec<(String, String)> = Vec::new();
-
+        let mut params = Vec::new();
         if let Some(index) = index_name {
-            query_params.push(("index_name".to_string(), index.to_string()));
+            params.push(format!("index_name={}", urlencoding::encode(index)));
         }
-
         if let Some(group) = mmp_group {
-            query_params.push(("mmp_group".to_string(), group.to_string()));
+            params.push(format!("mmp_group={}", urlencoding::encode(group)));
         }
-
         if let Some(rfq) = block_rfq
             && rfq
         {
-            query_params.push(("block_rfq".to_string(), "true".to_string()));
+            params.push("block_rfq=true".to_string());
         }
-
-        let url = if query_params.is_empty() {
-            format!("{}{}", self.base_url(), GET_MMP_STATUS)
+        let query = if params.is_empty() {
+            String::new()
         } else {
-            let query_string = query_params
-                .iter()
-                .map(|(k, v)| format!("{}={}", k, urlencoding::encode(v)))
-                .collect::<Vec<_>>()
-                .join("&");
-            format!("{}{}?{}", self.base_url(), GET_MMP_STATUS, query_string)
+            format!("?{}", params.join("&"))
         };
-
-        let response = self.make_authenticated_request(&url).await?;
-
-        if !response.status().is_success() {
-            let error_text = response
-                .text()
-                .await
-                .unwrap_or_else(|_| "Unknown error".to_string());
-            return Err(HttpError::RequestFailed(format!(
-                "Get MMP status failed: {}",
-                error_text
-            )));
-        }
-
-        let api_response: ApiResponse<Vec<MmpStatus>> = response
-            .json()
-            .await
-            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
-
-        if let Some(error) = api_response.error {
-            return Err(HttpError::RequestFailed(format!(
-                "API error: {} - {}",
-                error.code, error.message
-            )));
-        }
-
-        api_response
-            .result
-            .ok_or_else(|| HttpError::InvalidResponse("No MMP status data in response".to_string()))
+        self.private_get(GET_MMP_STATUS, &query).await
     }
 
     /// Set MMP configuration
@@ -3161,54 +1940,16 @@ impl DeribitHttpClient {
         mmp_group: Option<&str>,
         block_rfq: Option<bool>,
     ) -> Result<String, HttpError> {
-        let mut query_params = vec![("index_name".to_string(), index_name.to_string())];
-
+        let mut query = format!("?index_name={}", urlencoding::encode(index_name));
         if let Some(group) = mmp_group {
-            query_params.push(("mmp_group".to_string(), group.to_string()));
+            query.push_str(&format!("&mmp_group={}", urlencoding::encode(group)));
         }
-
         if let Some(rfq) = block_rfq
             && rfq
         {
-            query_params.push(("block_rfq".to_string(), "true".to_string()));
+            query.push_str("&block_rfq=true");
         }
-
-        let query_string = query_params
-            .iter()
-            .map(|(k, v)| format!("{}={}", k, urlencoding::encode(v)))
-            .collect::<Vec<_>>()
-            .join("&");
-
-        let url = format!("{}{}?{}", self.base_url(), RESET_MMP, query_string);
-
-        let response = self.make_authenticated_request(&url).await?;
-
-        if !response.status().is_success() {
-            let error_text = response
-                .text()
-                .await
-                .unwrap_or_else(|_| "Unknown error".to_string());
-            return Err(HttpError::RequestFailed(format!(
-                "Reset MMP failed: {}",
-                error_text
-            )));
-        }
-
-        let api_response: ApiResponse<String> = response
-            .json()
-            .await
-            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
-
-        if let Some(error) = api_response.error {
-            return Err(HttpError::RequestFailed(format!(
-                "API error: {} - {}",
-                error.code, error.message
-            )));
-        }
-
-        api_response
-            .result
-            .ok_or_else(|| HttpError::InvalidResponse("No result in response".to_string()))
+        self.private_get(RESET_MMP, &query).await
     }
 
     /// Mass quote
@@ -3343,45 +2084,11 @@ impl DeribitHttpClient {
     /// * `cancel_type` - Type of cancellation ("all", "by_currency", "by_instrument", etc.)
     ///
     pub async fn cancel_quotes(&self, cancel_type: Option<&str>) -> Result<u32, HttpError> {
-        let mut url = format!("{}{}", self.base_url(), CANCEL_QUOTES);
-
-        if let Some(cancel_type) = cancel_type {
-            url.push_str(&format!(
-                "?cancel_type={}",
-                urlencoding::encode(cancel_type)
-            ));
-        } else {
-            url.push_str("?cancel_type=all");
-        }
-
-        let response = self.make_authenticated_request(&url).await?;
-
-        if !response.status().is_success() {
-            let error_text = response
-                .text()
-                .await
-                .unwrap_or_else(|_| "Unknown error".to_string());
-            return Err(HttpError::RequestFailed(format!(
-                "Cancel quotes failed: {}",
-                error_text
-            )));
-        }
-
-        let api_response: ApiResponse<u32> = response
-            .json()
-            .await
-            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
-
-        if let Some(error) = api_response.error {
-            return Err(HttpError::RequestFailed(format!(
-                "API error: {} - {}",
-                error.code, error.message
-            )));
-        }
-
-        api_response
-            .result
-            .ok_or_else(|| HttpError::InvalidResponse("No cancel result in response".to_string()))
+        let query = format!(
+            "?cancel_type={}",
+            urlencoding::encode(cancel_type.unwrap_or("all"))
+        );
+        self.private_get(CANCEL_QUOTES, &query).await
     }
 
     /// Get open orders
@@ -3398,57 +2105,19 @@ impl DeribitHttpClient {
         kind: Option<&str>,
         order_type: Option<&str>,
     ) -> Result<Vec<OrderInfoResponse>, HttpError> {
-        let mut query_params = Vec::new();
-
+        let mut params = Vec::new();
         if let Some(kind) = kind {
-            query_params.push(("kind".to_string(), kind.to_string()));
+            params.push(format!("kind={}", urlencoding::encode(kind)));
         }
-
         if let Some(order_type) = order_type {
-            query_params.push(("type".to_string(), order_type.to_string()));
+            params.push(format!("type={}", urlencoding::encode(order_type)));
         }
-
-        let query_string = if query_params.is_empty() {
+        let query = if params.is_empty() {
             String::new()
         } else {
-            "?".to_string()
-                + &query_params
-                    .iter()
-                    .map(|(k, v)| format!("{}={}", k, urlencoding::encode(v)))
-                    .collect::<Vec<_>>()
-                    .join("&")
+            format!("?{}", params.join("&"))
         };
-
-        let url = format!("{}{}{}", self.base_url(), GET_OPEN_ORDERS, query_string);
-
-        let response = self.make_authenticated_request(&url).await?;
-
-        if !response.status().is_success() {
-            let error_text = response
-                .text()
-                .await
-                .unwrap_or_else(|_| "Unknown error".to_string());
-            return Err(HttpError::RequestFailed(format!(
-                "Get open orders failed: {}",
-                error_text
-            )));
-        }
-
-        let api_response: ApiResponse<Vec<OrderInfoResponse>> = response
-            .json()
-            .await
-            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
-
-        if let Some(error) = api_response.error {
-            return Err(HttpError::RequestFailed(format!(
-                "API error: {} - {}",
-                error.code, error.message
-            )));
-        }
-
-        api_response
-            .result
-            .ok_or_else(|| HttpError::InvalidResponse("No orders data in response".to_string()))
+        self.private_get(GET_OPEN_ORDERS, &query).await
     }
 
     /// Get open orders by label
@@ -3465,42 +2134,12 @@ impl DeribitHttpClient {
         label: &str,
         currency: &str,
     ) -> Result<Vec<OrderInfoResponse>, HttpError> {
-        let url = format!(
-            "{}{}?label={}&currency={}",
-            self.base_url(),
-            GET_OPEN_ORDERS_BY_LABEL,
+        let query = format!(
+            "?label={}&currency={}",
             urlencoding::encode(label),
             urlencoding::encode(currency)
         );
-
-        let response = self.make_authenticated_request(&url).await?;
-
-        if !response.status().is_success() {
-            let error_text = response
-                .text()
-                .await
-                .unwrap_or_else(|_| "Unknown error".to_string());
-            return Err(HttpError::RequestFailed(format!(
-                "Get open orders by label failed: {}",
-                error_text
-            )));
-        }
-
-        let api_response: ApiResponse<Vec<OrderInfoResponse>> = response
-            .json()
-            .await
-            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
-
-        if let Some(error) = api_response.error {
-            return Err(HttpError::RequestFailed(format!(
-                "API error: {} - {}",
-                error.code, error.message
-            )));
-        }
-
-        api_response
-            .result
-            .ok_or_else(|| HttpError::InvalidResponse("No orders data in response".to_string()))
+        self.private_get(GET_OPEN_ORDERS_BY_LABEL, &query).await
     }
 
     /// Get order state
@@ -3512,41 +2151,8 @@ impl DeribitHttpClient {
     /// * `order_id` - The order ID
     ///
     pub async fn get_order_state(&self, order_id: &str) -> Result<OrderInfoResponse, HttpError> {
-        let url = format!(
-            "{}{}?order_id={}",
-            self.base_url(),
-            GET_ORDER_STATE,
-            urlencoding::encode(order_id)
-        );
-
-        let response = self.make_authenticated_request(&url).await?;
-
-        if !response.status().is_success() {
-            let error_text = response
-                .text()
-                .await
-                .unwrap_or_else(|_| "Unknown error".to_string());
-            return Err(HttpError::RequestFailed(format!(
-                "Get order state failed: {}",
-                error_text
-            )));
-        }
-
-        let api_response: ApiResponse<OrderInfoResponse> = response
-            .json()
-            .await
-            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
-
-        if let Some(error) = api_response.error {
-            return Err(HttpError::RequestFailed(format!(
-                "API error: {} - {}",
-                error.code, error.message
-            )));
-        }
-
-        api_response
-            .result
-            .ok_or_else(|| HttpError::InvalidResponse("No order data in response".to_string()))
+        let query = format!("?order_id={}", urlencoding::encode(order_id));
+        self.private_get(GET_ORDER_STATE, &query).await
     }
 
     /// Get open orders by currency
@@ -3565,57 +2171,14 @@ impl DeribitHttpClient {
         kind: Option<&str>,
         order_type: Option<&str>,
     ) -> Result<Vec<OrderInfoResponse>, HttpError> {
-        let mut query_params = vec![("currency".to_string(), currency.to_string())];
-
+        let mut query = format!("?currency={}", urlencoding::encode(currency));
         if let Some(kind) = kind {
-            query_params.push(("kind".to_string(), kind.to_string()));
+            query.push_str(&format!("&kind={}", urlencoding::encode(kind)));
         }
-
         if let Some(order_type) = order_type {
-            query_params.push(("type".to_string(), order_type.to_string()));
+            query.push_str(&format!("&type={}", urlencoding::encode(order_type)));
         }
-
-        let query_string = query_params
-            .iter()
-            .map(|(k, v)| format!("{}={}", k, urlencoding::encode(v)))
-            .collect::<Vec<_>>()
-            .join("&");
-
-        let url = format!(
-            "{}{}?{}",
-            self.base_url(),
-            GET_OPEN_ORDERS_BY_CURRENCY,
-            query_string
-        );
-
-        let response = self.make_authenticated_request(&url).await?;
-
-        if !response.status().is_success() {
-            let error_text = response
-                .text()
-                .await
-                .unwrap_or_else(|_| "Unknown error".to_string());
-            return Err(HttpError::RequestFailed(format!(
-                "Get open orders by currency failed: {}",
-                error_text
-            )));
-        }
-
-        let api_response: ApiResponse<Vec<OrderInfoResponse>> = response
-            .json()
-            .await
-            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
-
-        if let Some(error) = api_response.error {
-            return Err(HttpError::RequestFailed(format!(
-                "API error: {} - {}",
-                error.code, error.message
-            )));
-        }
-
-        api_response
-            .result
-            .ok_or_else(|| HttpError::InvalidResponse("No orders data in response".to_string()))
+        self.private_get(GET_OPEN_ORDERS_BY_CURRENCY, &query).await
     }
 
     /// Get open orders by instrument
@@ -3632,53 +2195,12 @@ impl DeribitHttpClient {
         instrument_name: &str,
         order_type: Option<&str>,
     ) -> Result<Vec<OrderInfoResponse>, HttpError> {
-        let mut query_params = vec![("instrument_name".to_string(), instrument_name.to_string())];
-
+        let mut query = format!("?instrument_name={}", urlencoding::encode(instrument_name));
         if let Some(order_type) = order_type {
-            query_params.push(("type".to_string(), order_type.to_string()));
+            query.push_str(&format!("&type={}", urlencoding::encode(order_type)));
         }
-
-        let query_string = query_params
-            .iter()
-            .map(|(k, v)| format!("{}={}", k, urlencoding::encode(v)))
-            .collect::<Vec<_>>()
-            .join("&");
-
-        let url = format!(
-            "{}{}?{}",
-            self.base_url(),
-            GET_OPEN_ORDERS_BY_INSTRUMENT,
-            query_string
-        );
-
-        let response = self.make_authenticated_request(&url).await?;
-
-        if !response.status().is_success() {
-            let error_text = response
-                .text()
-                .await
-                .unwrap_or_else(|_| "Unknown error".to_string());
-            return Err(HttpError::RequestFailed(format!(
-                "Get open orders by instrument failed: {}",
-                error_text
-            )));
-        }
-
-        let api_response: ApiResponse<Vec<OrderInfoResponse>> = response
-            .json()
+        self.private_get(GET_OPEN_ORDERS_BY_INSTRUMENT, &query)
             .await
-            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
-
-        if let Some(error) = api_response.error {
-            return Err(HttpError::RequestFailed(format!(
-                "API error: {} - {}",
-                error.code, error.message
-            )));
-        }
-
-        api_response
-            .result
-            .ok_or_else(|| HttpError::InvalidResponse("No orders data in response".to_string()))
     }
 
     /// Get order history
@@ -3699,60 +2221,18 @@ impl DeribitHttpClient {
         count: Option<u32>,
         offset: Option<u32>,
     ) -> Result<Vec<OrderInfoResponse>, HttpError> {
-        let mut query_params = vec![("currency".to_string(), currency.to_string())];
-
+        let mut query = format!("?currency={}", urlencoding::encode(currency));
         if let Some(kind) = kind {
-            query_params.push(("kind".to_string(), kind.to_string()));
+            query.push_str(&format!("&kind={}", urlencoding::encode(kind)));
         }
-
         if let Some(count) = count {
-            query_params.push(("count".to_string(), count.to_string()));
+            query.push_str(&format!("&count={}", count));
         }
-
         if let Some(offset) = offset {
-            query_params.push(("offset".to_string(), offset.to_string()));
+            query.push_str(&format!("&offset={}", offset));
         }
-
-        let query_string = query_params
-            .iter()
-            .map(|(k, v)| format!("{}={}", k, urlencoding::encode(v)))
-            .collect::<Vec<_>>()
-            .join("&");
-
-        let url = format!(
-            "{}{}?{}",
-            self.base_url(),
-            GET_ORDER_HISTORY_BY_CURRENCY,
-            query_string
-        );
-        let response = self.make_authenticated_request(&url).await?;
-
-        if !response.status().is_success() {
-            let error_text = response
-                .text()
-                .await
-                .unwrap_or_else(|_| "Unknown error".to_string());
-            return Err(HttpError::RequestFailed(format!(
-                "Get order history failed: {}",
-                error_text
-            )));
-        }
-
-        let api_response: ApiResponse<Vec<OrderInfoResponse>> = response
-            .json()
+        self.private_get(GET_ORDER_HISTORY_BY_CURRENCY, &query)
             .await
-            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
-
-        if let Some(error) = api_response.error {
-            return Err(HttpError::RequestFailed(format!(
-                "API error: {} - {}",
-                error.code, error.message
-            )));
-        }
-
-        api_response.result.ok_or_else(|| {
-            HttpError::InvalidResponse("No order history data in response".to_string())
-        })
     }
 
     /// Get order history by currency
@@ -3793,57 +2273,15 @@ impl DeribitHttpClient {
         count: Option<u32>,
         offset: Option<u32>,
     ) -> Result<Vec<OrderInfoResponse>, HttpError> {
-        let mut query_params = vec![("instrument_name".to_string(), instrument_name.to_string())];
-
+        let mut query = format!("?instrument_name={}", urlencoding::encode(instrument_name));
         if let Some(count) = count {
-            query_params.push(("count".to_string(), count.to_string()));
+            query.push_str(&format!("&count={}", count));
         }
-
         if let Some(offset) = offset {
-            query_params.push(("offset".to_string(), offset.to_string()));
+            query.push_str(&format!("&offset={}", offset));
         }
-
-        let query_string = query_params
-            .iter()
-            .map(|(k, v)| format!("{}={}", k, urlencoding::encode(v)))
-            .collect::<Vec<_>>()
-            .join("&");
-
-        let url = format!(
-            "{}{}?{}",
-            self.base_url(),
-            GET_ORDER_HISTORY_BY_INSTRUMENT,
-            query_string
-        );
-
-        let response = self.make_authenticated_request(&url).await?;
-
-        if !response.status().is_success() {
-            let error_text = response
-                .text()
-                .await
-                .unwrap_or_else(|_| "Unknown error".to_string());
-            return Err(HttpError::RequestFailed(format!(
-                "Get order history by instrument failed: {}",
-                error_text
-            )));
-        }
-
-        let api_response: ApiResponse<Vec<OrderInfoResponse>> = response
-            .json()
+        self.private_get(GET_ORDER_HISTORY_BY_INSTRUMENT, &query)
             .await
-            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
-
-        if let Some(error) = api_response.error {
-            return Err(HttpError::RequestFailed(format!(
-                "API error: {} - {}",
-                error.code, error.message
-            )));
-        }
-
-        api_response.result.ok_or_else(|| {
-            HttpError::InvalidResponse("No order history data in response".to_string())
-        })
     }
 
     /// Get user trades by currency
@@ -4196,56 +2634,14 @@ impl DeribitHttpClient {
         sorting: Option<&str>,
         historical: bool,
     ) -> Result<Vec<UserTradeResponseByOrder>, HttpError> {
-        let mut query_params = vec![("order_id".to_string(), order_id.to_string())];
-
+        let mut query = format!("?order_id={}", urlencoding::encode(order_id));
         if let Some(sorting) = sorting {
-            query_params.push(("sorting".to_string(), sorting.to_string()));
+            query.push_str(&format!("&sorting={}", urlencoding::encode(sorting)));
         }
         if historical {
-            query_params.push(("historical".to_string(), historical.to_string()));
+            query.push_str("&historical=true");
         }
-
-        let query_string = query_params
-            .iter()
-            .map(|(k, v)| format!("{}={}", k, urlencoding::encode(v)))
-            .collect::<Vec<_>>()
-            .join("&");
-
-        let url = format!(
-            "{}{}?{}",
-            self.base_url(),
-            GET_USER_TRADES_BY_ORDER,
-            query_string
-        );
-
-        let response = self.make_authenticated_request(&url).await?;
-
-        if !response.status().is_success() {
-            let error_text = response
-                .text()
-                .await
-                .unwrap_or_else(|_| "Unknown error".to_string());
-            return Err(HttpError::RequestFailed(format!(
-                "Get user trades by order failed: {}",
-                error_text
-            )));
-        }
-
-        let api_response: ApiResponse<Vec<UserTradeResponseByOrder>> = response
-            .json()
-            .await
-            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
-
-        if let Some(error) = api_response.error {
-            return Err(HttpError::RequestFailed(format!(
-                "API error: {} - {}",
-                error.code, error.message
-            )));
-        }
-
-        api_response.result.ok_or_else(|| {
-            HttpError::InvalidResponse("No user trades data in response".to_string())
-        })
+        self.private_get(GET_USER_TRADES_BY_ORDER, &query).await
     }
 
     // ==================== API Key Management ====================
@@ -4437,36 +2833,8 @@ impl DeribitHttpClient {
     ///
     /// Returns `HttpError` if the request fails or the API key is not found.
     pub async fn disable_api_key(&self, id: u64) -> Result<ApiKeyInfo, HttpError> {
-        let url = format!("{}{}?id={}", self.base_url(), DISABLE_API_KEY, id);
-
-        let response = self.make_authenticated_request(&url).await?;
-
-        if !response.status().is_success() {
-            let error_text = response
-                .text()
-                .await
-                .unwrap_or_else(|_| "Unknown error".to_string());
-            return Err(HttpError::RequestFailed(format!(
-                "Disable API key failed: {}",
-                error_text
-            )));
-        }
-
-        let api_response: ApiResponse<ApiKeyInfo> = response
-            .json()
-            .await
-            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
-
-        if let Some(error) = api_response.error {
-            return Err(HttpError::RequestFailed(format!(
-                "API error: {} - {}",
-                error.code, error.message
-            )));
-        }
-
-        api_response
-            .result
-            .ok_or_else(|| HttpError::InvalidResponse("No API key data in response".to_string()))
+        let query = format!("?id={}", id);
+        self.private_get(DISABLE_API_KEY, &query).await
     }
 
     /// Enable an API key
@@ -4485,36 +2853,8 @@ impl DeribitHttpClient {
     ///
     /// Returns `HttpError` if the request fails or the API key is not found.
     pub async fn enable_api_key(&self, id: u64) -> Result<ApiKeyInfo, HttpError> {
-        let url = format!("{}{}?id={}", self.base_url(), ENABLE_API_KEY, id);
-
-        let response = self.make_authenticated_request(&url).await?;
-
-        if !response.status().is_success() {
-            let error_text = response
-                .text()
-                .await
-                .unwrap_or_else(|_| "Unknown error".to_string());
-            return Err(HttpError::RequestFailed(format!(
-                "Enable API key failed: {}",
-                error_text
-            )));
-        }
-
-        let api_response: ApiResponse<ApiKeyInfo> = response
-            .json()
-            .await
-            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
-
-        if let Some(error) = api_response.error {
-            return Err(HttpError::RequestFailed(format!(
-                "API error: {} - {}",
-                error.code, error.message
-            )));
-        }
-
-        api_response
-            .result
-            .ok_or_else(|| HttpError::InvalidResponse("No API key data in response".to_string()))
+        let query = format!("?id={}", id);
+        self.private_get(ENABLE_API_KEY, &query).await
     }
 
     /// List all API keys
@@ -4544,36 +2884,7 @@ impl DeribitHttpClient {
     /// # }
     /// ```
     pub async fn list_api_keys(&self) -> Result<Vec<ApiKeyInfo>, HttpError> {
-        let url = format!("{}{}", self.base_url(), LIST_API_KEYS);
-
-        let response = self.make_authenticated_request(&url).await?;
-
-        if !response.status().is_success() {
-            let error_text = response
-                .text()
-                .await
-                .unwrap_or_else(|_| "Unknown error".to_string());
-            return Err(HttpError::RequestFailed(format!(
-                "List API keys failed: {}",
-                error_text
-            )));
-        }
-
-        let api_response: ApiResponse<Vec<ApiKeyInfo>> = response
-            .json()
-            .await
-            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
-
-        if let Some(error) = api_response.error {
-            return Err(HttpError::RequestFailed(format!(
-                "API error: {} - {}",
-                error.code, error.message
-            )));
-        }
-
-        api_response
-            .result
-            .ok_or_else(|| HttpError::InvalidResponse("No API keys data in response".to_string()))
+        self.private_get(LIST_API_KEYS, "").await
     }
 
     /// Remove an API key
@@ -4592,36 +2903,8 @@ impl DeribitHttpClient {
     ///
     /// Returns `HttpError` if the request fails or the API key is not found.
     pub async fn remove_api_key(&self, id: u64) -> Result<String, HttpError> {
-        let url = format!("{}{}?id={}", self.base_url(), REMOVE_API_KEY, id);
-
-        let response = self.make_authenticated_request(&url).await?;
-
-        if !response.status().is_success() {
-            let error_text = response
-                .text()
-                .await
-                .unwrap_or_else(|_| "Unknown error".to_string());
-            return Err(HttpError::RequestFailed(format!(
-                "Remove API key failed: {}",
-                error_text
-            )));
-        }
-
-        let api_response: ApiResponse<String> = response
-            .json()
-            .await
-            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
-
-        if let Some(error) = api_response.error {
-            return Err(HttpError::RequestFailed(format!(
-                "API error: {} - {}",
-                error.code, error.message
-            )));
-        }
-
-        api_response
-            .result
-            .ok_or_else(|| HttpError::InvalidResponse("No result in response".to_string()))
+        let query = format!("?id={}", id);
+        self.private_get(REMOVE_API_KEY, &query).await
     }
 
     /// Reset an API key secret
@@ -4641,36 +2924,8 @@ impl DeribitHttpClient {
     ///
     /// Returns `HttpError` if the request fails or the API key is not found.
     pub async fn reset_api_key(&self, id: u64) -> Result<ApiKeyInfo, HttpError> {
-        let url = format!("{}{}?id={}", self.base_url(), RESET_API_KEY, id);
-
-        let response = self.make_authenticated_request(&url).await?;
-
-        if !response.status().is_success() {
-            let error_text = response
-                .text()
-                .await
-                .unwrap_or_else(|_| "Unknown error".to_string());
-            return Err(HttpError::RequestFailed(format!(
-                "Reset API key failed: {}",
-                error_text
-            )));
-        }
-
-        let api_response: ApiResponse<ApiKeyInfo> = response
-            .json()
-            .await
-            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
-
-        if let Some(error) = api_response.error {
-            return Err(HttpError::RequestFailed(format!(
-                "API error: {} - {}",
-                error.code, error.message
-            )));
-        }
-
-        api_response
-            .result
-            .ok_or_else(|| HttpError::InvalidResponse("No API key data in response".to_string()))
+        let query = format!("?id={}", id);
+        self.private_get(RESET_API_KEY, &query).await
     }
 
     /// Change API key name
@@ -4690,42 +2945,8 @@ impl DeribitHttpClient {
     ///
     /// Returns `HttpError` if the request fails or the API key is not found.
     pub async fn change_api_key_name(&self, id: u64, name: &str) -> Result<ApiKeyInfo, HttpError> {
-        let url = format!(
-            "{}{}?id={}&name={}",
-            self.base_url(),
-            CHANGE_API_KEY_NAME,
-            id,
-            urlencoding::encode(name)
-        );
-
-        let response = self.make_authenticated_request(&url).await?;
-
-        if !response.status().is_success() {
-            let error_text = response
-                .text()
-                .await
-                .unwrap_or_else(|_| "Unknown error".to_string());
-            return Err(HttpError::RequestFailed(format!(
-                "Change API key name failed: {}",
-                error_text
-            )));
-        }
-
-        let api_response: ApiResponse<ApiKeyInfo> = response
-            .json()
-            .await
-            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
-
-        if let Some(error) = api_response.error {
-            return Err(HttpError::RequestFailed(format!(
-                "API error: {} - {}",
-                error.code, error.message
-            )));
-        }
-
-        api_response
-            .result
-            .ok_or_else(|| HttpError::InvalidResponse("No API key data in response".to_string()))
+        let query = format!("?id={}&name={}", id, urlencoding::encode(name));
+        self.private_get(CHANGE_API_KEY_NAME, &query).await
     }
 
     /// Change API key scope
@@ -4749,42 +2970,8 @@ impl DeribitHttpClient {
         id: u64,
         max_scope: &str,
     ) -> Result<ApiKeyInfo, HttpError> {
-        let url = format!(
-            "{}{}?id={}&max_scope={}",
-            self.base_url(),
-            CHANGE_SCOPE_IN_API_KEY,
-            id,
-            urlencoding::encode(max_scope)
-        );
-
-        let response = self.make_authenticated_request(&url).await?;
-
-        if !response.status().is_success() {
-            let error_text = response
-                .text()
-                .await
-                .unwrap_or_else(|_| "Unknown error".to_string());
-            return Err(HttpError::RequestFailed(format!(
-                "Change API key scope failed: {}",
-                error_text
-            )));
-        }
-
-        let api_response: ApiResponse<ApiKeyInfo> = response
-            .json()
-            .await
-            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
-
-        if let Some(error) = api_response.error {
-            return Err(HttpError::RequestFailed(format!(
-                "API error: {} - {}",
-                error.code, error.message
-            )));
-        }
-
-        api_response
-            .result
-            .ok_or_else(|| HttpError::InvalidResponse("No API key data in response".to_string()))
+        let query = format!("?id={}&max_scope={}", id, urlencoding::encode(max_scope));
+        self.private_get(CHANGE_SCOPE_IN_API_KEY, &query).await
     }
 
     // ========================================================================
@@ -4947,46 +3134,15 @@ impl DeribitHttpClient {
         address: &str,
         tag: Option<&str>,
     ) -> Result<String, HttpError> {
-        let mut url = format!(
-            "{}{}?currency={}&address={}",
-            self.base_url(),
-            DELETE_ADDRESS_BENEFICIARY,
+        let mut query = format!(
+            "?currency={}&address={}",
             urlencoding::encode(currency),
             urlencoding::encode(address)
         );
-
         if let Some(t) = tag {
-            url.push_str(&format!("&tag={}", urlencoding::encode(t)));
+            query.push_str(&format!("&tag={}", urlencoding::encode(t)));
         }
-
-        let response = self.make_authenticated_request(&url).await?;
-
-        if !response.status().is_success() {
-            let error_text = response
-                .text()
-                .await
-                .unwrap_or_else(|_| "Unknown error".to_string());
-            return Err(HttpError::RequestFailed(format!(
-                "Delete address beneficiary failed: {}",
-                error_text
-            )));
-        }
-
-        let api_response: ApiResponse<String> = response
-            .json()
-            .await
-            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
-
-        if let Some(error) = api_response.error {
-            return Err(HttpError::RequestFailed(format!(
-                "API error: {} - {}",
-                error.code, error.message
-            )));
-        }
-
-        api_response
-            .result
-            .ok_or_else(|| HttpError::InvalidResponse("No result in response".to_string()))
+        self.private_get(DELETE_ADDRESS_BENEFICIARY, &query).await
     }
 
     /// Get address beneficiary information.
@@ -5020,46 +3176,15 @@ impl DeribitHttpClient {
         address: &str,
         tag: Option<&str>,
     ) -> Result<crate::model::AddressBeneficiary, HttpError> {
-        let mut url = format!(
-            "{}{}?currency={}&address={}",
-            self.base_url(),
-            GET_ADDRESS_BENEFICIARY,
+        let mut query = format!(
+            "?currency={}&address={}",
             urlencoding::encode(currency),
             urlencoding::encode(address)
         );
-
         if let Some(t) = tag {
-            url.push_str(&format!("&tag={}", urlencoding::encode(t)));
+            query.push_str(&format!("&tag={}", urlencoding::encode(t)));
         }
-
-        let response = self.make_authenticated_request(&url).await?;
-
-        if !response.status().is_success() {
-            let error_text = response
-                .text()
-                .await
-                .unwrap_or_else(|_| "Unknown error".to_string());
-            return Err(HttpError::RequestFailed(format!(
-                "Get address beneficiary failed: {}",
-                error_text
-            )));
-        }
-
-        let api_response: ApiResponse<crate::model::AddressBeneficiary> = response
-            .json()
-            .await
-            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
-
-        if let Some(error) = api_response.error {
-            return Err(HttpError::RequestFailed(format!(
-                "API error: {} - {}",
-                error.code, error.message
-            )));
-        }
-
-        api_response.result.ok_or_else(|| {
-            HttpError::InvalidResponse("No beneficiary data in response".to_string())
-        })
+        self.private_get(GET_ADDRESS_BENEFICIARY, &query).await
     }
 
     /// List address beneficiaries with filtering and pagination.
@@ -5298,57 +3423,20 @@ impl DeribitHttpClient {
         count: Option<u32>,
         offset: Option<u32>,
     ) -> Result<crate::model::AccessLogResponse, HttpError> {
-        let mut query_params = Vec::new();
-
+        let mut params = Vec::new();
         if let Some(count) = count {
-            query_params.push(format!("count={}", count));
+            params.push(format!("count={}", count));
         }
-
         if let Some(offset) = offset {
-            query_params.push(format!("offset={}", offset));
+            params.push(format!("offset={}", offset));
         }
-
-        let query_string = if query_params.is_empty() {
+        let query = if params.is_empty() {
             String::new()
         } else {
-            format!("?{}", query_params.join("&"))
+            format!("?{}", params.join("&"))
         };
-
-        let url = format!(
-            "{}{}{}",
-            self.base_url(),
-            crate::constants::endpoints::GET_ACCESS_LOG,
-            query_string
-        );
-
-        let response = self.make_authenticated_request(&url).await?;
-
-        if !response.status().is_success() {
-            let error_text = response
-                .text()
-                .await
-                .unwrap_or_else(|_| "Unknown error".to_string());
-            return Err(HttpError::RequestFailed(format!(
-                "Get access log failed: {}",
-                error_text
-            )));
-        }
-
-        let api_response: ApiResponse<crate::model::AccessLogResponse> = response
-            .json()
+        self.private_get(crate::constants::endpoints::GET_ACCESS_LOG, &query)
             .await
-            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
-
-        if let Some(error) = api_response.error {
-            return Err(HttpError::RequestFailed(format!(
-                "API error: {} - {}",
-                error.code, error.message
-            )));
-        }
-
-        api_response
-            .result
-            .ok_or_else(|| HttpError::InvalidResponse("No access log data in response".to_string()))
     }
 
     /// Get user account locks
@@ -5356,40 +3444,8 @@ impl DeribitHttpClient {
     /// Retrieves information about any locks on the user's account.
     ///
     pub async fn get_user_locks(&self) -> Result<Vec<crate::model::UserLock>, HttpError> {
-        let url = format!(
-            "{}{}",
-            self.base_url(),
-            crate::constants::endpoints::GET_USER_LOCKS
-        );
-
-        let response = self.make_authenticated_request(&url).await?;
-
-        if !response.status().is_success() {
-            let error_text = response
-                .text()
-                .await
-                .unwrap_or_else(|_| "Unknown error".to_string());
-            return Err(HttpError::RequestFailed(format!(
-                "Get user locks failed: {}",
-                error_text
-            )));
-        }
-
-        let api_response: ApiResponse<Vec<crate::model::UserLock>> = response
-            .json()
+        self.private_get(crate::constants::endpoints::GET_USER_LOCKS, "")
             .await
-            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
-
-        if let Some(error) = api_response.error {
-            return Err(HttpError::RequestFailed(format!(
-                "API error: {} - {}",
-                error.code, error.message
-            )));
-        }
-
-        api_response
-            .result
-            .ok_or_else(|| HttpError::InvalidResponse("No user locks data in response".to_string()))
     }
 
     /// List custody accounts
@@ -5404,41 +3460,9 @@ impl DeribitHttpClient {
         &self,
         currency: &str,
     ) -> Result<Vec<crate::model::CustodyAccount>, HttpError> {
-        let url = format!(
-            "{}{}?currency={}",
-            self.base_url(),
-            crate::constants::endpoints::LIST_CUSTODY_ACCOUNTS,
-            urlencoding::encode(currency)
-        );
-
-        let response = self.make_authenticated_request(&url).await?;
-
-        if !response.status().is_success() {
-            let error_text = response
-                .text()
-                .await
-                .unwrap_or_else(|_| "Unknown error".to_string());
-            return Err(HttpError::RequestFailed(format!(
-                "List custody accounts failed: {}",
-                error_text
-            )));
-        }
-
-        let api_response: ApiResponse<Vec<crate::model::CustodyAccount>> = response
-            .json()
+        let query = format!("?currency={}", urlencoding::encode(currency));
+        self.private_get(crate::constants::endpoints::LIST_CUSTODY_ACCOUNTS, &query)
             .await
-            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
-
-        if let Some(error) = api_response.error {
-            return Err(HttpError::RequestFailed(format!(
-                "API error: {} - {}",
-                error.code, error.message
-            )));
-        }
-
-        api_response.result.ok_or_else(|| {
-            HttpError::InvalidResponse("No custody accounts data in response".to_string())
-        })
     }
 
     /// Simulate portfolio margin
@@ -5520,41 +3544,9 @@ impl DeribitHttpClient {
         &self,
         currency: &str,
     ) -> Result<crate::model::PmeSimulateResponse, HttpError> {
-        let url = format!(
-            "{}{}?currency={}",
-            self.base_url(),
-            crate::constants::endpoints::PME_SIMULATE,
-            urlencoding::encode(currency)
-        );
-
-        let response = self.make_authenticated_request(&url).await?;
-
-        if !response.status().is_success() {
-            let error_text = response
-                .text()
-                .await
-                .unwrap_or_else(|_| "Unknown error".to_string());
-            return Err(HttpError::RequestFailed(format!(
-                "PME simulate failed: {}",
-                error_text
-            )));
-        }
-
-        let api_response: ApiResponse<crate::model::PmeSimulateResponse> = response
-            .json()
+        let query = format!("?currency={}", urlencoding::encode(currency));
+        self.private_get(crate::constants::endpoints::PME_SIMULATE, &query)
             .await
-            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
-
-        if let Some(error) = api_response.error {
-            return Err(HttpError::RequestFailed(format!(
-                "API error: {} - {}",
-                error.code, error.message
-            )));
-        }
-
-        api_response.result.ok_or_else(|| {
-            HttpError::InvalidResponse("No PME simulation data in response".to_string())
-        })
     }
 
     /// Change margin model
@@ -5741,40 +3733,8 @@ impl DeribitHttpClient {
     pub async fn get_new_announcements(
         &self,
     ) -> Result<Vec<crate::model::Announcement>, HttpError> {
-        let url = format!(
-            "{}{}",
-            self.base_url(),
-            crate::constants::endpoints::GET_NEW_ANNOUNCEMENTS
-        );
-
-        let response = self.make_authenticated_request(&url).await?;
-
-        if !response.status().is_success() {
-            let error_text = response
-                .text()
-                .await
-                .unwrap_or_else(|_| "Unknown error".to_string());
-            return Err(HttpError::RequestFailed(format!(
-                "Get new announcements failed: {}",
-                error_text
-            )));
-        }
-
-        let api_response: ApiResponse<Vec<crate::model::Announcement>> = response
-            .json()
+        self.private_get(crate::constants::endpoints::GET_NEW_ANNOUNCEMENTS, "")
             .await
-            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
-
-        if let Some(error) = api_response.error {
-            return Err(HttpError::RequestFailed(format!(
-                "API error: {} - {}",
-                error.code, error.message
-            )));
-        }
-
-        api_response.result.ok_or_else(|| {
-            HttpError::InvalidResponse("No new announcements data in response".to_string())
-        })
     }
 
     /// Mark announcement as read
@@ -5786,39 +3746,14 @@ impl DeribitHttpClient {
     /// * `announcement_id` - ID of the announcement to mark as read
     ///
     pub async fn set_announcement_as_read(&self, announcement_id: u64) -> Result<bool, HttpError> {
-        let url = format!(
-            "{}{}?announcement_id={}",
-            self.base_url(),
-            crate::constants::endpoints::SET_ANNOUNCEMENT_AS_READ,
-            announcement_id
-        );
-
-        let response = self.make_authenticated_request(&url).await?;
-
-        if !response.status().is_success() {
-            let error_text = response
-                .text()
-                .await
-                .unwrap_or_else(|_| "Unknown error".to_string());
-            return Err(HttpError::RequestFailed(format!(
-                "Set announcement as read failed: {}",
-                error_text
-            )));
-        }
-
-        let api_response: ApiResponse<String> = response
-            .json()
-            .await
-            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
-
-        if let Some(error) = api_response.error {
-            return Err(HttpError::RequestFailed(format!(
-                "API error: {} - {}",
-                error.code, error.message
-            )));
-        }
-
-        Ok(api_response.result.map(|s| s == "ok").unwrap_or(true))
+        let query = format!("?announcement_id={}", announcement_id);
+        let result: String = self
+            .private_get(
+                crate::constants::endpoints::SET_ANNOUNCEMENT_AS_READ,
+                &query,
+            )
+            .await?;
+        Ok(result == "ok")
     }
 
     /// Enable affiliate program
@@ -5826,38 +3761,10 @@ impl DeribitHttpClient {
     /// Enables the affiliate program for the user's account.
     ///
     pub async fn enable_affiliate_program(&self) -> Result<bool, HttpError> {
-        let url = format!(
-            "{}{}",
-            self.base_url(),
-            crate::constants::endpoints::ENABLE_AFFILIATE_PROGRAM
-        );
-
-        let response = self.make_authenticated_request(&url).await?;
-
-        if !response.status().is_success() {
-            let error_text = response
-                .text()
-                .await
-                .unwrap_or_else(|_| "Unknown error".to_string());
-            return Err(HttpError::RequestFailed(format!(
-                "Enable affiliate program failed: {}",
-                error_text
-            )));
-        }
-
-        let api_response: ApiResponse<String> = response
-            .json()
-            .await
-            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
-
-        if let Some(error) = api_response.error {
-            return Err(HttpError::RequestFailed(format!(
-                "API error: {} - {}",
-                error.code, error.message
-            )));
-        }
-
-        Ok(api_response.result.map(|s| s == "ok").unwrap_or(true))
+        let result: String = self
+            .private_get(crate::constants::endpoints::ENABLE_AFFILIATE_PROGRAM, "")
+            .await?;
+        Ok(result == "ok")
     }
 
     /// Get affiliate program information
@@ -5867,41 +3774,8 @@ impl DeribitHttpClient {
     pub async fn get_affiliate_program_info(
         &self,
     ) -> Result<crate::model::AffiliateProgramInfo, HttpError> {
-        let url = format!(
-            "{}{}",
-            self.base_url(),
-            crate::constants::endpoints::GET_AFFILIATE_PROGRAM_INFO
-        );
-
-        let response = self.make_authenticated_request(&url).await?;
-
-        if !response.status().is_success() {
-            let error_text = response
-                .text()
-                .await
-                .unwrap_or_else(|_| "Unknown error".to_string());
-            return Err(HttpError::RequestFailed(format!(
-                "Get affiliate program info failed: {}",
-                error_text
-            )));
-        }
-
-        let api_response: ApiResponse<crate::model::AffiliateProgramInfo> =
-            response
-                .json()
-                .await
-                .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
-
-        if let Some(error) = api_response.error {
-            return Err(HttpError::RequestFailed(format!(
-                "API error: {} - {}",
-                error.code, error.message
-            )));
-        }
-
-        api_response.result.ok_or_else(|| {
-            HttpError::InvalidResponse("No affiliate program info in response".to_string())
-        })
+        self.private_get(crate::constants::endpoints::GET_AFFILIATE_PROGRAM_INFO, "")
+            .await
     }
 
     /// Set email language preference
@@ -5916,39 +3790,11 @@ impl DeribitHttpClient {
         &self,
         language: crate::model::EmailLanguage,
     ) -> Result<bool, HttpError> {
-        let url = format!(
-            "{}{}?language={}",
-            self.base_url(),
-            crate::constants::endpoints::SET_EMAIL_LANGUAGE,
-            language.as_str()
-        );
-
-        let response = self.make_authenticated_request(&url).await?;
-
-        if !response.status().is_success() {
-            let error_text = response
-                .text()
-                .await
-                .unwrap_or_else(|_| "Unknown error".to_string());
-            return Err(HttpError::RequestFailed(format!(
-                "Set email language failed: {}",
-                error_text
-            )));
-        }
-
-        let api_response: ApiResponse<String> = response
-            .json()
-            .await
-            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
-
-        if let Some(error) = api_response.error {
-            return Err(HttpError::RequestFailed(format!(
-                "API error: {} - {}",
-                error.code, error.message
-            )));
-        }
-
-        Ok(api_response.result.map(|s| s == "ok").unwrap_or(true))
+        let query = format!("?language={}", language.as_str());
+        let result: String = self
+            .private_get(crate::constants::endpoints::SET_EMAIL_LANGUAGE, &query)
+            .await?;
+        Ok(result == "ok")
     }
 
     /// Get email language preference
@@ -5956,40 +3802,8 @@ impl DeribitHttpClient {
     /// Retrieves the current email language preference.
     ///
     pub async fn get_email_language(&self) -> Result<String, HttpError> {
-        let url = format!(
-            "{}{}",
-            self.base_url(),
-            crate::constants::endpoints::GET_EMAIL_LANGUAGE
-        );
-
-        let response = self.make_authenticated_request(&url).await?;
-
-        if !response.status().is_success() {
-            let error_text = response
-                .text()
-                .await
-                .unwrap_or_else(|_| "Unknown error".to_string());
-            return Err(HttpError::RequestFailed(format!(
-                "Get email language failed: {}",
-                error_text
-            )));
-        }
-
-        let api_response: ApiResponse<String> = response
-            .json()
+        self.private_get(crate::constants::endpoints::GET_EMAIL_LANGUAGE, "")
             .await
-            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
-
-        if let Some(error) = api_response.error {
-            return Err(HttpError::RequestFailed(format!(
-                "API error: {} - {}",
-                error.code, error.message
-            )));
-        }
-
-        api_response
-            .result
-            .ok_or_else(|| HttpError::InvalidResponse("No email language in response".to_string()))
     }
 
     // ========================================================================
@@ -6091,47 +3905,8 @@ impl DeribitHttpClient {
         currency: &str,
         id: u64,
     ) -> Result<crate::model::Withdrawal, HttpError> {
-        let query_params = [
-            ("currency".to_string(), currency.to_string()),
-            ("id".to_string(), id.to_string()),
-        ];
-
-        let query_string = query_params
-            .iter()
-            .map(|(k, v)| format!("{}={}", k, urlencoding::encode(v)))
-            .collect::<Vec<_>>()
-            .join("&");
-
-        let url = format!("{}{}?{}", self.base_url(), CANCEL_WITHDRAWAL, query_string);
-
-        let response = self.make_authenticated_request(&url).await?;
-
-        if !response.status().is_success() {
-            let error_text = response
-                .text()
-                .await
-                .unwrap_or_else(|_| "Unknown error".to_string());
-            return Err(HttpError::RequestFailed(format!(
-                "Cancel withdrawal failed: {}",
-                error_text
-            )));
-        }
-
-        let api_response: ApiResponse<crate::model::Withdrawal> = response
-            .json()
-            .await
-            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
-
-        if let Some(error) = api_response.error {
-            return Err(HttpError::RequestFailed(format!(
-                "API error: {} - {}",
-                error.code, error.message
-            )));
-        }
-
-        api_response
-            .result
-            .ok_or_else(|| HttpError::InvalidResponse("No withdrawal data in response".to_string()))
+        let query = format!("?currency={}&id={}", urlencoding::encode(currency), id);
+        self.private_get(CANCEL_WITHDRAWAL, &query).await
     }
 
     /// Create a new deposit address
@@ -6153,41 +3928,8 @@ impl DeribitHttpClient {
         &self,
         currency: &str,
     ) -> Result<crate::model::wallet::DepositAddress, HttpError> {
-        let url = format!(
-            "{}{}?currency={}",
-            self.base_url(),
-            CREATE_DEPOSIT_ADDRESS,
-            urlencoding::encode(currency)
-        );
-
-        let response = self.make_authenticated_request(&url).await?;
-
-        if !response.status().is_success() {
-            let error_text = response
-                .text()
-                .await
-                .unwrap_or_else(|_| "Unknown error".to_string());
-            return Err(HttpError::RequestFailed(format!(
-                "Create deposit address failed: {}",
-                error_text
-            )));
-        }
-
-        let api_response: ApiResponse<crate::model::wallet::DepositAddress> = response
-            .json()
-            .await
-            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
-
-        if let Some(error) = api_response.error {
-            return Err(HttpError::RequestFailed(format!(
-                "API error: {} - {}",
-                error.code, error.message
-            )));
-        }
-
-        api_response.result.ok_or_else(|| {
-            HttpError::InvalidResponse("No deposit address data in response".to_string())
-        })
+        let query = format!("?currency={}", urlencoding::encode(currency));
+        self.private_get(CREATE_DEPOSIT_ADDRESS, &query).await
     }
 
     /// Get the current deposit address
@@ -6209,41 +3951,8 @@ impl DeribitHttpClient {
         &self,
         currency: &str,
     ) -> Result<crate::model::wallet::DepositAddress, HttpError> {
-        let url = format!(
-            "{}{}?currency={}",
-            self.base_url(),
-            GET_CURRENT_DEPOSIT_ADDRESS,
-            urlencoding::encode(currency)
-        );
-
-        let response = self.make_authenticated_request(&url).await?;
-
-        if !response.status().is_success() {
-            let error_text = response
-                .text()
-                .await
-                .unwrap_or_else(|_| "Unknown error".to_string());
-            return Err(HttpError::RequestFailed(format!(
-                "Get current deposit address failed: {}",
-                error_text
-            )));
-        }
-
-        let api_response: ApiResponse<crate::model::wallet::DepositAddress> = response
-            .json()
-            .await
-            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
-
-        if let Some(error) = api_response.error {
-            return Err(HttpError::RequestFailed(format!(
-                "API error: {} - {}",
-                error.code, error.message
-            )));
-        }
-
-        api_response.result.ok_or_else(|| {
-            HttpError::InvalidResponse("No deposit address data in response".to_string())
-        })
+        let query = format!("?currency={}", urlencoding::encode(currency));
+        self.private_get(GET_CURRENT_DEPOSIT_ADDRESS, &query).await
     }
 
     /// Add an address to the address book
@@ -6353,51 +4062,14 @@ impl DeribitHttpClient {
         address_type: crate::model::wallet::AddressBookType,
         address: &str,
     ) -> Result<bool, HttpError> {
-        let query_params = [
-            ("currency".to_string(), currency.to_string()),
-            ("type".to_string(), address_type.as_str().to_string()),
-            ("address".to_string(), address.to_string()),
-        ];
-
-        let query_string = query_params
-            .iter()
-            .map(|(k, v)| format!("{}={}", k, urlencoding::encode(v)))
-            .collect::<Vec<_>>()
-            .join("&");
-
-        let url = format!(
-            "{}{}?{}",
-            self.base_url(),
-            REMOVE_FROM_ADDRESS_BOOK,
-            query_string
+        let query = format!(
+            "?currency={}&type={}&address={}",
+            urlencoding::encode(currency),
+            urlencoding::encode(address_type.as_str()),
+            urlencoding::encode(address)
         );
-
-        let response = self.make_authenticated_request(&url).await?;
-
-        if !response.status().is_success() {
-            let error_text = response
-                .text()
-                .await
-                .unwrap_or_else(|_| "Unknown error".to_string());
-            return Err(HttpError::RequestFailed(format!(
-                "Remove from address book failed: {}",
-                error_text
-            )));
-        }
-
-        let api_response: ApiResponse<String> = response
-            .json()
-            .await
-            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
-
-        if let Some(error) = api_response.error {
-            return Err(HttpError::RequestFailed(format!(
-                "API error: {} - {}",
-                error.code, error.message
-            )));
-        }
-
-        Ok(api_response.result.map(|s| s == "ok").unwrap_or(true))
+        let result: String = self.private_get(REMOVE_FROM_ADDRESS_BOOK, &query).await?;
+        Ok(result == "ok")
     }
 
     /// Update an address in the address book
@@ -6526,47 +4198,12 @@ impl DeribitHttpClient {
         currency: &str,
         address_type: crate::model::wallet::AddressBookType,
     ) -> Result<Vec<crate::model::wallet::AddressBookEntry>, HttpError> {
-        let query_params = [
-            ("currency".to_string(), currency.to_string()),
-            ("type".to_string(), address_type.as_str().to_string()),
-        ];
-
-        let query_string = query_params
-            .iter()
-            .map(|(k, v)| format!("{}={}", k, urlencoding::encode(v)))
-            .collect::<Vec<_>>()
-            .join("&");
-
-        let url = format!("{}{}?{}", self.base_url(), GET_ADDRESS_BOOK, query_string);
-
-        let response = self.make_authenticated_request(&url).await?;
-
-        if !response.status().is_success() {
-            let error_text = response
-                .text()
-                .await
-                .unwrap_or_else(|_| "Unknown error".to_string());
-            return Err(HttpError::RequestFailed(format!(
-                "Get address book failed: {}",
-                error_text
-            )));
-        }
-
-        let api_response: ApiResponse<Vec<crate::model::wallet::AddressBookEntry>> = response
-            .json()
-            .await
-            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
-
-        if let Some(error) = api_response.error {
-            return Err(HttpError::RequestFailed(format!(
-                "API error: {} - {}",
-                error.code, error.message
-            )));
-        }
-
-        api_response.result.ok_or_else(|| {
-            HttpError::InvalidResponse("No address book data in response".to_string())
-        })
+        let query = format!(
+            "?currency={}&type={}",
+            urlencoding::encode(currency),
+            urlencoding::encode(address_type.as_str())
+        );
+        self.private_get(GET_ADDRESS_BOOK, &query).await
     }
 
     // ========================================================================
@@ -6599,51 +4236,14 @@ impl DeribitHttpClient {
         nonce: &str,
         role: crate::model::block_trade::BlockTradeRole,
     ) -> Result<bool, HttpError> {
-        let query_params = [
-            ("timestamp".to_string(), timestamp.to_string()),
-            ("nonce".to_string(), nonce.to_string()),
-            ("role".to_string(), role.to_string()),
-        ];
-
-        let query_string = query_params
-            .iter()
-            .map(|(k, v)| format!("{}={}", k, urlencoding::encode(v)))
-            .collect::<Vec<_>>()
-            .join("&");
-
-        let url = format!(
-            "{}{}?{}",
-            self.base_url(),
-            APPROVE_BLOCK_TRADE,
-            query_string
+        let query = format!(
+            "?timestamp={}&nonce={}&role={}",
+            timestamp,
+            urlencoding::encode(nonce),
+            urlencoding::encode(&role.to_string())
         );
-
-        let response = self.make_authenticated_request(&url).await?;
-
-        if !response.status().is_success() {
-            let error_text = response
-                .text()
-                .await
-                .unwrap_or_else(|_| "Unknown error".to_string());
-            return Err(HttpError::RequestFailed(format!(
-                "Approve block trade failed: {}",
-                error_text
-            )));
-        }
-
-        let api_response: ApiResponse<String> = response
-            .json()
-            .await
-            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
-
-        if let Some(error) = api_response.error {
-            return Err(HttpError::RequestFailed(format!(
-                "API error: {} - {}",
-                error.code, error.message
-            )));
-        }
-
-        Ok(api_response.result.map(|s| s == "ok").unwrap_or(false))
+        let result: String = self.private_get(APPROVE_BLOCK_TRADE, &query).await?;
+        Ok(result == "ok")
     }
 
     /// Execute a block trade
@@ -6744,37 +4344,8 @@ impl DeribitHttpClient {
         &self,
         id: &str,
     ) -> Result<crate::model::block_trade::BlockTrade, HttpError> {
-        let query_string = format!("id={}", urlencoding::encode(id));
-        let url = format!("{}{}?{}", self.base_url(), GET_BLOCK_TRADE, query_string);
-
-        let response = self.make_authenticated_request(&url).await?;
-
-        if !response.status().is_success() {
-            let error_text = response
-                .text()
-                .await
-                .unwrap_or_else(|_| "Unknown error".to_string());
-            return Err(HttpError::RequestFailed(format!(
-                "Get block trade failed: {}",
-                error_text
-            )));
-        }
-
-        let api_response: ApiResponse<crate::model::block_trade::BlockTrade> = response
-            .json()
-            .await
-            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
-
-        if let Some(error) = api_response.error {
-            return Err(HttpError::RequestFailed(format!(
-                "API error: {} - {}",
-                error.code, error.message
-            )));
-        }
-
-        api_response.result.ok_or_else(|| {
-            HttpError::InvalidResponse("No block trade data in response".to_string())
-        })
+        let query = format!("?id={}", urlencoding::encode(id));
+        self.private_get(GET_BLOCK_TRADE, &query).await
     }
 
     /// Get pending block trade requests
@@ -6946,34 +4517,7 @@ impl DeribitHttpClient {
     pub async fn get_broker_trade_requests(
         &self,
     ) -> Result<Vec<crate::model::block_trade::BlockTradeRequest>, HttpError> {
-        let url = format!("{}{}", self.base_url(), GET_BROKER_TRADE_REQUESTS);
-
-        let response = self.make_authenticated_request(&url).await?;
-
-        if !response.status().is_success() {
-            let error_text = response
-                .text()
-                .await
-                .unwrap_or_else(|_| "Unknown error".to_string());
-            return Err(HttpError::RequestFailed(format!(
-                "Get broker trade requests failed: {}",
-                error_text
-            )));
-        }
-
-        let api_response: ApiResponse<Vec<crate::model::block_trade::BlockTradeRequest>> = response
-            .json()
-            .await
-            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
-
-        if let Some(error) = api_response.error {
-            return Err(HttpError::RequestFailed(format!(
-                "API error: {} - {}",
-                error.code, error.message
-            )));
-        }
-
-        Ok(api_response.result.unwrap_or_default())
+        self.private_get(GET_BROKER_TRADE_REQUESTS, "").await
     }
 
     /// Get broker trades with optional filters
@@ -7075,40 +4619,11 @@ impl DeribitHttpClient {
         &self,
         signature: &str,
     ) -> Result<bool, HttpError> {
-        let query_string = format!("signature={}", urlencoding::encode(signature));
-        let url = format!(
-            "{}{}?{}",
-            self.base_url(),
-            INVALIDATE_BLOCK_TRADE_SIGNATURE,
-            query_string
-        );
-
-        let response = self.make_authenticated_request(&url).await?;
-
-        if !response.status().is_success() {
-            let error_text = response
-                .text()
-                .await
-                .unwrap_or_else(|_| "Unknown error".to_string());
-            return Err(HttpError::RequestFailed(format!(
-                "Invalidate block trade signature failed: {}",
-                error_text
-            )));
-        }
-
-        let api_response: ApiResponse<String> = response
-            .json()
-            .await
-            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
-
-        if let Some(error) = api_response.error {
-            return Err(HttpError::RequestFailed(format!(
-                "API error: {} - {}",
-                error.code, error.message
-            )));
-        }
-
-        Ok(api_response.result.map(|s| s == "ok").unwrap_or(false))
+        let query = format!("?signature={}", urlencoding::encode(signature));
+        let result: String = self
+            .private_get(INVALIDATE_BLOCK_TRADE_SIGNATURE, &query)
+            .await?;
+        Ok(result == "ok")
     }
 
     /// Reject a pending block trade
@@ -7134,46 +4649,14 @@ impl DeribitHttpClient {
         nonce: &str,
         role: crate::model::block_trade::BlockTradeRole,
     ) -> Result<bool, HttpError> {
-        let query_params = [
-            ("timestamp".to_string(), timestamp.to_string()),
-            ("nonce".to_string(), nonce.to_string()),
-            ("role".to_string(), role.to_string()),
-        ];
-
-        let query_string = query_params
-            .iter()
-            .map(|(k, v)| format!("{}={}", k, urlencoding::encode(v)))
-            .collect::<Vec<_>>()
-            .join("&");
-
-        let url = format!("{}{}?{}", self.base_url(), REJECT_BLOCK_TRADE, query_string);
-
-        let response = self.make_authenticated_request(&url).await?;
-
-        if !response.status().is_success() {
-            let error_text = response
-                .text()
-                .await
-                .unwrap_or_else(|_| "Unknown error".to_string());
-            return Err(HttpError::RequestFailed(format!(
-                "Reject block trade failed: {}",
-                error_text
-            )));
-        }
-
-        let api_response: ApiResponse<String> = response
-            .json()
-            .await
-            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
-
-        if let Some(error) = api_response.error {
-            return Err(HttpError::RequestFailed(format!(
-                "API error: {} - {}",
-                error.code, error.message
-            )));
-        }
-
-        Ok(api_response.result.map(|s| s == "ok").unwrap_or(false))
+        let query = format!(
+            "?timestamp={}&nonce={}&role={}",
+            timestamp,
+            urlencoding::encode(nonce),
+            urlencoding::encode(&role.to_string())
+        );
+        let result: String = self.private_get(REJECT_BLOCK_TRADE, &query).await?;
+        Ok(result == "ok")
     }
 
     /// Simulate a block trade
@@ -7584,41 +5067,9 @@ impl DeribitHttpClient {
         &self,
         block_rfq_id: i64,
     ) -> Result<crate::model::response::BlockRfq, HttpError> {
-        let url = format!(
-            "{}{}?block_rfq_id={}",
-            self.base_url(),
-            crate::constants::endpoints::CANCEL_BLOCK_RFQ,
-            block_rfq_id
-        );
-
-        let response = self.make_authenticated_request(&url).await?;
-
-        if !response.status().is_success() {
-            let error_text = response
-                .text()
-                .await
-                .unwrap_or_else(|_| "Unknown error".to_string());
-            return Err(HttpError::RequestFailed(format!(
-                "Cancel Block RFQ failed: {}",
-                error_text
-            )));
-        }
-
-        let api_response: ApiResponse<crate::model::response::BlockRfq> = response
-            .json()
+        let query = format!("?block_rfq_id={}", block_rfq_id);
+        self.private_get(crate::constants::endpoints::CANCEL_BLOCK_RFQ, &query)
             .await
-            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
-
-        if let Some(error) = api_response.error {
-            return Err(HttpError::RequestFailed(format!(
-                "API error: {} - {}",
-                error.code, error.message
-            )));
-        }
-
-        api_response
-            .result
-            .ok_or_else(|| HttpError::InvalidResponse("No Block RFQ in response".to_string()))
     }
 
     /// Accepts a Block RFQ quote (taker method).
@@ -8189,39 +5640,7 @@ impl DeribitHttpClient {
     pub async fn cancel_all_block_rfq_quotes(
         &self,
     ) -> Result<Vec<crate::model::response::BlockRfqQuote>, HttpError> {
-        let url = format!(
-            "{}{}",
-            self.base_url(),
-            crate::constants::endpoints::CANCEL_ALL_BLOCK_RFQ_QUOTES
-        );
-
-        let response = self.make_authenticated_request(&url).await?;
-
-        if !response.status().is_success() {
-            let error_text = response
-                .text()
-                .await
-                .unwrap_or_else(|_| "Unknown error".to_string());
-            return Err(HttpError::RequestFailed(format!(
-                "Cancel all Block RFQ quotes failed: {}",
-                error_text
-            )));
-        }
-
-        let api_response: ApiResponse<Vec<crate::model::response::BlockRfqQuote>> = response
-            .json()
+        self.private_get(crate::constants::endpoints::CANCEL_ALL_BLOCK_RFQ_QUOTES, "")
             .await
-            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
-
-        if let Some(error) = api_response.error {
-            return Err(HttpError::RequestFailed(format!(
-                "API error: {} - {}",
-                error.code, error.message
-            )));
-        }
-
-        api_response.result.ok_or_else(|| {
-            HttpError::InvalidResponse("No cancelled quotes in response".to_string())
-        })
     }
 }
