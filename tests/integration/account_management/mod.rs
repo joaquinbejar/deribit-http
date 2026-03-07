@@ -5,6 +5,7 @@
 
 pub mod account_summary;
 pub mod positions;
+pub mod settlement_history;
 pub mod subaccounts;
 pub mod transaction_log;
 pub mod user_trades;

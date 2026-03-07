@@ -136,6 +136,12 @@ pub mod endpoints {
     pub const GET_ORDER_MARGIN_BY_IDS: &str = "/private/get_order_margin_by_ids";
     /// Get order state by label
     pub const GET_ORDER_STATE_BY_LABEL: &str = "/private/get_order_state_by_label";
+    /// Get settlement history by currency
+    pub const GET_SETTLEMENT_HISTORY_BY_CURRENCY: &str =
+        "/private/get_settlement_history_by_currency";
+    /// Get settlement history by instrument
+    pub const GET_SETTLEMENT_HISTORY_BY_INSTRUMENT: &str =
+        "/private/get_settlement_history_by_instrument";
 
     // Private account endpoints
     /// Get account summary information
