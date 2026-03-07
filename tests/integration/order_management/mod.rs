@@ -371,3 +371,54 @@ mod get_order_margin_by_ids_tests {
         Ok(())
     }
 }
+
+#[cfg(test)]
+mod get_order_state_by_label_tests {
+    use deribit_http::DeribitHttpClient;
+    use tokio::time::{Duration, Instant};
+    use tracing::info;
+
+    /// Test get_order_state_by_label endpoint behavior
+    ///
+    /// Returns order states for orders with a specific label.
+    #[tokio::test]
+    #[serial_test::serial]
+    #[ignore = "Requires authentication"]
+    async fn test_get_order_state_by_label() -> Result<(), Box<dyn std::error::Error>> {
+        let client = DeribitHttpClient::new();
+
+        info!("Testing get_order_state_by_label");
+        let start_time = Instant::now();
+
+        let result = client.get_order_state_by_label("ETH", "testLabel").await;
+        let elapsed = start_time.elapsed();
+
+        match &result {
+            Ok(orders) => {
+                info!(
+                    "Get order state by label succeeded in {:?}: {} orders found",
+                    elapsed,
+                    orders.len()
+                );
+                for order in orders {
+                    info!(
+                        "Order {}: state={}, instrument={}",
+                        order.order_id, order.order_state, order.instrument_name
+                    );
+                }
+            }
+            Err(e) => {
+                info!("Get order state by label failed in {:?}: {:?}", elapsed, e);
+            }
+        }
+
+        assert!(
+            elapsed < Duration::from_secs(30),
+            "Request took too long: {:?}",
+            elapsed
+        );
+
+        info!("test_get_order_state_by_label completed");
+        Ok(())
+    }
+}
