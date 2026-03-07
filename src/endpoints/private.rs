@@ -10,7 +10,7 @@ use crate::model::request::order::OrderRequest;
 use crate::model::request::trade::TradesRequest;
 use crate::model::response::api_response::ApiResponse;
 use crate::model::response::deposit::DepositsResponse;
-use crate::model::response::margin::MarginsResponse;
+use crate::model::response::margin::{MarginsResponse, OrderMargin};
 use crate::model::response::mass_quote::MassQuoteResponse;
 use crate::model::response::mmp::{MmpConfig, MmpStatus, SetMmpConfigRequest};
 use crate::model::response::order::{OrderInfoResponse, OrderResponse};
@@ -1598,6 +1598,76 @@ impl DeribitHttpClient {
         api_response
             .result
             .ok_or_else(|| HttpError::InvalidResponse("No margin data in response".to_string()))
+    }
+
+    /// Get order margin by IDs
+    ///
+    /// Retrieves the initial margin requirements for one or more orders identified
+    /// by their order IDs. Initial margin is the amount of funds required to open
+    /// a position with these orders.
+    ///
+    /// # Arguments
+    ///
+    /// * `ids` - Array of order IDs (e.g., ["ETH-349280", "ETH-349279"])
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use deribit_http::DeribitHttpClient;
+    ///
+    /// let client = DeribitHttpClient::new();
+    /// // let margins = client.get_order_margin_by_ids(&["ETH-349280", "ETH-349279"]).await?;
+    /// ```
+    pub async fn get_order_margin_by_ids(
+        &self,
+        ids: &[&str],
+    ) -> Result<Vec<OrderMargin>, HttpError> {
+        if ids.is_empty() {
+            return Err(HttpError::RequestFailed(
+                "ids array cannot be empty".to_string(),
+            ));
+        }
+
+        // Format IDs as JSON array for the query parameter
+        let ids_json = serde_json::to_string(ids)
+            .map_err(|e| HttpError::InvalidResponse(format!("Failed to serialize ids: {}", e)))?;
+
+        let query_string = format!("ids={}", urlencoding::encode(&ids_json));
+        let url = format!(
+            "{}{}?{}",
+            self.base_url(),
+            GET_ORDER_MARGIN_BY_IDS,
+            query_string
+        );
+
+        let response = self.make_authenticated_request(&url).await?;
+
+        if !response.status().is_success() {
+            let error_text = response
+                .text()
+                .await
+                .unwrap_or_else(|_| "Unknown error".to_string());
+            return Err(HttpError::RequestFailed(format!(
+                "Get order margin by IDs failed: {}",
+                error_text
+            )));
+        }
+
+        let api_response: ApiResponse<Vec<OrderMargin>> = response
+            .json()
+            .await
+            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
+
+        if let Some(error) = api_response.error {
+            return Err(HttpError::RequestFailed(format!(
+                "API error: {} - {}",
+                error.code, error.message
+            )));
+        }
+
+        api_response.result.ok_or_else(|| {
+            HttpError::InvalidResponse("No order margin data in response".to_string())
+        })
     }
 
     /// Get MMP configuration

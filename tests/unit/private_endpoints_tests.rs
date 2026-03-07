@@ -995,3 +995,67 @@ async fn test_reset_mmp_success() {
     assert!(result.is_ok());
     assert_eq!(result.unwrap(), "ok");
 }
+
+// =========================================================================
+// Get Order Margin By IDs Tests (Issue #17)
+// =========================================================================
+
+#[tokio::test]
+async fn test_get_order_margin_by_ids_success() {
+    let mut server = mockito::Server::new_async().await;
+    let client = create_test_client(&server);
+
+    let _auth_mock = create_auth_mock(&mut server).await;
+
+    let mock_response = json!({
+        "jsonrpc": "2.0",
+        "result": [
+            {
+                "order_id": "ETH-349278",
+                "initial_margin": 0.00091156,
+                "initial_margin_currency": "ETH"
+            },
+            {
+                "order_id": "ETH-349279",
+                "initial_margin": 0.0,
+                "initial_margin_currency": "ETH"
+            }
+        ],
+        "id": 1
+    });
+
+    let mock = server
+        .mock(
+            "GET",
+            mockito::Matcher::Regex(r"/api/v2/private/get_order_margin_by_ids\?ids=.*".to_string()),
+        )
+        .with_status(200)
+        .with_header("content-type", "application/json")
+        .with_body(mock_response.to_string())
+        .create_async()
+        .await;
+
+    let result = client
+        .get_order_margin_by_ids(&["ETH-349278", "ETH-349279"])
+        .await;
+
+    mock.assert_async().await;
+    assert!(result.is_ok());
+    let margins = result.unwrap();
+    assert_eq!(margins.len(), 2);
+    assert_eq!(margins[0].order_id, "ETH-349278");
+    assert!((margins[0].initial_margin - 0.00091156).abs() < 0.0001);
+    assert_eq!(margins[0].initial_margin_currency, "ETH");
+}
+
+#[tokio::test]
+async fn test_get_order_margin_by_ids_empty_ids_error() {
+    let server = mockito::Server::new_async().await;
+    let client = create_test_client(&server);
+
+    let result = client.get_order_margin_by_ids(&[]).await;
+
+    assert!(result.is_err());
+    let err = result.unwrap_err();
+    assert!(err.to_string().contains("ids array cannot be empty"));
+}
