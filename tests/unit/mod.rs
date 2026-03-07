@@ -4,6 +4,7 @@
    Date: 16/8/25
 ******************************************************************************/
 
+pub mod api_key_tests;
 pub mod book_tests;
 pub mod builder_tests;
 pub mod client_tests;

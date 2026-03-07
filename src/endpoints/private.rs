@@ -4,6 +4,7 @@ use crate::DeribitHttpClient;
 use crate::constants::endpoints::*;
 use crate::error::HttpError;
 use crate::model::account::Subaccount;
+use crate::model::api_key::{ApiKeyInfo, CreateApiKeyRequest, EditApiKeyRequest};
 use crate::model::position::Position;
 use crate::model::request::mass_quote::MassQuoteRequest;
 use crate::model::request::order::OrderRequest;
@@ -3605,5 +3606,544 @@ impl DeribitHttpClient {
         api_response.result.ok_or_else(|| {
             HttpError::InvalidResponse("No user trades data in response".to_string())
         })
+    }
+
+    // ==================== API Key Management ====================
+
+    /// Create a new API key
+    ///
+    /// Creates a new API key with the specified scope and optional settings.
+    ///
+    /// # Arguments
+    ///
+    /// * `request` - The create API key request parameters
+    ///
+    /// # Returns
+    ///
+    /// Returns the newly created API key information including client_id and client_secret.
+    ///
+    /// # Errors
+    ///
+    /// Returns `HttpError` if the request fails or authentication is invalid.
+    ///
+    /// # Example
+    ///
+    /// ```rust,no_run
+    /// use deribit_http::{DeribitHttpClient, model::CreateApiKeyRequest};
+    ///
+    /// # async fn example() -> Result<(), Box<dyn std::error::Error>> {
+    /// let client = DeribitHttpClient::new();
+    /// let request = CreateApiKeyRequest {
+    ///     max_scope: "account:read trade:read_write".to_string(),
+    ///     name: Some("my_trading_key".to_string()),
+    ///     ..Default::default()
+    /// };
+    /// let api_key = client.create_api_key(request).await?;
+    /// println!("Created API key: {}", api_key.client_id);
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub async fn create_api_key(
+        &self,
+        request: CreateApiKeyRequest,
+    ) -> Result<ApiKeyInfo, HttpError> {
+        let mut query_params = vec![("max_scope".to_string(), request.max_scope)];
+
+        if let Some(name) = request.name {
+            query_params.push(("name".to_string(), name));
+        }
+
+        if let Some(public_key) = request.public_key {
+            query_params.push(("public_key".to_string(), public_key));
+        }
+
+        if let Some(enabled_features) = request.enabled_features {
+            for feature in enabled_features {
+                query_params.push(("enabled_features".to_string(), feature));
+            }
+        }
+
+        let query_string = query_params
+            .iter()
+            .map(|(k, v)| format!("{}={}", k, urlencoding::encode(v)))
+            .collect::<Vec<_>>()
+            .join("&");
+
+        let url = format!("{}{}?{}", self.base_url(), CREATE_API_KEY, query_string);
+
+        let response = self.make_authenticated_request(&url).await?;
+
+        if !response.status().is_success() {
+            let error_text = response
+                .text()
+                .await
+                .unwrap_or_else(|_| "Unknown error".to_string());
+            return Err(HttpError::RequestFailed(format!(
+                "Create API key failed: {}",
+                error_text
+            )));
+        }
+
+        let api_response: ApiResponse<ApiKeyInfo> = response
+            .json()
+            .await
+            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
+
+        if let Some(error) = api_response.error {
+            return Err(HttpError::RequestFailed(format!(
+                "API error: {} - {}",
+                error.code, error.message
+            )));
+        }
+
+        api_response
+            .result
+            .ok_or_else(|| HttpError::InvalidResponse("No API key data in response".to_string()))
+    }
+
+    /// Edit an existing API key
+    ///
+    /// Modifies an existing API key's scope, name, or other settings.
+    ///
+    /// # Arguments
+    ///
+    /// * `request` - The edit API key request parameters
+    ///
+    /// # Returns
+    ///
+    /// Returns the updated API key information.
+    ///
+    /// # Errors
+    ///
+    /// Returns `HttpError` if the request fails or the API key is not found.
+    pub async fn edit_api_key(&self, request: EditApiKeyRequest) -> Result<ApiKeyInfo, HttpError> {
+        let mut query_params = vec![
+            ("id".to_string(), request.id.to_string()),
+            ("max_scope".to_string(), request.max_scope),
+        ];
+
+        if let Some(name) = request.name {
+            query_params.push(("name".to_string(), name));
+        }
+
+        if let Some(enabled) = request.enabled {
+            query_params.push(("enabled".to_string(), enabled.to_string()));
+        }
+
+        if let Some(enabled_features) = request.enabled_features {
+            for feature in enabled_features {
+                query_params.push(("enabled_features".to_string(), feature));
+            }
+        }
+
+        if let Some(ip_whitelist) = request.ip_whitelist {
+            for ip in ip_whitelist {
+                query_params.push(("ip_whitelist".to_string(), ip));
+            }
+        }
+
+        let query_string = query_params
+            .iter()
+            .map(|(k, v)| format!("{}={}", k, urlencoding::encode(v)))
+            .collect::<Vec<_>>()
+            .join("&");
+
+        let url = format!("{}{}?{}", self.base_url(), EDIT_API_KEY, query_string);
+
+        let response = self.make_authenticated_request(&url).await?;
+
+        if !response.status().is_success() {
+            let error_text = response
+                .text()
+                .await
+                .unwrap_or_else(|_| "Unknown error".to_string());
+            return Err(HttpError::RequestFailed(format!(
+                "Edit API key failed: {}",
+                error_text
+            )));
+        }
+
+        let api_response: ApiResponse<ApiKeyInfo> = response
+            .json()
+            .await
+            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
+
+        if let Some(error) = api_response.error {
+            return Err(HttpError::RequestFailed(format!(
+                "API error: {} - {}",
+                error.code, error.message
+            )));
+        }
+
+        api_response
+            .result
+            .ok_or_else(|| HttpError::InvalidResponse("No API key data in response".to_string()))
+    }
+
+    /// Disable an API key
+    ///
+    /// Disables the API key with the specified ID. The key cannot be used
+    /// for authentication until it is re-enabled.
+    ///
+    /// # Arguments
+    ///
+    /// * `id` - The ID of the API key to disable
+    ///
+    /// # Returns
+    ///
+    /// Returns the updated API key information with `enabled` set to `false`.
+    ///
+    /// # Errors
+    ///
+    /// Returns `HttpError` if the request fails or the API key is not found.
+    pub async fn disable_api_key(&self, id: u64) -> Result<ApiKeyInfo, HttpError> {
+        let url = format!("{}{}?id={}", self.base_url(), DISABLE_API_KEY, id);
+
+        let response = self.make_authenticated_request(&url).await?;
+
+        if !response.status().is_success() {
+            let error_text = response
+                .text()
+                .await
+                .unwrap_or_else(|_| "Unknown error".to_string());
+            return Err(HttpError::RequestFailed(format!(
+                "Disable API key failed: {}",
+                error_text
+            )));
+        }
+
+        let api_response: ApiResponse<ApiKeyInfo> = response
+            .json()
+            .await
+            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
+
+        if let Some(error) = api_response.error {
+            return Err(HttpError::RequestFailed(format!(
+                "API error: {} - {}",
+                error.code, error.message
+            )));
+        }
+
+        api_response
+            .result
+            .ok_or_else(|| HttpError::InvalidResponse("No API key data in response".to_string()))
+    }
+
+    /// Enable an API key
+    ///
+    /// Enables a previously disabled API key with the specified ID.
+    ///
+    /// # Arguments
+    ///
+    /// * `id` - The ID of the API key to enable
+    ///
+    /// # Returns
+    ///
+    /// Returns the updated API key information with `enabled` set to `true`.
+    ///
+    /// # Errors
+    ///
+    /// Returns `HttpError` if the request fails or the API key is not found.
+    pub async fn enable_api_key(&self, id: u64) -> Result<ApiKeyInfo, HttpError> {
+        let url = format!("{}{}?id={}", self.base_url(), ENABLE_API_KEY, id);
+
+        let response = self.make_authenticated_request(&url).await?;
+
+        if !response.status().is_success() {
+            let error_text = response
+                .text()
+                .await
+                .unwrap_or_else(|_| "Unknown error".to_string());
+            return Err(HttpError::RequestFailed(format!(
+                "Enable API key failed: {}",
+                error_text
+            )));
+        }
+
+        let api_response: ApiResponse<ApiKeyInfo> = response
+            .json()
+            .await
+            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
+
+        if let Some(error) = api_response.error {
+            return Err(HttpError::RequestFailed(format!(
+                "API error: {} - {}",
+                error.code, error.message
+            )));
+        }
+
+        api_response
+            .result
+            .ok_or_else(|| HttpError::InvalidResponse("No API key data in response".to_string()))
+    }
+
+    /// List all API keys
+    ///
+    /// Retrieves a list of all API keys associated with the account.
+    ///
+    /// # Returns
+    ///
+    /// Returns a vector of API key information.
+    ///
+    /// # Errors
+    ///
+    /// Returns `HttpError` if the request fails or authentication is invalid.
+    ///
+    /// # Example
+    ///
+    /// ```rust,no_run
+    /// use deribit_http::DeribitHttpClient;
+    ///
+    /// # async fn example() -> Result<(), Box<dyn std::error::Error>> {
+    /// let client = DeribitHttpClient::new();
+    /// let api_keys = client.list_api_keys().await?;
+    /// for key in api_keys {
+    ///     println!("Key ID: {}, Name: {}, Enabled: {}", key.id, key.name, key.enabled);
+    /// }
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub async fn list_api_keys(&self) -> Result<Vec<ApiKeyInfo>, HttpError> {
+        let url = format!("{}{}", self.base_url(), LIST_API_KEYS);
+
+        let response = self.make_authenticated_request(&url).await?;
+
+        if !response.status().is_success() {
+            let error_text = response
+                .text()
+                .await
+                .unwrap_or_else(|_| "Unknown error".to_string());
+            return Err(HttpError::RequestFailed(format!(
+                "List API keys failed: {}",
+                error_text
+            )));
+        }
+
+        let api_response: ApiResponse<Vec<ApiKeyInfo>> = response
+            .json()
+            .await
+            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
+
+        if let Some(error) = api_response.error {
+            return Err(HttpError::RequestFailed(format!(
+                "API error: {} - {}",
+                error.code, error.message
+            )));
+        }
+
+        api_response
+            .result
+            .ok_or_else(|| HttpError::InvalidResponse("No API keys data in response".to_string()))
+    }
+
+    /// Remove an API key
+    ///
+    /// Permanently removes the API key with the specified ID.
+    ///
+    /// # Arguments
+    ///
+    /// * `id` - The ID of the API key to remove
+    ///
+    /// # Returns
+    ///
+    /// Returns `"ok"` on success.
+    ///
+    /// # Errors
+    ///
+    /// Returns `HttpError` if the request fails or the API key is not found.
+    pub async fn remove_api_key(&self, id: u64) -> Result<String, HttpError> {
+        let url = format!("{}{}?id={}", self.base_url(), REMOVE_API_KEY, id);
+
+        let response = self.make_authenticated_request(&url).await?;
+
+        if !response.status().is_success() {
+            let error_text = response
+                .text()
+                .await
+                .unwrap_or_else(|_| "Unknown error".to_string());
+            return Err(HttpError::RequestFailed(format!(
+                "Remove API key failed: {}",
+                error_text
+            )));
+        }
+
+        let api_response: ApiResponse<String> = response
+            .json()
+            .await
+            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
+
+        if let Some(error) = api_response.error {
+            return Err(HttpError::RequestFailed(format!(
+                "API error: {} - {}",
+                error.code, error.message
+            )));
+        }
+
+        api_response
+            .result
+            .ok_or_else(|| HttpError::InvalidResponse("No result in response".to_string()))
+    }
+
+    /// Reset an API key secret
+    ///
+    /// Generates a new client_secret for the API key with the specified ID.
+    /// The old secret will no longer be valid.
+    ///
+    /// # Arguments
+    ///
+    /// * `id` - The ID of the API key to reset
+    ///
+    /// # Returns
+    ///
+    /// Returns the updated API key information with the new client_secret.
+    ///
+    /// # Errors
+    ///
+    /// Returns `HttpError` if the request fails or the API key is not found.
+    pub async fn reset_api_key(&self, id: u64) -> Result<ApiKeyInfo, HttpError> {
+        let url = format!("{}{}?id={}", self.base_url(), RESET_API_KEY, id);
+
+        let response = self.make_authenticated_request(&url).await?;
+
+        if !response.status().is_success() {
+            let error_text = response
+                .text()
+                .await
+                .unwrap_or_else(|_| "Unknown error".to_string());
+            return Err(HttpError::RequestFailed(format!(
+                "Reset API key failed: {}",
+                error_text
+            )));
+        }
+
+        let api_response: ApiResponse<ApiKeyInfo> = response
+            .json()
+            .await
+            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
+
+        if let Some(error) = api_response.error {
+            return Err(HttpError::RequestFailed(format!(
+                "API error: {} - {}",
+                error.code, error.message
+            )));
+        }
+
+        api_response
+            .result
+            .ok_or_else(|| HttpError::InvalidResponse("No API key data in response".to_string()))
+    }
+
+    /// Change API key name
+    ///
+    /// Changes the name of the API key with the specified ID.
+    ///
+    /// # Arguments
+    ///
+    /// * `id` - The ID of the API key
+    /// * `name` - The new name (only letters, numbers and underscores; max 16 characters)
+    ///
+    /// # Returns
+    ///
+    /// Returns the updated API key information.
+    ///
+    /// # Errors
+    ///
+    /// Returns `HttpError` if the request fails or the API key is not found.
+    pub async fn change_api_key_name(&self, id: u64, name: &str) -> Result<ApiKeyInfo, HttpError> {
+        let url = format!(
+            "{}{}?id={}&name={}",
+            self.base_url(),
+            CHANGE_API_KEY_NAME,
+            id,
+            urlencoding::encode(name)
+        );
+
+        let response = self.make_authenticated_request(&url).await?;
+
+        if !response.status().is_success() {
+            let error_text = response
+                .text()
+                .await
+                .unwrap_or_else(|_| "Unknown error".to_string());
+            return Err(HttpError::RequestFailed(format!(
+                "Change API key name failed: {}",
+                error_text
+            )));
+        }
+
+        let api_response: ApiResponse<ApiKeyInfo> = response
+            .json()
+            .await
+            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
+
+        if let Some(error) = api_response.error {
+            return Err(HttpError::RequestFailed(format!(
+                "API error: {} - {}",
+                error.code, error.message
+            )));
+        }
+
+        api_response
+            .result
+            .ok_or_else(|| HttpError::InvalidResponse("No API key data in response".to_string()))
+    }
+
+    /// Change API key scope
+    ///
+    /// Changes the maximum scope of the API key with the specified ID.
+    ///
+    /// # Arguments
+    ///
+    /// * `id` - The ID of the API key
+    /// * `max_scope` - The new maximum scope (e.g., "account:read trade:read_write")
+    ///
+    /// # Returns
+    ///
+    /// Returns the updated API key information.
+    ///
+    /// # Errors
+    ///
+    /// Returns `HttpError` if the request fails or the API key is not found.
+    pub async fn change_scope_in_api_key(
+        &self,
+        id: u64,
+        max_scope: &str,
+    ) -> Result<ApiKeyInfo, HttpError> {
+        let url = format!(
+            "{}{}?id={}&max_scope={}",
+            self.base_url(),
+            CHANGE_SCOPE_IN_API_KEY,
+            id,
+            urlencoding::encode(max_scope)
+        );
+
+        let response = self.make_authenticated_request(&url).await?;
+
+        if !response.status().is_success() {
+            let error_text = response
+                .text()
+                .await
+                .unwrap_or_else(|_| "Unknown error".to_string());
+            return Err(HttpError::RequestFailed(format!(
+                "Change API key scope failed: {}",
+                error_text
+            )));
+        }
+
+        let api_response: ApiResponse<ApiKeyInfo> = response
+            .json()
+            .await
+            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
+
+        if let Some(error) = api_response.error {
+            return Err(HttpError::RequestFailed(format!(
+                "API error: {} - {}",
+                error.code, error.message
+            )));
+        }
+
+        api_response
+            .result
+            .ok_or_else(|| HttpError::InvalidResponse("No API key data in response".to_string()))
     }
 }

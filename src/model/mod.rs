@@ -3,6 +3,8 @@
 // HTTP-specific models
 /// Account-related models and structures
 pub mod account;
+/// API key management models
+pub mod api_key;
 /// Order book models
 pub mod book;
 /// Currency and expiration models
@@ -51,6 +53,7 @@ pub mod types;
 pub mod withdrawal;
 
 pub use account::*;
+pub use api_key::*;
 pub use book::*;
 pub use currency::*;
 pub use deposit::*;

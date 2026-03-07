@@ -200,6 +200,26 @@ pub mod endpoints {
         "/private/get_user_trades_by_instrument_and_time";
     /// Get user trades by order
     pub const GET_USER_TRADES_BY_ORDER: &str = "/private/get_user_trades_by_order";
+
+    // API Key Management endpoints
+    /// Create a new API key
+    pub const CREATE_API_KEY: &str = "/private/create_api_key";
+    /// Edit an existing API key
+    pub const EDIT_API_KEY: &str = "/private/edit_api_key";
+    /// Disable an API key
+    pub const DISABLE_API_KEY: &str = "/private/disable_api_key";
+    /// Enable an API key
+    pub const ENABLE_API_KEY: &str = "/private/enable_api_key";
+    /// List all API keys
+    pub const LIST_API_KEYS: &str = "/private/list_api_keys";
+    /// Remove an API key
+    pub const REMOVE_API_KEY: &str = "/private/remove_api_key";
+    /// Reset an API key secret
+    pub const RESET_API_KEY: &str = "/private/reset_api_key";
+    /// Change API key name
+    pub const CHANGE_API_KEY_NAME: &str = "/private/change_api_key_name";
+    /// Change API key scope
+    pub const CHANGE_SCOPE_IN_API_KEY: &str = "/private/change_scope_in_api_key";
 }
 
 /// HTTP headers
