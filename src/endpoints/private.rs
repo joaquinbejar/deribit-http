@@ -1329,6 +1329,81 @@ impl DeribitHttpClient {
     //
     // }
 
+    /// Close an existing position
+    ///
+    /// Places a reduce-only order to close an existing position. The order will
+    /// automatically be set to reduce-only to ensure it only closes the position.
+    ///
+    /// # Arguments
+    ///
+    /// * `instrument_name` - Instrument identifier (e.g., "BTC-PERPETUAL")
+    /// * `order_type` - Order type: "market" or "limit"
+    /// * `price` - Optional price for limit orders (required if order_type is "limit")
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use deribit_http::DeribitHttpClient;
+    ///
+    /// let client = DeribitHttpClient::new();
+    /// // Close position with market order
+    /// // let result = client.close_position("BTC-PERPETUAL", "market", None).await?;
+    /// // Close position with limit order
+    /// // let result = client.close_position("ETH-PERPETUAL", "limit", Some(2500.0)).await?;
+    /// ```
+    pub async fn close_position(
+        &self,
+        instrument_name: &str,
+        order_type: &str,
+        price: Option<f64>,
+    ) -> Result<OrderResponse, HttpError> {
+        let mut query_params = vec![
+            ("instrument_name".to_string(), instrument_name.to_string()),
+            ("type".to_string(), order_type.to_string()),
+        ];
+
+        if let Some(price) = price {
+            query_params.push(("price".to_string(), price.to_string()));
+        }
+
+        let query_string = query_params
+            .iter()
+            .map(|(k, v)| format!("{}={}", k, urlencoding::encode(v)))
+            .collect::<Vec<_>>()
+            .join("&");
+
+        let url = format!("{}{}?{}", self.base_url(), CLOSE_POSITION, query_string);
+
+        let response = self.make_authenticated_request(&url).await?;
+
+        if !response.status().is_success() {
+            let error_text = response
+                .text()
+                .await
+                .unwrap_or_else(|_| "Unknown error".to_string());
+            return Err(HttpError::RequestFailed(format!(
+                "Close position failed: {}",
+                error_text
+            )));
+        }
+
+        let api_response: ApiResponse<OrderResponse> = response
+            .json()
+            .await
+            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
+
+        if let Some(error) = api_response.error {
+            return Err(HttpError::RequestFailed(format!(
+                "API error: {} - {}",
+                error.code, error.message
+            )));
+        }
+
+        api_response
+            .result
+            .ok_or_else(|| HttpError::InvalidResponse("No order data in response".to_string()))
+    }
+
     /// Mass quote
     ///
     /// Places multiple quotes at once.

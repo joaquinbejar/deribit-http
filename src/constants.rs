@@ -118,6 +118,8 @@ pub mod endpoints {
     pub const EDIT: &str = "/private/edit";
     /// Cancel quotes
     pub const CANCEL_QUOTES: &str = "/private/cancel_quotes";
+    /// Close an existing position
+    pub const CLOSE_POSITION: &str = "/private/close_position";
 
     // Private account endpoints
     /// Get account summary information
