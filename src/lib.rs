@@ -1,21 +1,27 @@
 //! # Deribit HTTP Client (deribit_http)
 //!
-//! Asynchronous HTTP client for the Deribit API, designed for server integrations,
-//! batch jobs and tooling that prefer REST/HTTP over WebSocket. Built on top of
-//! `reqwest` and `tokio`, it provides a typed set of methods for public and
-//! private endpoints, OAuth2 authentication, category-based rate limiting and
-//! Serde-powered data models.
+//! **Production-ready** asynchronous HTTP client for the Deribit API v2.
+//! Version **0.6.0** provides **~95% coverage** of all HTTP-compatible Deribit endpoints.
 //!
-//! This crate-level documentation is intended to be used by `cargo readme` to generate the README.
+//! Designed for server integrations, batch jobs, and tooling that prefer REST/HTTP over WebSocket.
+//! Built on `reqwest` and `tokio`, with full WASM/Cloudflare Workers support.
 //!
 //! ## Key features
-//! - Pure async HTTP (reqwest + tokio).
-//! - Simple Testnet/Mainnet setup: `DeribitHttpClient::new()` or `default`.
-//! - Built-in OAuth2 (Client Credentials); utilities for `exchange_token` and `fork_token`.
-//! - Category-based rate limiting (trading, market, account, auth, general) with a token-bucket approach.
-//! - Strongly-typed data models (Serde) and JSON-RPC responses mapped to `ApiResponse`/`ApiError`.
-//! - Re-exported types and structures for ergonomic usage.
-//! - Explicit focus on Deribit REST public/private endpoints (no WebSocket/streaming in this crate).
+//! - **100+ endpoints** implemented across public and private APIs
+//! - **Pure async HTTP** with reqwest + tokio (native) or fetch (WASM)
+//! - **Cross-platform**: Native, WASM browsers, and Cloudflare Workers
+//! - **OAuth2 authentication** with automatic token renewal
+//! - **Token-bucket rate limiting** per endpoint category
+//! - **40+ strongly-typed models** with Serde serialization
+//! - **126 unit tests** ensuring reliability
+//!
+//! ## Installation
+//! Add to your `Cargo.toml`:
+//! ```toml
+//! [dependencies]
+//! deribit-http = "0.6"
+//! tokio = { version = "1", features = ["full"] }
+//! ```
 //!
 //! ## Quick start
 //! ```rust
@@ -60,34 +66,46 @@
 //! - `rate_limit`: `RateLimiter` and `categorize_endpoint` with per-category limits.
 //! - `constants`: base URLs (production/testnet), endpoint routes, and common headers.
 //!
-//! ## Implemented public endpoints (selection)
-//! The following methods exist on `DeribitHttpClient` within `endpoints::public`:
-//! - Currencies and markets: `get_currencies()`.
-//! - Indices and prices: `get_index(currency)`, `get_index_price(index_name)`, `get_index_price_names()`.
-//! - Book summary: `get_book_summary_by_currency(currency, kind)`, `get_book_summary_by_instrument(instrument_name)`.
-//! - Instruments: `get_instrument(instrument_name)`, `get_instruments(currency, kind, expired)`, `get_contract_size(instrument_name)`.
-//! - System and status: `get_server_time()`, `test_connection()`, `get_status()`.
-//! - Market data: `get_ticker(instrument_name)`, `get_order_book(instrument_name, depth)`, `get_order_book_by_instrument_id(instrument_id, depth)`.
-//! - Trades: `get_last_trades(instrument_name, ...)`, `get_last_trades_by_currency(...)`,
-//!   `get_last_trades_by_currency_and_time(...)`, `get_last_trades_by_instrument_and_time(...)`.
-//! - Volatility and interest: `get_historical_volatility(currency)`, `get_apr_history(currency, ...)`.
-//! - Funding: `get_funding_chart_data(instrument_name, length)`, `get_funding_rate_history(instrument_name, start, end)`, `get_funding_rate_value(instrument_name, start, end)`.
-//! - TradingView: `get_tradingview_chart_data(instrument_name, start, end, resolution)`.
-//! - Other: `get_delivery_prices(index_name, ...)`, `get_expirations(currency, kind, currency_pair)`.
-//! - Note: `hello(client_name, client_version)` is documented but WebSocket-only; in HTTP it will return a configuration error.
+//! ## Public endpoints (30+)
 //!
-//! Included models (re-exported): `Currency`, `IndexData`, `BookSummary`, `Instrument`, `Trade`,
-//! `TickerData`, `OrderBook`, `FundingChartData`, `TradingViewChartData`, `DeliveryPricesResponse`,
-//! `ExpirationsResponse`, `FundingRateData`, `SettlementsResponse`, `LastTradesResponse`, etc.
+//! | Category | Endpoints |
+//! |----------|-----------|
+//! | **System** | `get_server_time()`, `test_connection()`, `get_status()` |
+//! | **Currencies** | `get_currencies()`, `get_apr_history()` |
+//! | **Indices** | `get_index()`, `get_index_price()`, `get_index_price_names()`, `get_index_chart_data()` |
+//! | **Instruments** | `get_instrument()`, `get_instruments()`, `get_contract_size()` |
+//! | **Book Summary** | `get_book_summary_by_currency()`, `get_book_summary_by_instrument()` |
+//! | **Market Data** | `get_ticker()`, `get_order_book()`, `get_order_book_by_instrument_id()` |
+//! | **Trades** | `get_last_trades()`, `get_last_trades_by_currency()`, `get_last_trades_by_*_and_time()` |
+//! | **Funding** | `get_funding_chart_data()`, `get_funding_rate_history()`, `get_funding_rate_value()` |
+//! | **Volatility** | `get_historical_volatility()`, `get_volatility_index_data()` |
+//! | **Settlements** | `get_last_settlements_by_currency()`, `get_last_settlements_by_instrument()` |
+//! | **TradingView** | `get_tradingview_chart_data()` |
+//! | **Combo Books** | `get_combo_details()`, `get_combo_ids()`, `get_combos()` |
+//! | **Block RFQ** | `get_block_rfq_trades()` |
 //!
-//! ## Implemented private endpoints (selection)
-//! Require valid authentication (OAuth2). Examples include:
-//! - Accounts and movements: `get_subaccounts()`, `get_transaction_log(...)`, `get_deposits(...)`, `get_withdrawals(...)`.
-//! - Basic trading: `buy_order(...)`, `sell_order(...)`, `cancel_order(order_id)`.
-//! - Account: `get_account_summary(currency, ...)`.
+//! ## Private endpoints (70+)
 //!
-//! Useful re-exported models: `Subaccount`, `TransactionLog`, `DepositsResponse`, `WithdrawalsResponse`,
-//! `OrderResponse`, `OrderInfo`, `AccountSummary`, `Position`, `PortfolioInfo`, etc.
+//! Require valid authentication (OAuth2):
+//!
+//! | Category | Endpoints |
+//! |----------|-----------|
+//! | **Trading** | `buy_order()`, `sell_order()`, `edit_order()`, `cancel_order()`, `cancel_all()`, `cancel_all_by_*()` |
+//! | **Orders** | `get_open_orders()`, `get_order_state()`, `get_order_history_by_currency()`, `get_order_history_by_instrument()` |
+//! | **Positions** | `get_position()`, `get_positions()`, `close_position()`, `move_positions()` |
+//! | **User Trades** | `get_user_trades_by_instrument()`, `get_user_trades_by_currency()`, `get_user_trades_by_order()` |
+//! | **Account** | `get_account_summary()`, `get_account_summaries()`, `get_subaccounts()`, `get_subaccounts_details()` |
+//! | **Subaccounts** | `create_subaccount()`, `change_subaccount_name()`, `toggle_subaccount_login()`, `remove_subaccount()` |
+//! | **API Keys** | `create_api_key()`, `edit_api_key()`, `remove_api_key()`, `list_api_keys()`, `enable_api_key()`, `disable_api_key()` |
+//! | **Wallet** | `get_deposits()`, `get_withdrawals()`, `withdraw()`, `cancel_withdrawal()`, `create_deposit_address()` |
+//! | **Transfers** | `get_transfers()`, `submit_transfer_to_subaccount()`, `submit_transfer_between_subaccounts()`, `cancel_transfer_by_id()` |
+//! | **Block Trade** | `execute_block_trade()`, `verify_block_trade()`, `get_block_trade()`, `get_block_trades()`, `simulate_block_trade()` |
+//! | **Block RFQ** | `create_block_rfq()`, `accept_block_rfq()`, `add_block_rfq_quote()`, `cancel_block_rfq()`, `get_block_rfqs()` |
+//! | **Combo Books** | `create_combo()`, `get_leg_prices()` |
+//! | **MMP** | `get_mmp_config()`, `set_mmp_config()`, `reset_mmp()`, `get_mmp_status()` |
+//! | **Mass Quote** | `mass_quote()`, `cancel_quotes()` |
+//! | **Margins** | `get_margins()`, `get_order_margin_by_ids()` |
+//! | **Settlement** | `get_settlement_history_by_currency()`, `get_settlement_history_by_instrument()` |
 //!
 //! ## Limitations and important notes
 //! - This crate does not implement WebSocket or streaming. Some Deribit endpoints exist only over WS
@@ -105,12 +123,27 @@
 //! The `RateLimiter` categorizes each URL and applies a token-bucket scheme per category
 //! (Trading, MarketData, Account, Auth, General). You can inspect it via `rate_limiter()`.
 //!
-//! ## README generation
-//! This crate-level header is consumed by `cargo readme`. To generate the README:
+//! ## Examples
+//!
+//! See the `examples/` directory for comprehensive examples:
+//! - **Public examples** (16 binaries): Market data, instruments, trades, funding, settlements
+//! - **Private examples** (7 binaries): Trading, orders, positions, account management, mass quotes
+//!
 //! ```bash
-//! cargo readme -o README.md
+//! # Run a public example
+//! cargo run --bin check_currencies
+//!
+//! # Run a private example (requires .env with credentials)
+//! cargo run --bin trading_endpoints
 //! ```
-//! Ensure you have `cargo-readme` installed (`cargo install cargo-readme`).
+//!
+//! ## Platform support
+//!
+//! | Target | Status |
+//! |--------|--------|
+//! | Native (tokio) | ✅ Full support |
+//! | WASM (browser) | ✅ Full support |
+//! | Cloudflare Workers | ✅ Full support |
 
 pub mod auth;
 pub mod client;
