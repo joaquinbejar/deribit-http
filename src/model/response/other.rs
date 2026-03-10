@@ -21,7 +21,7 @@ pub struct TradingLimit {
 #[derive(DebugPretty, DisplaySimple, Clone, Serialize, Deserialize)]
 pub struct AccountLimits {
     /// Whether limits are applied per currency
-    pub limits_per_currency: bool,
+    pub limits_per_currency: Option<bool>,
     /// Rate limits for non-matching engine operations
     pub non_matching_engine: RateLimit,
     /// Rate limits for matching engine operations
@@ -43,15 +43,15 @@ pub struct RateLimit {
 #[derive(DebugPretty, DisplaySimple, Clone, Serialize, Deserialize)]
 pub struct MatchingEngineLimit {
     /// Trading limits configuration
-    pub trading: TradingLimit,
+    pub trading: Option<TradingLimit>,
     /// Spot trading rate limits
-    pub spot: RateLimit,
+    pub spot: Option<RateLimit>,
     /// Quote request rate limits
-    pub quotes: RateLimit,
+    pub quotes: Option<RateLimit>,
     /// Maximum quotes rate limits
-    pub max_quotes: RateLimit,
+    pub max_quotes: Option<RateLimit>,
     /// Guaranteed quotes rate limits
-    pub guaranteed_quotes: RateLimit,
+    pub guaranteed_quotes: Option<RateLimit>,
     /// Cancel all orders rate limits
     pub cancel_all: RateLimit,
 }
@@ -212,40 +212,66 @@ pub struct TransferResultResponse {
     pub status: String,
 }
 
-/// Account summary response containing user account information
+/// Shared account-level fields returned by both singular and plural account summary endpoints.
 #[skip_serializing_none]
-#[derive(DebugPretty, DisplaySimple, Clone, Serialize, Deserialize)]
-pub struct AccountSummaryResponse {
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AccountInfo {
     /// Account id
     pub id: u64,
     /// User email
     pub email: String,
     /// System generated user nickname
-    pub system_name: String,
+    pub system_name: Option<String>,
     /// Account name (given by user)
-    pub username: String,
+    pub username: Option<String>,
     /// When Block RFQ Self Match Prevention is enabled
-    pub block_rfq_self_match_prevention: bool,
+    pub block_rfq_self_match_prevention: Option<bool>,
     /// Time at which the account was created (milliseconds since the Unix epoch)
-    pub creation_timestamp: u64,
+    pub creation_timestamp: Option<u64>,
     /// Account type
     #[serde(rename = "type")]
-    pub account_type: String,
+    pub account_type: Option<String>,
     /// Optional identifier of the referrer
     pub referrer_id: Option<String>,
     /// Whether account is loginable using email and password
-    pub login_enabled: bool,
+    pub login_enabled: Option<bool>,
     /// Whether Security Key authentication is enabled
-    pub security_keys_enabled: bool,
+    pub security_keys_enabled: Option<bool>,
     /// Whether MMP is enabled
-    pub mmp_enabled: bool,
+    pub mmp_enabled: Option<bool>,
     /// true when the inter-user transfers are enabled for user
-    pub interuser_transfers_enabled: bool,
+    pub interuser_transfers_enabled: Option<bool>,
     /// Self trading rejection behavior - reject_taker or cancel_maker
-    pub self_trading_reject_mode: String,
+    pub self_trading_reject_mode: Option<String>,
     /// true if self trading rejection behavior is applied to trades between subaccounts
-    pub self_trading_extended_to_subaccounts: bool,
-    /// Aggregated list of per-currency account summaries
+    pub self_trading_extended_to_subaccounts: Option<bool>,
+}
+
+/// Response from `get_account_summary` (singular, per-currency).
+///
+/// Deribit returns a flat object with account-level fields and currency-level
+/// financial data mixed together. Uses `#[serde(flatten)]` to split them into
+/// [`AccountInfo`] and [`AccountResult`] without duplication.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AccountSummaryResponse {
+    /// Account-level fields (id, email, type, etc.)
+    #[serde(flatten)]
+    pub account: AccountInfo,
+    /// Currency-level financial data (balance, equity, margins, etc.)
+    #[serde(flatten)]
+    pub summary: AccountResult,
+}
+
+/// Response from `get_account_summaries` (plural, all currencies).
+///
+/// Returns account-level fields with a `summaries` array containing
+/// per-currency financial data.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AccountSummariesResponse {
+    /// Account-level fields (id, email, type, etc.)
+    #[serde(flatten)]
+    pub account: AccountInfo,
+    /// Per-currency account summaries
     pub summaries: Vec<AccountResult>,
 }
 
@@ -406,6 +432,7 @@ where
 #[derive(DebugPretty, DisplaySimple, Clone, Serialize, Deserialize)]
 pub struct AccountResult {
     /// Currency of the summary
+    #[serde(default)]
     pub currency: String,
     /// The account's balance
     pub balance: f64,
@@ -501,8 +528,4 @@ pub struct AccountResult {
     pub total_maintenance_margin_usd: Option<f64>,
     /// The account's total equity in all cross collateral currencies, expressed in USD
     pub total_equity_usd: Option<f64>,
-    /// System name for the account
-    pub system_name: Option<String>,
-    /// Account type
-    pub account_type: Option<String>,
 }

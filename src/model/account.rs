@@ -3,7 +3,7 @@
    Email: jb@taunais.com
    Date: 21/7/25
 ******************************************************************************/
-use crate::model::response::other::AccountSummaryResponse;
+use crate::model::response::other::AccountSummariesResponse;
 use pretty_simple_display::{DebugPretty, DisplaySimple};
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
@@ -127,7 +127,7 @@ pub struct Portfolio {
     /// Currency of the portfolio
     pub currency: String,
     /// Account summaries for different currencies
-    pub accounts: Vec<AccountSummaryResponse>,
+    pub accounts: Vec<AccountSummariesResponse>,
     /// Total portfolio value in USD
     pub total_usd_value: Option<f64>,
     /// Cross-currency margin enabled
@@ -146,7 +146,7 @@ impl Portfolio {
     }
 
     /// Add an account summary to the portfolio
-    pub fn add_account(&mut self, account: AccountSummaryResponse) {
+    pub fn add_account(&mut self, account: AccountSummariesResponse) {
         self.accounts.push(account);
     }
 }
