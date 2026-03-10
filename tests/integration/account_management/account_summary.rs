@@ -402,7 +402,8 @@ mod get_account_summaries_tests {
                 );
                 info!(
                     "Account ID: {}, Username: {}",
-                    response.id, response.username
+                    response.account.id,
+                    response.account.username.as_deref().unwrap_or("")
                 );
                 for summary in &response.summaries {
                     info!("  Currency: {}", summary.currency);

@@ -1543,8 +1543,8 @@ async fn test_get_account_summaries_success() {
     assert!(result.is_ok());
     let response = result.unwrap();
     assert_eq!(response.summaries.len(), 2);
-    assert_eq!(response.email, "user@example.com");
-    assert_eq!(response.username, "user");
+    assert_eq!(response.account.email, "user@example.com");
+    assert_eq!(response.account.username, Some("user".to_string()));
 }
 
 #[tokio::test]
@@ -1606,7 +1606,10 @@ async fn test_get_account_summaries_with_subaccount() {
     assert!(result.is_ok());
     let response = result.unwrap();
     assert_eq!(response.summaries.len(), 1);
-    assert_eq!(response.account_type, "subaccount");
+    assert_eq!(
+        response.account.account_type,
+        Some("subaccount".to_string())
+    );
 }
 
 // =========================================================================
