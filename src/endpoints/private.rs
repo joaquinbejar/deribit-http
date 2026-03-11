@@ -17,7 +17,8 @@ use crate::model::response::mass_quote::MassQuoteResponse;
 use crate::model::response::mmp::{MmpConfig, MmpStatus, SetMmpConfigRequest};
 use crate::model::response::order::{OrderInfoResponse, OrderResponse};
 use crate::model::response::other::{
-    AccountSummaryResponse, SettlementsResponse, TransactionLogResponse, TransferResultResponse,
+    AccountSummariesResponse, AccountSummaryResponse, SettlementsResponse, TransactionLogResponse,
+    TransferResultResponse,
 };
 use crate::model::response::position::MovePositionResult;
 use crate::model::response::subaccount::SubaccountDetails;
@@ -1028,7 +1029,7 @@ impl DeribitHttpClient {
         &self,
         subaccount_id: Option<i64>,
         extended: Option<bool>,
-    ) -> Result<AccountSummaryResponse, HttpError> {
+    ) -> Result<AccountSummariesResponse, HttpError> {
         let mut params = Vec::new();
         if let Some(subaccount_id) = subaccount_id {
             params.push(format!("subaccount_id={}", subaccount_id));
@@ -5104,6 +5105,7 @@ impl DeribitHttpClient {
         let direction_str = match direction {
             crate::model::types::Direction::Buy => "buy",
             crate::model::types::Direction::Sell => "sell",
+            crate::model::types::Direction::Unknown => "buy",
         };
 
         let mut query_params = vec![
@@ -5386,6 +5388,7 @@ impl DeribitHttpClient {
         let direction_str = match direction {
             crate::model::types::Direction::Buy => "buy",
             crate::model::types::Direction::Sell => "sell",
+            crate::model::types::Direction::Unknown => "buy",
         };
 
         let mut query_params = vec![

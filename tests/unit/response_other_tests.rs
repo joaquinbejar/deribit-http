@@ -179,6 +179,45 @@ fn create_mock_account_result() -> AccountResult {
     }
 }
 
+fn create_mock_account_info() -> AccountInfo {
+    AccountInfo {
+        id: 12345,
+        email: "user@example.com".to_string(),
+        system_name: Some("user_12345".to_string()),
+        username: Some("testuser".to_string()),
+        block_rfq_self_match_prevention: Some(false),
+        creation_timestamp: Some(1640995200000),
+        account_type: Some("main".to_string()),
+        referrer_id: Some("ref_123".to_string()),
+        login_enabled: Some(true),
+        security_keys_enabled: Some(false),
+        mmp_enabled: Some(false),
+        interuser_transfers_enabled: Some(true),
+        self_trading_reject_mode: Some("reject_taker".to_string()),
+        self_trading_extended_to_subaccounts: Some(false),
+    }
+}
+
+fn create_mock_account_summary_response() -> AccountSummaryResponse {
+    AccountSummaryResponse {
+        id: 12345,
+        email: "user@example.com".to_string(),
+        system_name: "user_12345".to_string(),
+        username: "testuser".to_string(),
+        block_rfq_self_match_prevention: false,
+        creation_timestamp: 1640995200000,
+        account_type: "main".to_string(),
+        referrer_id: Some("ref_123".to_string()),
+        login_enabled: true,
+        security_keys_enabled: false,
+        mmp_enabled: false,
+        interuser_transfers_enabled: true,
+        self_trading_reject_mode: "reject_taker".to_string(),
+        self_trading_extended_to_subaccounts: false,
+        summaries: vec![create_mock_account_result()],
+    }
+}
+
 // Tests for LastTradesResponse
 #[test]
 fn test_last_trades_response_creation() {
@@ -400,51 +439,17 @@ fn test_transfer_result_response_clone() {
 // Tests for AccountSummaryResponse
 #[test]
 fn test_account_summary_response_creation() {
-    let summaries = vec![create_mock_account_result()];
-    let response = AccountSummaryResponse {
-        id: 12345,
-        email: "user@example.com".to_string(),
-        system_name: "user_12345".to_string(),
-        username: "testuser".to_string(),
-        block_rfq_self_match_prevention: false,
-        creation_timestamp: 1640995200000,
-        account_type: "main".to_string(),
-        referrer_id: Some("ref_123".to_string()),
-        login_enabled: true,
-        security_keys_enabled: false,
-        mmp_enabled: false,
-        interuser_transfers_enabled: true,
-        self_trading_reject_mode: "reject_taker".to_string(),
-        self_trading_extended_to_subaccounts: false,
-        summaries,
-    };
+    let response = create_mock_account_summary_response();
 
     assert_eq!(response.id, 12345);
     assert_eq!(response.email, "user@example.com");
-    assert_eq!(response.summaries.len(), 1);
+    assert_eq!(response.summaries[0].balance, 1.5);
     assert!(response.login_enabled);
 }
 
 #[test]
 fn test_account_summary_response_serialization() {
-    let summaries = vec![create_mock_account_result()];
-    let response = AccountSummaryResponse {
-        id: 12345,
-        email: "user@example.com".to_string(),
-        system_name: "user_12345".to_string(),
-        username: "testuser".to_string(),
-        block_rfq_self_match_prevention: false,
-        creation_timestamp: 1640995200000,
-        account_type: "main".to_string(),
-        referrer_id: None,
-        login_enabled: true,
-        security_keys_enabled: false,
-        mmp_enabled: false,
-        interuser_transfers_enabled: true,
-        self_trading_reject_mode: "reject_taker".to_string(),
-        self_trading_extended_to_subaccounts: false,
-        summaries,
-    };
+    let response = create_mock_account_summary_response();
 
     let serialized = serde_json::to_string(&response).unwrap();
     assert!(serialized.contains("user@example.com"));
@@ -455,29 +460,99 @@ fn test_account_summary_response_serialization() {
 
 #[test]
 fn test_account_summary_response_clone() {
-    let summaries = vec![create_mock_account_result()];
-    let response = AccountSummaryResponse {
-        id: 12345,
-        email: "user@example.com".to_string(),
-        system_name: "user_12345".to_string(),
-        username: "testuser".to_string(),
-        block_rfq_self_match_prevention: false,
-        creation_timestamp: 1640995200000,
-        account_type: "main".to_string(),
-        referrer_id: None,
-        login_enabled: true,
-        security_keys_enabled: false,
-        mmp_enabled: false,
-        interuser_transfers_enabled: true,
-        self_trading_reject_mode: "reject_taker".to_string(),
-        self_trading_extended_to_subaccounts: false,
-        summaries,
-    };
+    let response = create_mock_account_summary_response();
 
     let cloned = response.clone();
     assert_eq!(response.id, cloned.id);
     assert_eq!(response.email, cloned.email);
-    assert_eq!(response.summaries.len(), cloned.summaries.len());
+    assert_eq!(response.summaries[0].balance, cloned.summaries[0].balance);
+}
+
+// Tests for AccountSummariesResponse (plural, with summaries array)
+#[test]
+fn test_account_summaries_response_creation() {
+    let response = AccountSummariesResponse {
+        account: create_mock_account_info(),
+        summaries: vec![create_mock_account_result()],
+    };
+
+    assert_eq!(response.account.id, 12345);
+    assert_eq!(response.summaries.len(), 1);
+}
+
+#[test]
+fn test_account_summaries_response_deserialization() {
+    let json = r#"{
+        "id": 10,
+        "email": "user@example.com",
+        "system_name": "user",
+        "username": "user",
+        "block_rfq_self_match_prevention": true,
+        "creation_timestamp": 1687352432143,
+        "type": "main",
+        "login_enabled": false,
+        "security_keys_enabled": false,
+        "mmp_enabled": false,
+        "interuser_transfers_enabled": false,
+        "self_trading_reject_mode": "cancel_maker",
+        "self_trading_extended_to_subaccounts": false,
+        "summaries": [
+            {
+                "currency": "BTC",
+                "balance": 302.60065765,
+                "equity": 302.61869214,
+                "available_funds": 301.38059622,
+                "margin_balance": 302.62729214,
+                "maintenance_margin": 0.8857841,
+                "initial_margin": 1.24669592
+            }
+        ]
+    }"#;
+
+    let response: AccountSummariesResponse = serde_json::from_str(json).unwrap();
+    assert_eq!(response.account.id, 10);
+    assert_eq!(response.summaries.len(), 1);
+    assert_eq!(response.summaries[0].currency, "BTC");
+}
+
+/// Test deserialization of AccountSummaryResponse with summaries array.
+#[test]
+fn test_account_summary_response_with_summaries() {
+    let json = r#"{
+        "id": 58766,
+        "email": "user@example.com",
+        "system_name": "user",
+        "username": "testuser",
+        "block_rfq_self_match_prevention": false,
+        "creation_timestamp": 1719530093974,
+        "type": "main",
+        "login_enabled": true,
+        "security_keys_enabled": true,
+        "mmp_enabled": false,
+        "interuser_transfers_enabled": false,
+        "self_trading_reject_mode": "cancel_maker",
+        "self_trading_extended_to_subaccounts": false,
+        "summaries": [
+            {
+                "currency": "BTC",
+                "balance": 99.97016673,
+                "equity": 99.9697549,
+                "available_funds": 99.84771854,
+                "margin_balance": 99.9697549,
+                "maintenance_margin": 0.07541183,
+                "initial_margin": 0.12244676
+            }
+        ]
+    }"#;
+
+    let response: AccountSummaryResponse = serde_json::from_str(json).unwrap();
+    assert_eq!(response.id, 58766);
+    assert_eq!(response.email, "user@example.com");
+    assert_eq!(response.account_type, "main");
+    assert!(response.login_enabled);
+    assert_eq!(response.summaries.len(), 1);
+    assert_eq!(response.summaries[0].currency, "BTC");
+    assert!((response.summaries[0].balance - 99.97016673).abs() < f64::EPSILON);
 }
 
 // Tests for AccountResult

@@ -248,10 +248,23 @@ impl DeribitHttpClient {
             return Err(HttpError::RequestFailed(error_text));
         }
 
-        let api_response: ApiResponse<T> = response
-            .json()
-            .await
-            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
+        let body = response.text().await.map_err(|e| {
+            HttpError::InvalidResponse(format!("Failed to read response body: {}", e))
+        })?;
+
+        let api_response: ApiResponse<T> = serde_json::from_str(&body).map_err(|e| {
+            tracing::error!(
+                error = %e,
+                endpoint = %endpoint,
+                body_preview = %&body[..body.len().min(1000)],
+                "Failed to deserialize private API response"
+            );
+            HttpError::InvalidResponse(format!(
+                "error decoding response body: {} - Raw (first 500 chars): {}",
+                e,
+                &body[..body.len().min(500)]
+            ))
+        })?;
 
         if let Some(error) = api_response.error {
             return Err(HttpError::RequestFailed(format!(

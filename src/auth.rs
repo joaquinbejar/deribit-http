@@ -7,6 +7,7 @@
 use crate::config::HttpConfig;
 use crate::error::HttpError;
 use crate::model::types::AuthToken;
+use crate::time_compat::{SystemTime, UNIX_EPOCH};
 use base64::Engine;
 use hmac::{Hmac, Mac};
 use pretty_simple_display::{DebugPretty, DisplaySimple};
@@ -14,7 +15,6 @@ use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use sha2::Sha256;
 use std::time::Duration;
-use crate::time_compat::{SystemTime, UNIX_EPOCH};
 use tracing::{debug, error};
 use urlencoding;
 

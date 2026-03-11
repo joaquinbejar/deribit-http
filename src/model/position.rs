@@ -13,12 +13,14 @@ use serde_with::skip_serializing_none;
 #[derive(DebugPretty, DisplaySimple, Clone, Serialize, Deserialize)]
 pub struct Position {
     /// Average price of the position
+    #[serde(default)]
     pub average_price: f64,
     /// Average price in USD
     pub average_price_usd: Option<f64>,
     /// Delta (price sensitivity) of the position
     pub delta: Option<f64>,
-    /// Direction of the position (buy/sell)
+    /// Direction of the position (buy/sell/zero)
+    #[serde(default)]
     pub direction: Direction,
     /// Estimated liquidation price
     pub estimated_liquidation_price: Option<f64>,
@@ -53,6 +55,7 @@ pub struct Position {
     /// Settlement price
     pub settlement_price: Option<f64>,
     /// Position size
+    #[serde(default)]
     pub size: f64,
     /// Position size in currency units
     pub size_currency: Option<f64>,
