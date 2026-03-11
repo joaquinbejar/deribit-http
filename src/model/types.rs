@@ -120,14 +120,16 @@ pub struct Withdrawal {
 }
 
 /// Position direction enumeration
-#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
+#[non_exhaustive]
 pub enum Direction {
     /// Buy direction
     Buy,
     /// Sell direction
     Sell,
-    /// Zero direction (closed/expired positions with size 0)
+    /// Unknown direction (e.g., "zero" for closed/expired positions)
     #[default]
-    Zero,
+    #[serde(other)]
+    Unknown,
 }

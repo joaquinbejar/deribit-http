@@ -10,49 +10,61 @@ use serde_with::skip_serializing_none;
 
 /// Trading limit structure
 #[skip_serializing_none]
-#[derive(DebugPretty, DisplaySimple, Clone, Serialize, Deserialize)]
+#[derive(DebugPretty, DisplaySimple, Clone, Default, Serialize, Deserialize)]
 pub struct TradingLimit {
     /// Total rate limit for trading operations
+    #[serde(default)]
     pub total: RateLimit,
 }
 
 /// Account limits structure
 #[skip_serializing_none]
-#[derive(DebugPretty, DisplaySimple, Clone, Serialize, Deserialize)]
+#[derive(DebugPretty, DisplaySimple, Clone, Default, Serialize, Deserialize)]
 pub struct AccountLimits {
     /// Whether limits are applied per currency
-    pub limits_per_currency: Option<bool>,
+    #[serde(default)]
+    pub limits_per_currency: bool,
     /// Rate limits for non-matching engine operations
+    #[serde(default)]
     pub non_matching_engine: RateLimit,
     /// Rate limits for matching engine operations
+    #[serde(default)]
     pub matching_engine: MatchingEngineLimit,
 }
 
 /// Rate limit structure
 #[skip_serializing_none]
-#[derive(DebugPretty, DisplaySimple, Clone, Serialize, Deserialize)]
+#[derive(DebugPretty, DisplaySimple, Clone, Default, Serialize, Deserialize)]
 pub struct RateLimit {
     /// Maximum burst capacity for rate limiting
+    #[serde(default)]
     pub burst: u32,
     /// Rate limit per time unit
+    #[serde(default)]
     pub rate: u32,
 }
 
 /// Matching engine limits
 #[skip_serializing_none]
-#[derive(DebugPretty, DisplaySimple, Clone, Serialize, Deserialize)]
+#[derive(DebugPretty, DisplaySimple, Clone, Default, Serialize, Deserialize)]
 pub struct MatchingEngineLimit {
     /// Trading limits configuration
-    pub trading: Option<TradingLimit>,
+    #[serde(default)]
+    pub trading: TradingLimit,
     /// Spot trading rate limits
-    pub spot: Option<RateLimit>,
+    #[serde(default)]
+    pub spot: RateLimit,
     /// Quote request rate limits
-    pub quotes: Option<RateLimit>,
+    #[serde(default)]
+    pub quotes: RateLimit,
     /// Maximum quotes rate limits
-    pub max_quotes: Option<RateLimit>,
+    #[serde(default)]
+    pub max_quotes: RateLimit,
     /// Guaranteed quotes rate limits
-    pub guaranteed_quotes: Option<RateLimit>,
+    #[serde(default)]
+    pub guaranteed_quotes: RateLimit,
     /// Cancel all orders rate limits
+    #[serde(default)]
     pub cancel_all: RateLimit,
 }
 
@@ -247,26 +259,62 @@ pub struct AccountInfo {
     pub self_trading_extended_to_subaccounts: Option<bool>,
 }
 
-/// Response from `get_account_summary` (singular, per-currency).
-///
-/// Deribit returns a flat object with account-level fields and currency-level
-/// financial data mixed together. Uses `#[serde(flatten)]` to split them into
-/// [`AccountInfo`] and [`AccountResult`] without duplication.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+/// Account summary response containing user account information
+#[skip_serializing_none]
+#[derive(DebugPretty, DisplaySimple, Clone, Serialize, Deserialize)]
 pub struct AccountSummaryResponse {
-    /// Account-level fields (id, email, type, etc.)
-    #[serde(flatten)]
-    pub account: AccountInfo,
-    /// Currency-level financial data (balance, equity, margins, etc.)
-    #[serde(flatten)]
-    pub summary: AccountResult,
+    /// Account id
+    #[serde(default)]
+    pub id: u64,
+    /// User email
+    #[serde(default)]
+    pub email: String,
+    /// System generated user nickname
+    #[serde(default)]
+    pub system_name: String,
+    /// Account name (given by user)
+    #[serde(default)]
+    pub username: String,
+    /// When Block RFQ Self Match Prevention is enabled
+    #[serde(default)]
+    pub block_rfq_self_match_prevention: bool,
+    /// Time at which the account was created (milliseconds since the Unix epoch)
+    #[serde(default)]
+    pub creation_timestamp: u64,
+    /// Account type
+    #[serde(rename = "type", default)]
+    pub account_type: String,
+    /// Optional identifier of the referrer
+    pub referrer_id: Option<String>,
+    /// Whether account is loginable using email and password
+    #[serde(default)]
+    pub login_enabled: bool,
+    /// Whether Security Key authentication is enabled
+    #[serde(default)]
+    pub security_keys_enabled: bool,
+    /// Whether MMP is enabled
+    #[serde(default)]
+    pub mmp_enabled: bool,
+    /// true when the inter-user transfers are enabled for user
+    #[serde(default)]
+    pub interuser_transfers_enabled: bool,
+    /// Self trading rejection behavior - reject_taker or cancel_maker
+    #[serde(default)]
+    pub self_trading_reject_mode: String,
+    /// true if self trading rejection behavior is applied to trades between subaccounts
+    #[serde(default)]
+    pub self_trading_extended_to_subaccounts: bool,
+    /// Aggregated list of per-currency account summaries
+    #[serde(default)]
+    pub summaries: Vec<AccountResult>,
 }
 
 /// Response from `get_account_summaries` (plural, all currencies).
 ///
 /// Returns account-level fields with a `summaries` array containing
 /// per-currency financial data.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[skip_serializing_none]
+#[derive(DebugPretty, DisplaySimple, Clone, Serialize, Deserialize)]
 pub struct AccountSummariesResponse {
     /// Account-level fields (id, email, type, etc.)
     #[serde(flatten)]
@@ -528,4 +576,8 @@ pub struct AccountResult {
     pub total_maintenance_margin_usd: Option<f64>,
     /// The account's total equity in all cross collateral currencies, expressed in USD
     pub total_equity_usd: Option<f64>,
+    /// System name for the account
+    pub system_name: Option<String>,
+    /// Account type
+    pub account_type: Option<String>,
 }

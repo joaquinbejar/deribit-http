@@ -5105,7 +5105,7 @@ impl DeribitHttpClient {
         let direction_str = match direction {
             crate::model::types::Direction::Buy => "buy",
             crate::model::types::Direction::Sell => "sell",
-            crate::model::types::Direction::Zero => "zero",
+            crate::model::types::Direction::Unknown => "buy",
         };
 
         let mut query_params = vec![
@@ -5388,7 +5388,7 @@ impl DeribitHttpClient {
         let direction_str = match direction {
             crate::model::types::Direction::Buy => "buy",
             crate::model::types::Direction::Sell => "sell",
-            crate::model::types::Direction::Zero => "zero",
+            crate::model::types::Direction::Unknown => "buy",
         };
 
         let mut query_params = vec![

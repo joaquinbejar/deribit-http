@@ -101,25 +101,25 @@ fn create_mock_fee_structure() -> FeeStructure {
 
 fn create_mock_account_limits() -> AccountLimits {
     AccountLimits {
-        limits_per_currency: Some(false),
+        limits_per_currency: false,
         non_matching_engine: RateLimit { burst: 10, rate: 5 },
         matching_engine: MatchingEngineLimit {
-            trading: Some(TradingLimit {
+            trading: TradingLimit {
                 total: RateLimit {
                     burst: 100,
                     rate: 50,
                 },
-            }),
-            spot: Some(RateLimit {
+            },
+            spot: RateLimit {
                 burst: 20,
                 rate: 10,
-            }),
-            quotes: Some(RateLimit { burst: 15, rate: 8 }),
-            max_quotes: Some(RateLimit {
+            },
+            quotes: RateLimit { burst: 15, rate: 8 },
+            max_quotes: RateLimit {
                 burst: 25,
                 rate: 12,
-            }),
-            guaranteed_quotes: Some(RateLimit { burst: 5, rate: 2 }),
+            },
+            guaranteed_quotes: RateLimit { burst: 5, rate: 2 },
             cancel_all: RateLimit { burst: 10, rate: 5 },
         },
     }
@@ -174,6 +174,8 @@ fn create_mock_account_result() -> AccountResult {
         total_initial_margin_usd: Some(7500.0),
         total_maintenance_margin_usd: Some(5000.0),
         total_equity_usd: Some(80000.0),
+        system_name: Some("user_12345".to_string()),
+        account_type: Some("main".to_string()),
     }
 }
 
@@ -193,6 +195,26 @@ fn create_mock_account_info() -> AccountInfo {
         interuser_transfers_enabled: Some(true),
         self_trading_reject_mode: Some("reject_taker".to_string()),
         self_trading_extended_to_subaccounts: Some(false),
+    }
+}
+
+fn create_mock_account_summary_response() -> AccountSummaryResponse {
+    AccountSummaryResponse {
+        id: 12345,
+        email: "user@example.com".to_string(),
+        system_name: "user_12345".to_string(),
+        username: "testuser".to_string(),
+        block_rfq_self_match_prevention: false,
+        creation_timestamp: 1640995200000,
+        account_type: "main".to_string(),
+        referrer_id: Some("ref_123".to_string()),
+        login_enabled: true,
+        security_keys_enabled: false,
+        mmp_enabled: false,
+        interuser_transfers_enabled: true,
+        self_trading_reject_mode: "reject_taker".to_string(),
+        self_trading_extended_to_subaccounts: false,
+        summaries: vec![create_mock_account_result()],
     }
 }
 
@@ -414,45 +436,36 @@ fn test_transfer_result_response_clone() {
     assert_eq!(response.status, cloned.status);
 }
 
-// Tests for AccountSummaryResponse (singular, flat)
+// Tests for AccountSummaryResponse
 #[test]
 fn test_account_summary_response_creation() {
-    let response = AccountSummaryResponse {
-        account: create_mock_account_info(),
-        summary: create_mock_account_result(),
-    };
+    let response = create_mock_account_summary_response();
 
-    assert_eq!(response.account.id, 12345);
-    assert_eq!(response.account.email, "user@example.com");
-    assert_eq!(response.summary.balance, 1.5);
-    assert_eq!(response.account.login_enabled, Some(true));
+    assert_eq!(response.id, 12345);
+    assert_eq!(response.email, "user@example.com");
+    assert_eq!(response.summaries[0].balance, 1.5);
+    assert!(response.login_enabled);
 }
 
 #[test]
 fn test_account_summary_response_serialization() {
-    let response = AccountSummaryResponse {
-        account: create_mock_account_info(),
-        summary: create_mock_account_result(),
-    };
+    let response = create_mock_account_summary_response();
 
     let serialized = serde_json::to_string(&response).unwrap();
     assert!(serialized.contains("user@example.com"));
     assert!(serialized.contains("testuser"));
-    assert!(serialized.contains("balance"));
+    assert!(serialized.contains("summaries"));
     assert!(serialized.contains("type"));
 }
 
 #[test]
 fn test_account_summary_response_clone() {
-    let response = AccountSummaryResponse {
-        account: create_mock_account_info(),
-        summary: create_mock_account_result(),
-    };
+    let response = create_mock_account_summary_response();
 
     let cloned = response.clone();
-    assert_eq!(response.account.id, cloned.account.id);
-    assert_eq!(response.account.email, cloned.account.email);
-    assert_eq!(response.summary.balance, cloned.summary.balance);
+    assert_eq!(response.id, cloned.id);
+    assert_eq!(response.email, cloned.email);
+    assert_eq!(response.summaries[0].balance, cloned.summaries[0].balance);
 }
 
 // Tests for AccountSummariesResponse (plural, with summaries array)
@@ -502,59 +515,44 @@ fn test_account_summaries_response_deserialization() {
     assert_eq!(response.summaries[0].currency, "BTC");
 }
 
-/// Test deserialization of a real Deribit get_account_summary (singular) response.
-/// This is a flat object with account + currency fields mixed.
+/// Test deserialization of AccountSummaryResponse with summaries array.
 #[test]
-fn test_account_summary_response_real_deribit_format() {
+fn test_account_summary_response_with_summaries() {
     let json = r#"{
-        "options_session_upl": 0.00328817,
-        "options_pl": 0.00328817,
-        "session_upl": 0.00328817,
-        "block_rfq_self_match_prevention": false,
-        "security_keys_enabled": true,
-        "equity": 99.9697549,
-        "additional_reserve": 0.0,
-        "projected_initial_margin": 0.0,
         "id": 58766,
-        "referrer_id": null,
-        "options_theta_map": {"btc_usd": 28.8441},
-        "spot_reserve": 0.0,
-        "projected_delta_total": 0.0,
-        "type": "main",
-        "margin_model": "segregated_sm",
         "email": "user@example.com",
+        "system_name": "user",
+        "username": "testuser",
+        "block_rfq_self_match_prevention": false,
         "creation_timestamp": 1719530093974,
-        "options_gamma": -9.0e-5,
-        "initial_margin": 0.12244676,
-        "delta_total_map": {"btc_usd": -0.05623},
-        "maintenance_margin": 0.07541183,
-        "balance": 99.97016673,
-        "portfolio_margining_enabled": false,
-        "available_funds": 99.84771854,
-        "margin_balance": 99.9697549,
-        "session_rpl": 0.0,
-        "options_vega_map": {"btc_usd": 0.1234},
-        "currency": "BTC",
-        "options_delta": -0.05623,
-        "options_gamma_map": {"btc_usd": -9.0e-5},
-        "options_session_rpl": 0.0,
-        "options_vega": 0.1234,
-        "options_theta": 28.8441,
-        "delta_total": -0.05623,
-        "futures_pl": 0.0,
-        "futures_session_rpl": 0.0,
-        "futures_session_upl": 0.0,
-        "available_withdrawal_funds": 99.84771854
+        "type": "main",
+        "login_enabled": true,
+        "security_keys_enabled": true,
+        "mmp_enabled": false,
+        "interuser_transfers_enabled": false,
+        "self_trading_reject_mode": "cancel_maker",
+        "self_trading_extended_to_subaccounts": false,
+        "summaries": [
+            {
+                "currency": "BTC",
+                "balance": 99.97016673,
+                "equity": 99.9697549,
+                "available_funds": 99.84771854,
+                "margin_balance": 99.9697549,
+                "maintenance_margin": 0.07541183,
+                "initial_margin": 0.12244676
+            }
+        ]
     }"#;
 
     let response: AccountSummaryResponse = serde_json::from_str(json).unwrap();
-    assert_eq!(response.account.id, 58766);
-    assert_eq!(response.account.email, "user@example.com");
-    assert_eq!(response.account.account_type, Some("main".to_string()));
-    assert_eq!(response.account.login_enabled, None); // Not in response
-    assert_eq!(response.summary.currency, "BTC");
-    assert!((response.summary.balance - 99.97016673).abs() < f64::EPSILON);
-    assert!(response.summary.limits.is_none());
+    assert_eq!(response.id, 58766);
+    assert_eq!(response.email, "user@example.com");
+    assert_eq!(response.account_type, "main");
+    assert!(response.login_enabled);
+    assert_eq!(response.summaries.len(), 1);
+    assert_eq!(response.summaries[0].currency, "BTC");
+    assert!((response.summaries[0].balance - 99.97016673).abs() < f64::EPSILON);
 }
 
 // Tests for AccountResult
@@ -615,7 +613,7 @@ fn test_account_limits_creation() {
     let limits = create_mock_account_limits();
 
     assert_eq!(limits.non_matching_engine.burst, 10);
-    assert_eq!(limits.matching_engine.spot.as_ref().unwrap().rate, 10);
+    assert_eq!(limits.matching_engine.spot.rate, 10);
 }
 
 #[test]
