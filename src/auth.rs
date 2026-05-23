@@ -9,6 +9,7 @@ use crate::error::HttpError;
 use crate::model::types::AuthToken;
 use crate::time_compat::{SystemTime, UNIX_EPOCH};
 use base64::Engine;
+use hmac::KeyInit;
 use hmac::{Hmac, Mac};
 use pretty_simple_display::{DebugPretty, DisplaySimple};
 use reqwest::Client;

@@ -7,6 +7,7 @@ use crate::model::account::Subaccount;
 use crate::model::api_key::{ApiKeyInfo, CreateApiKeyRequest, EditApiKeyRequest};
 use crate::model::position::Position;
 use crate::model::request::mass_quote::MassQuoteRequest;
+use crate::model::request::order::AdvancedOrderType;
 use crate::model::request::order::OrderRequest;
 use crate::model::request::position::MovePositionTrade;
 use crate::model::request::trade::TradesRequest;
@@ -15,6 +16,7 @@ use crate::model::response::deposit::DepositsResponse;
 use crate::model::response::margin::{MarginsResponse, OrderMargin};
 use crate::model::response::mass_quote::MassQuoteResponse;
 use crate::model::response::mmp::{MmpConfig, MmpStatus, SetMmpConfigRequest};
+use crate::model::response::order::LinkedOrderType;
 use crate::model::response::order::{OrderInfoResponse, OrderResponse};
 use crate::model::response::other::{
     AccountSummariesResponse, AccountSummaryResponse, SettlementsResponse, TransactionLogResponse,
@@ -25,10 +27,113 @@ use crate::model::response::subaccount::SubaccountDetails;
 use crate::model::response::transfer::{InternalTransfer, TransfersResponse};
 use crate::model::response::trigger::TriggerOrderHistoryResponse;
 use crate::model::response::withdrawal::WithdrawalsResponse;
+use crate::model::trigger::TriggerFillCondition;
 use crate::model::{
     TransactionLogRequest, UserTradeResponseByOrder, UserTradeWithPaginationResponse,
 };
 use crate::prelude::Trigger;
+
+fn trigger_str(t: &Trigger) -> &'static str {
+    match t {
+        Trigger::IndexPrice => "index_price",
+        Trigger::MarkPrice => "mark_price",
+        Trigger::LastPrice => "last_price",
+    }
+}
+
+fn linked_order_str(t: &LinkedOrderType) -> &'static str {
+    match t {
+        LinkedOrderType::OneTriggersOther => "one_triggers_other",
+        LinkedOrderType::OneCancelsOther => "one_cancels_other",
+        LinkedOrderType::OneTriggersOneCancelsOther => "one_triggers_one_cancels_other",
+    }
+}
+
+fn trigger_fill_str(t: &TriggerFillCondition) -> &'static str {
+    match t {
+        TriggerFillCondition::FirstHit => "first_hit",
+        TriggerFillCondition::CompleteFill => "complete_fill",
+        TriggerFillCondition::Incremental => "incremental",
+    }
+}
+
+fn advanced_str(a: &AdvancedOrderType) -> &'static str {
+    match a {
+        AdvancedOrderType::Usd => "usd",
+        AdvancedOrderType::Implv => "implv",
+    }
+}
+
+/// Append every settable OrderRequest field to a query-param vector.
+/// Skips `order_id` and `instrument_name`; the caller owns those.
+fn append_order_params(
+    out: &mut Vec<(String, String)>,
+    req: &crate::model::request::order::OrderRequest,
+) {
+    if let Some(a) = req.amount {
+        out.push(("amount".into(), a.to_string()));
+    }
+    if let Some(c) = req.contracts {
+        out.push(("contracts".into(), c.to_string()));
+    }
+    if let Some(t) = req.type_ {
+        out.push(("type".into(), t.as_str().into()));
+    }
+    if let Some(label) = req.label.as_ref() {
+        out.push(("label".into(), label.clone()));
+    }
+    if let Some(p) = req.price {
+        out.push(("price".into(), p.to_string()));
+    }
+    if let Some(tif) = req.time_in_force {
+        out.push(("time_in_force".into(), tif.as_str().into()));
+    }
+    if let Some(d) = req.display_amount {
+        out.push(("display_amount".into(), d.to_string()));
+    }
+    if req.post_only == Some(true) {
+        out.push(("post_only".into(), "true".into()));
+    }
+    if req.reject_post_only == Some(true) {
+        out.push(("reject_post_only".into(), "true".into()));
+    }
+    if req.reduce_only == Some(true) {
+        out.push(("reduce_only".into(), "true".into()));
+    }
+    if let Some(tp) = req.trigger_price {
+        out.push(("trigger_price".into(), tp.to_string()));
+    }
+    if let Some(to) = req.trigger_offset {
+        out.push(("trigger_offset".into(), to.to_string()));
+    }
+    if let Some(t) = req.trigger.as_ref() {
+        out.push(("trigger".into(), trigger_str(t).into()));
+    }
+    if let Some(a) = req.advanced.as_ref() {
+        out.push(("advanced".into(), advanced_str(a).into()));
+    }
+    if req.mmp == Some(true) {
+        out.push(("mmp".into(), "true".into()));
+    }
+    if let Some(vu) = req.valid_until {
+        out.push(("valid_until".into(), vu.to_string()));
+    }
+    if let Some(l) = req.linked_order_type.as_ref() {
+        out.push(("linked_order_type".into(), linked_order_str(l).into()));
+    }
+    if let Some(tfc) = req.trigger_fill_condition.as_ref() {
+        out.push((
+            "trigger_fill_condition".into(),
+            trigger_fill_str(tfc).into(),
+        ));
+    }
+    if let Some(cfg) = req.otoco_config.as_ref()
+        && !cfg.is_empty()
+        && let Ok(json) = serde_json::to_string(cfg)
+    {
+        out.push(("otoco_config".into(), json));
+    }
+}
 
 /// Private endpoints implementation
 impl DeribitHttpClient {
@@ -665,60 +770,49 @@ impl DeribitHttpClient {
     ///
     /// * `request` - The buy order request parameters
     ///
+    /// # Errors
+    ///
+    /// Returns `HttpError::RequestFailed` if neither `amount` nor `contracts` is set,
+    /// if the upstream API rejects the order, or on network / decoding failure.
     pub async fn buy_order(&self, request: OrderRequest) -> Result<OrderResponse, HttpError> {
-        let mut query_params = vec![
-            ("instrument_name".to_string(), request.instrument_name),
-            (
-                "amount".to_string(),
-                request
-                    .amount
-                    .map_or_else(|| "0".to_string(), |a| a.to_string()),
-            ),
-        ];
+        self.submit_order(request, BUY, "Buy order").await
+    }
 
-        if let Some(order_type) = request.type_ {
-            query_params.push(("type".to_string(), order_type.as_str().to_string()));
+    /// Place a sell order
+    ///
+    /// Places a sell order for the specified instrument.
+    ///
+    /// # Arguments
+    ///
+    /// * `request` - The sell order request parameters
+    ///
+    /// # Errors
+    ///
+    /// Returns `HttpError::RequestFailed` if neither `amount` nor `contracts` is set,
+    /// if the upstream API rejects the order, or on network / decoding failure.
+    pub async fn sell_order(&self, request: OrderRequest) -> Result<OrderResponse, HttpError> {
+        self.submit_order(request, SELL, "Sell order").await
+    }
+
+    async fn submit_order(
+        &self,
+        request: OrderRequest,
+        endpoint: &str,
+        op_name: &str,
+    ) -> Result<OrderResponse, HttpError> {
+        if request.amount.is_none() && request.contracts.is_none() {
+            return Err(HttpError::RequestFailed(format!(
+                "{}: either `amount` or `contracts` must be set",
+                op_name
+            )));
         }
 
-        if let Some(price) = request.price {
-            query_params.push(("price".to_string(), price.to_string()));
-        }
-
-        if let Some(label) = request.label {
-            query_params.push(("label".to_string(), label));
-        }
-
-        if let Some(time_in_force) = request.time_in_force {
-            query_params.push((
-                "time_in_force".to_string(),
-                time_in_force.as_str().to_string(),
-            ));
-        }
-
-        if let Some(post_only) = request.post_only
-            && post_only
-        {
-            query_params.push(("post_only".to_string(), "true".to_string()));
-        }
-
-        if let Some(reduce_only) = request.reduce_only
-            && reduce_only
-        {
-            query_params.push(("reduce_only".to_string(), "true".to_string()));
-        }
-
-        if let Some(trigger_price) = request.trigger_price {
-            query_params.push(("trigger_price".to_string(), trigger_price.to_string()));
-        }
-
-        if let Some(trigger) = request.trigger {
-            let trigger_str = match trigger {
-                Trigger::IndexPrice => "index_price",
-                Trigger::MarkPrice => "mark_price",
-                Trigger::LastPrice => "last_price",
-            };
-            query_params.push(("trigger".to_string(), trigger_str.to_string()));
-        }
+        let mut query_params: Vec<(String, String)> = Vec::with_capacity(16);
+        query_params.push((
+            "instrument_name".to_string(),
+            request.instrument_name.clone(),
+        ));
+        append_order_params(&mut query_params, &request);
 
         let query_string = query_params
             .iter()
@@ -726,7 +820,7 @@ impl DeribitHttpClient {
             .collect::<Vec<_>>()
             .join("&");
 
-        let url = format!("{}{}?{}", self.base_url(), BUY, query_string);
+        let url = format!("{}{}?{}", self.base_url(), endpoint, query_string);
 
         let response = self.make_authenticated_request(&url).await?;
 
@@ -736,12 +830,11 @@ impl DeribitHttpClient {
                 .await
                 .unwrap_or_else(|_| "Unknown error".to_string());
             return Err(HttpError::RequestFailed(format!(
-                "Buy order failed: {}",
-                error_text
+                "{} failed: {}",
+                op_name, error_text
             )));
         }
 
-        // Debug: capture raw response text first
         let response_text = response
             .text()
             .await
@@ -756,101 +849,6 @@ impl DeribitHttpClient {
                     e, response_text
                 ))
             })?;
-
-        if let Some(error) = api_response.error {
-            return Err(HttpError::RequestFailed(format!(
-                "API error: {} - {}",
-                error.code, error.message
-            )));
-        }
-
-        api_response
-            .result
-            .ok_or_else(|| HttpError::InvalidResponse("No order data in response".to_string()))
-    }
-
-    /// Place a sell order
-    ///
-    /// Places a sell order for the specified instrument.
-    ///
-    /// # Arguments
-    ///
-    /// * `request` - The sell order request parameters
-    pub async fn sell_order(&self, request: OrderRequest) -> Result<OrderResponse, HttpError> {
-        let mut query_params = vec![
-            ("instrument_name".to_string(), request.instrument_name),
-            ("amount".to_string(), request.amount.unwrap().to_string()),
-        ];
-
-        if let Some(order_type) = request.type_ {
-            query_params.push(("type".to_string(), order_type.as_str().to_string()));
-        }
-
-        if let Some(price) = request.price {
-            query_params.push(("price".to_string(), price.to_string()));
-        }
-
-        if let Some(label) = request.label {
-            query_params.push(("label".to_string(), label));
-        }
-
-        if let Some(time_in_force) = request.time_in_force {
-            query_params.push((
-                "time_in_force".to_string(),
-                time_in_force.as_str().to_string(),
-            ));
-        }
-
-        if let Some(post_only) = request.post_only
-            && post_only
-        {
-            query_params.push(("post_only".to_string(), "true".to_string()));
-        }
-
-        if let Some(reduce_only) = request.reduce_only
-            && reduce_only
-        {
-            query_params.push(("reduce_only".to_string(), "true".to_string()));
-        }
-
-        if let Some(trigger_price) = request.trigger_price {
-            query_params.push(("trigger_price".to_string(), trigger_price.to_string()));
-        }
-
-        if let Some(trigger) = request.trigger {
-            let trigger_str = match trigger {
-                Trigger::IndexPrice => "index_price",
-                Trigger::MarkPrice => "mark_price",
-                Trigger::LastPrice => "last_price",
-            };
-            query_params.push(("trigger".to_string(), trigger_str.to_string()));
-        }
-
-        let query_string = query_params
-            .iter()
-            .map(|(k, v)| format!("{}={}", k, urlencoding::encode(v)))
-            .collect::<Vec<_>>()
-            .join("&");
-
-        let url = format!("{}{}?{}", self.base_url(), SELL, query_string);
-
-        let response = self.make_authenticated_request(&url).await?;
-
-        if !response.status().is_success() {
-            let error_text = response
-                .text()
-                .await
-                .unwrap_or_else(|_| "Unknown error".to_string());
-            return Err(HttpError::RequestFailed(format!(
-                "Sell order failed: {}",
-                error_text
-            )));
-        }
-
-        let api_response: ApiResponse<OrderResponse> = response
-            .json()
-            .await
-            .map_err(|e| HttpError::InvalidResponse(e.to_string()))?;
 
         if let Some(error) = api_response.error {
             return Err(HttpError::RequestFailed(format!(
@@ -1114,34 +1112,11 @@ impl DeribitHttpClient {
     /// * `request` - The edit order request parameters
     ///
     pub async fn edit_order(&self, request: OrderRequest) -> Result<OrderResponse, HttpError> {
-        let order_id = request.order_id.ok_or_else(|| {
+        let order_id = request.order_id.clone().ok_or_else(|| {
             HttpError::RequestFailed("order_id is required for edit_order".to_string())
         })?;
-        let mut query_params = vec![("order_id", order_id.as_str())];
-
-        let amount_str;
-        if let Some(amount) = request.amount {
-            amount_str = amount.to_string();
-            query_params.push(("amount", amount_str.as_str()));
-        }
-
-        let price_str;
-        if let Some(price) = request.price {
-            price_str = price.to_string();
-            query_params.push(("price", price_str.as_str()));
-        }
-
-        if let Some(post_only) = request.post_only
-            && post_only
-        {
-            query_params.push(("post_only", "true"));
-        }
-
-        if let Some(reduce_only) = request.reduce_only
-            && reduce_only
-        {
-            query_params.push(("reduce_only", "true"));
-        }
+        let mut query_params: Vec<(String, String)> = vec![("order_id".into(), order_id)];
+        append_order_params(&mut query_params, &request);
 
         let query_string = query_params
             .iter()
