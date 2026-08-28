@@ -74,10 +74,7 @@ impl OptionInstrumentPair {
     /// * `Some(DateTime<Utc>)` - The expiration timestamp if available
     /// * `None` - If no instrument is available or expiration timestamp is not set
     pub fn expiration(&self) -> Option<DateTime<Utc>> {
-        let expiration_timestamp = match self.instrument() {
-            Some(i) => i.expiration_timestamp,
-            None => return None,
-        };
+        let expiration_timestamp = self.instrument()?.expiration_timestamp;
 
         if let Some(expiration_timestamp) = expiration_timestamp {
             Utc.timestamp_millis_opt(expiration_timestamp).single()
