@@ -20,7 +20,10 @@ members = [
 
 [features]
 default = ["native"]
-native = ["tokio", "dotenvy", "tracing-subscriber"]
+native = ["tokio", "dotenv", "tracing-subscriber"]
+# `dotenv` stays the feature name so `native` and any `--features dotenv` keep
+# resolving; the crate behind it is dotenvy.
+dotenv = ["dotenvy"]
 wasm = ["async-lock", "futures-timer", "web-time", "tracing-web", "tracing-subscriber", "getrandom", "getrandom_03"]
 
 [dependencies]
