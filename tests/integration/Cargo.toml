@@ -12,7 +12,7 @@ path = "./lib.rs"
 deribit-http = { workspace = true }
 tokio = { workspace = true, features = ["full"] }
 tracing = { workspace = true }
-dotenv = { workspace = true }
+dotenvy = { workspace = true }
 mockito = "1.7"
 serial_test = "4.0"
 url = { workspace = true }

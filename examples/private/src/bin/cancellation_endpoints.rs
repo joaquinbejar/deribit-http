@@ -24,7 +24,7 @@ use tracing::{error, info, warn};
 async fn main() -> Result<(), HttpError> {
     // Load environment variables from .env file if it exists
     if Path::new(".env").exists() {
-        dotenv::dotenv().ok();
+        dotenvy::dotenv().ok();
     }
 
     setup_logger();
