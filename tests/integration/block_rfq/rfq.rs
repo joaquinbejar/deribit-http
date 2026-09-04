@@ -17,7 +17,7 @@ use deribit_http::model::response::{
 
 #[allow(dead_code)]
 fn check_env_file() -> Result<(), Box<dyn std::error::Error>> {
-    dotenv::from_path("tests/integration/.env")?;
+    dotenvy::from_path("tests/integration/.env")?;
     Ok(())
 }
 

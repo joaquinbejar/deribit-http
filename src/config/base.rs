@@ -52,7 +52,7 @@ impl HttpConfig {
     /// Read shared configuration from environment variables.
     #[cfg(not(target_arch = "wasm32"))]
     fn from_env(base_url: Url, testnet: bool) -> Self {
-        dotenv::dotenv().ok();
+        dotenvy::dotenv().ok();
         let credentials = ApiCredentials::new().ok();
 
         let max_retries = env::var("DERIBIT_HTTP_MAX_RETRIES")

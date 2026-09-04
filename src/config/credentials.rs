@@ -99,7 +99,7 @@ impl ApiCredentials {
 impl Default for ApiCredentials {
     #[cfg(not(target_arch = "wasm32"))]
     fn default() -> Self {
-        dotenv::dotenv().ok();
+        dotenvy::dotenv().ok();
         let client_id = env::var("DERIBIT_CLIENT_ID").ok();
         let client_secret = env::var("DERIBIT_CLIENT_SECRET").ok();
         Self {

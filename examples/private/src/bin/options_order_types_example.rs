@@ -77,7 +77,7 @@ struct LiquidOption {
 #[tokio::main]
 async fn main() -> Result<(), HttpError> {
     if Path::new(".env").exists() {
-        dotenv::dotenv().ok();
+        dotenvy::dotenv().ok();
     }
     setup_logger();
 

@@ -17,7 +17,7 @@ mod deposits_tests {
             );
         }
 
-        dotenv::dotenv().ok();
+        dotenvy::dotenv().ok();
 
         let has_oauth2 = std::env::var("DERIBIT_CLIENT_ID").is_ok()
             && std::env::var("DERIBIT_CLIENT_SECRET").is_ok();
