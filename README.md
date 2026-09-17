@@ -189,3 +189,23 @@ Licensed under MIT license
 ## Disclaimer
 
 This software is not officially associated with Deribit. Trading financial instruments carries risk, and this library is provided as-is without any guarantees. Always test thoroughly with a demo account before using in a live trading environment.
+
+<!-- related-projects:start -->
+## Related projects
+
+Repositories by the same author that this project depends on, and repositories that depend on it.
+
+### Depends on
+
+| Repository | Description |
+|------------|-------------|
+| [pretty-simple-display](https://github.com/joaquinbejar/pretty-simple-display) · [crates.io](https://crates.io/crates/pretty-simple-display) | Derive macros for pretty and simple JSON display formatting. |
+
+### Used by
+
+| Repository | Description |
+|------------|-------------|
+| [ChainView](https://github.com/joaquinbejar/ChainView) | Terminal UI for option chains, Greeks and volatility, real-time and backtest replay. |
+| [deribit-mcp](https://github.com/joaquinbejar/deribit-mcp) | Model Context Protocol server exposing the Deribit client stack as MCP tools, resources and prompts. |
+
+<!-- related-projects:end -->
