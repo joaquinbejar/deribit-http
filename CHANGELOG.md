@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.3] - 2026-09-18
+
 ### Changed
 - Dependencies updated to latest stable versions (tokio 1.53, serde_with 3.23; Cloudflare Worker example: worker 0.8, getrandom 0.4)
 
