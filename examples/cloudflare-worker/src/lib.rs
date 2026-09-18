@@ -91,7 +91,7 @@ async fn handle_ticker(url: &Url) -> Result<Response> {
 }
 
 fn json_headers() -> Headers {
-    let mut headers = Headers::new();
+    let headers = Headers::new();
     headers.set("Content-Type", "application/json").ok();
     headers
 }
