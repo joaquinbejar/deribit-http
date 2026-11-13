@@ -54,13 +54,13 @@ Repositories by the same author that this project depends on, and repositories t
 
 | Repository | Description |
 |------------|-------------|
-| [pretty-simple-display](https://github.com/joaquinbejar/pretty-simple-display) · [crates.io](https://crates.io/crates/pretty-simple-display) | Derive macros for pretty and simple JSON display formatting. |
+| [pretty-simple-display](https://github.com/joaquinbejar/pretty-simple-display) | Derive macros that give the request and response models their pretty and simple JSON `Display` formatting. |
 
 ### Used by
 
 | Repository | Description |
 |------------|-------------|
-| [ChainView](https://github.com/joaquinbejar/ChainView) | Terminal UI for option chains, Greeks and volatility, real-time and backtest replay. |
-| [deribit-mcp](https://github.com/joaquinbejar/deribit-mcp) | Model Context Protocol server exposing the Deribit client stack as MCP tools, resources and prompts. |
+| [ChainView](https://github.com/joaquinbejar/ChainView) | Terminal UI for option chains, Greeks and volatility; uses this crate in its Deribit provider to load instruments and chain snapshots. |
+| [deribit-mcp](https://github.com/joaquinbejar/deribit-mcp) | Model Context Protocol server for Deribit; uses this crate as the REST transport behind its MCP tools and resources. |
 
 <!-- related-projects:end -->
