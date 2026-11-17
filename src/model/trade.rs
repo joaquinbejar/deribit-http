@@ -131,6 +131,8 @@ pub struct UserTrade {
 pub struct LastTrade {
     /// Trade amount
     pub amount: f64,
+    /// Trade size in contract units (may be absent in historical trades)
+    pub contracts: Option<f64>,
     /// Trade direction (buy/sell)
     pub direction: String,
     /// Index price at execution time
@@ -141,6 +143,8 @@ pub struct LastTrade {
     pub iv: Option<f64>,
     /// Liquidity information
     pub liquid: Option<String>,
+    /// Mark price of the instrument at the moment of the trade
+    pub mark_price: Option<f64>,
     /// Execution price
     pub price: f64,
     /// Price tick direction (1=up, -1=down, 0=no change)

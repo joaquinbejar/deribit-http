@@ -10,11 +10,13 @@ use serde_json;
 fn create_mock_last_trade() -> LastTrade {
     LastTrade {
         amount: 1.0,
+        contracts: None,
         direction: "buy".to_string(),
         index_price: 49900.0,
         instrument_name: "BTC-PERPETUAL".to_string(),
         iv: None,
         liquid: Some("T".to_string()),
+        mark_price: None,
         price: 50000.0,
         tick_direction: 1,
         timestamp: 1234567890,

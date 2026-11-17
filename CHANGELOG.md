@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.0] - 2026-11-17
+
+### Added
+- `LastTrade::mark_price` and `LastTrade::contracts`: the mark price of the instrument at the moment of the trade and the trade size in contract units, as returned by the `get_last_trades*` methods
+- `HISTORY_BASE_URL`: the base URL of the Deribit history API, which serves trades older than the production host keeps
+
+### Changed
+- **Breaking**: `LastTrade` has two new public fields, so code that builds it with a struct literal must set them
+
 ## [0.7.3] - 2026-09-18
 
 ### Changed

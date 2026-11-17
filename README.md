@@ -35,7 +35,7 @@ Built on `reqwest` and `tokio`, with full WASM/Cloudflare Workers support.
 Add to your `Cargo.toml`:
 ```toml
 [dependencies]
-deribit-http = "0.6"
+deribit-http = "0.8"
 tokio = { version = "1", features = ["full"] }
 ```
 

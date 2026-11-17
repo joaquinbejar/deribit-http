@@ -25,7 +25,9 @@ pub use crate::session::HttpSession;
 pub use crate::rate_limit::{RateLimitCategory, RateLimiter, categorize_endpoint};
 
 // Re-export constants
-pub use crate::constants::{DEFAULT_TIMEOUT, MAX_RETRIES, PRODUCTION_BASE_URL, TESTNET_BASE_URL};
+pub use crate::constants::{
+    DEFAULT_TIMEOUT, HISTORY_BASE_URL, MAX_RETRIES, PRODUCTION_BASE_URL, TESTNET_BASE_URL,
+};
 
 // Re-export logging utilities
 pub use crate::logger::setup_logger;

@@ -71,11 +71,13 @@ fn create_mock_user_trade() -> UserTrade {
 fn create_mock_last_trade() -> LastTrade {
     LastTrade {
         amount: 1.5,
+        contracts: Some(1.5),
         direction: "buy".to_string(),
         index_price: 49900.0,
         instrument_name: "BTC-PERPETUAL".to_string(),
         iv: Some(0.8),
         liquid: Some("M".to_string()),
+        mark_price: Some(49990.0),
         price: 50000.0,
         tick_direction: 1,
         timestamp: 1640995200000,
@@ -275,6 +277,56 @@ fn test_last_trade_deserialization() {
     let deserialized: LastTrade = serde_json::from_str(json).unwrap();
     assert_eq!(deserialized.trade_id, "trade_789");
     assert_eq!(deserialized.amount, 1.5);
+}
+
+#[test]
+fn test_last_trade_deserialization_option_with_mark_price() {
+    // An option trade as returned by public/get_last_trades_by_currency_and_time
+    let json = r#"{
+        "trade_seq": 222,
+        "trade_id": "16992564",
+        "timestamp": 1554077504779,
+        "tick_direction": 0,
+        "price": 0.015,
+        "mark_price": 0.01463023,
+        "iv": 42.53,
+        "instrument_name": "BTC-5APR19-4125-C",
+        "index_price": 4094.01,
+        "direction": "buy",
+        "amount": 0.3
+    }"#;
+
+    let deserialized: LastTrade = serde_json::from_str(json).unwrap();
+    assert_eq!(deserialized.mark_price, Some(0.01463023));
+    assert_eq!(deserialized.iv, Some(42.53));
+    assert_eq!(deserialized.contracts, None);
+
+    let with_contracts: LastTrade = serde_json::from_str(&json.replacen(
+        "\"amount\": 0.3",
+        "\"amount\": 3, \"contracts\": 3",
+        1,
+    ))
+    .unwrap();
+    assert_eq!(with_contracts.contracts, Some(3.0));
+}
+
+#[test]
+fn test_last_trade_deserialization_without_mark_price() {
+    let json = r#"{
+        "amount": 1.5,
+        "direction": "buy",
+        "index_price": 49900.0,
+        "instrument_name": "BTC-PERPETUAL",
+        "price": 50000.0,
+        "tick_direction": 1,
+        "timestamp": 1640995200000,
+        "trade_id": "trade_789",
+        "trade_seq": 123456
+    }"#;
+
+    let deserialized: LastTrade = serde_json::from_str(json).unwrap();
+    assert_eq!(deserialized.mark_price, None);
+    assert_eq!(deserialized.contracts, None);
 }
 
 #[test]
