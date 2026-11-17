@@ -12,6 +12,13 @@ pub const PRODUCTION_BASE_URL: &str = "https://www.deribit.com/api/v2";
 /// Testnet base URL for Deribit API
 pub const TESTNET_BASE_URL: &str = "https://test.deribit.com/api/v2";
 
+/// Base URL of the Deribit history API
+///
+/// The production host keeps recent trades only. The history host serves the
+/// public market-data methods over the whole history of an instrument, expired
+/// ones included. Use it as the `base_url` of an `HttpConfig`.
+pub const HISTORY_BASE_URL: &str = "https://history.deribit.com/api/v2";
+
 /// API endpoints
 pub mod endpoints {
     // Authentication endpoints
